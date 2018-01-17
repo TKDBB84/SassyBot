@@ -81,4 +81,5 @@ client.on('message', message => {
         }
     }
 });
+
 client.login(getSecrets().token);
