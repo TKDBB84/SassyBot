@@ -13,7 +13,7 @@ let addRow, removeRow, addQuote, getQuotesByUser;
 client.on('ready', () => {
     console.log('I am ready!');
     db.exec('CREATE TABLE IF NOT EXISTS spam_channels (guild_id TEXT PRIMARY KEY, channel_id TEXT) WITHOUT ROWID;');
-    db.exec('CREATE TABLE IF NOT EXISTS user_quotes (user_id TEXT, message_id TEXT, timestamp INTEGER);');
+    db.exec('CREATE TABLE IF NOT EXISTS user_quotes (guild_id, user_id TEXT, message_id TEXT, timestamp INTEGER);');
     db.all('SELECT * FROM spam_channels', (error, rows) => {
         if(!error) {
             rows.forEach((row) => {
@@ -23,13 +23,16 @@ client.on('ready', () => {
     });
     addRow = db.prepare('INSERT INTO spam_channels (guild_id, channel_id) VALUES (?,?);');
     removeRow = db.prepare('DELETE FROM spam_channels WHERE guild_id = ?;');
-    addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, quote, timestamp) VALUES (?,?,?,strftime(\'%s\',\'now\'));');
+    addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, message_id, timestamp) VALUES (?,?,?,strftime(\'%s\',\'now\'));');
     getQuotesByUser = db.prepare('SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ?');
 });
 
 let chatFunctions = {
     'ping': (message) => {
         message.reply('pong');
+    },
+    'echo': (message) => {
+        message.reply(JSON.stringify(message.embed.length, message.embed[0].fields));
     },
     'spam': (message) => {
         channelList.set(message.guild.id, message.channel.id);
@@ -43,11 +46,20 @@ let chatFunctions = {
             getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                 if(!error && rows.length > 0) {
                     let row = rows[Math.floor(Math.random() * rows.length)];
-                    message.channel.fetchMessage(row.message_id).then((message) => {
+                    message.channel.fetchMessage(row.message_id).then((recalledMessage) => {
+                        let content = recalledMessage.cleanContent();
+                        let attachment = {};
+                        let embeds = [];
+                        if ( recalledMessage.attachments && recalledMessage.attachments.array().length > 0 ) {
 
+                        }
+
+                        if ( recalledMessage.embeds && recalledMessage.embeds.length > 0 ) {
+
+                        }
                     });
-                    message.channel.send(quotedMember.displayName + ' said: "' + row.quote + '"');
-                    message.channel.send(quotedMember.displayName + ' has ' + ((row.length - 1) === 0 ? 'No' : (row.length - 1))  + ' other quotes saved');
+                    // message.channel.send(quotedMember.displayName + ' said: "' + row.quote + '"');
+                    // message.channel.send(quotedMember.displayName + ' has ' + ((row.length - 1) === 0 ? 'No' : (row.length - 1))  + ' other quotes saved');
                 }
             });
         } else {
@@ -71,7 +83,7 @@ let chatFunctions = {
                                     reaction.fetchUsers().then(
                                         (users) => {
                                             if (users.get(message.author.id) && !foundOne) {
-                                                addQuote.run([message.guild.id, reaction.message.author.id, reaction.message.id]);
+                                                // addQuote.run([message.guild.id, reaction.message.author.id, reaction.message.id]);
                                                 message.reply(' ' + 'I\'ve noted that ' + reaction.message.author.displayName + ' said: "' + reaction.message.cleanContent +  '"');
                                                 foundOne = true;
                                             }
