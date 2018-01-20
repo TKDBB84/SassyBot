@@ -50,7 +50,12 @@ let chatFunctions = {
                     message.channel.fetchMessage(row.message_id).then((recalledMessage) => {
                         let content = recalledMessage.cleanContent;
                         let embed = null;
-                        if ( recalledMessage.embeds && recalledMessage.embeds.length > 0 ) {
+                        let attachment = null;
+                        if ( recalledMessage.attachments ) {
+                            let tmpAttachment = recalledMessage.attachments.first();
+                            attachment = new Discord.Attachment(tmpAttachment.url, tmpAttachment.filename);
+                        }
+                        if ( !attachment && recalledMessage.embeds && recalledMessage.embeds.length > 0 ) {
                             // discord JS can only deal w/ 1 embed at a time
                             /** @var MessageEmbed tmp */
                             let tmp = recalledMessage.embeds[0];
@@ -115,7 +120,11 @@ let chatFunctions = {
                             disableEveryone: true,
                             embed: embed ? embed : {}
                         };
-                        message.channel.send(quotedMember.displayName + ' said: "' + content + '"', messageOptions);
+                        if (attachment) {
+                            message.channel.send(quotedMember.displayName + ' said: "' + content + '"', attachment);
+                        } else {
+                            message.channel.send(quotedMember.displayName + ' said: "' + content + '"', messageOptions);
+                        }
                         message.channel.send('and has ' + ((rows.length - 1) === 0 ? 'No' : (rows.length - 1))  + ' other quotes saved');
                     });
                 }
