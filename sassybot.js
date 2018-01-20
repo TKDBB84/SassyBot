@@ -14,7 +14,7 @@ let addSpamChannel, removeSpamChannel, addQuote, getQuotesByUser;
 client.on('ready', () => {
     console.log('I am ready!');
     db.exec('CREATE TABLE IF NOT EXISTS spam_channels (guild_id TEXT PRIMARY KEY, channel_id TEXT) WITHOUT ROWID;');
-    db.exec('CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, message_id TEXT, timestamp INTEGER);');
+    db.exec('CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, channel_id TEXT, message_id TEXT, timestamp INTEGER);');
     db.all('SELECT * FROM spam_channels', (error, rows) => {
         if(!error) {
             rows.forEach((row) => {
@@ -24,7 +24,7 @@ client.on('ready', () => {
     });
     addSpamChannel = db.prepare('INSERT INTO spam_channels (guild_id, channel_id) VALUES (?,?);');
     removeSpamChannel = db.prepare('DELETE FROM spam_channels WHERE guild_id = ?;');
-    addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, message_id, timestamp) VALUES (?,?,?,strftime(\'%s\',\'now\'));');
+    addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp) VALUES (?,?,?,?,strftime(\'%s\',\'now\'));');
     getQuotesByUser = db.prepare('SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ?');
 });
 
@@ -47,11 +47,11 @@ let chatFunctions = {
             getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                 if(!error && rows.length > 0) {
                     let row = rows[Math.floor(Math.random() * rows.length)];
-                    message.channel.fetchMessage(row.message_id).then((recalledMessage) => {
+                    client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
                         let content = recalledMessage.cleanContent;
                         let embed = null;
                         let attachment = null;
-                        if ( recalledMessage.attachments ) {
+                        if ( recalledMessage.attachments.array().length > 0 ) {
                             let tmpAttachment = recalledMessage.attachments.first();
                             attachment = new Discord.Attachment(tmpAttachment.url, tmpAttachment.filename);
                         }
@@ -150,7 +150,7 @@ let chatFunctions = {
                                     reaction.fetchUsers().then(
                                         (users) => {
                                             if (users.get(message.author.id) && !foundOne) {
-                                                addQuote.run([message.guild.id, reaction.message.author.id, reaction.message.id]);
+                                                addQuote.run([message.guild.id, reaction.message.author.id, activeChannel.id, reaction.message.id]);
                                                 message.reply(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent +  '"');
                                                 foundOne = true;
                                             }
