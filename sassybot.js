@@ -55,14 +55,14 @@ let chatFunctions = {
                     let row = rows[selectedQuoted];
                     selectedQuoted += 1;
                     if (row.quote_text && row.quote_text !== '') {
-                        message.channel.send(quotedMember.displayName + ' said: "' + content + '" (quote #' + selectedQuoted + ')', {disableEveryone: true});
+                        message.channel.send(quotedMember.displayName + ' said: "' + row.quote_text + '" (quote #' + selectedQuoted + ')', {disableEveryone: true});
                         message.channel.send('and has ' + ((rows.length - 1) === 0 ? 'No' : (rows.length - 1)) + ' other quotes saved');
                     } else {
                         client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
                             let content = recalledMessage.cleanContent;
                             message.channel.send(quotedMember.displayName + ' said: "' + content + '" (quote #' + selectedQuoted + ')', {disableEveryone: true});
                             message.channel.send('and has ' + ((rows.length - 1) === 0 ? 'No' : (rows.length - 1)) + ' other quotes saved');
-                            updateMesageText.run([row.message_id, content]);
+                            updateMesageText.run([content, row.message_id]);
                         });
                     }
                 }
