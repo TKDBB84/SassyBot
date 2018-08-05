@@ -96,14 +96,8 @@ let chatFunctions = {
                         Promise.all(fetches).then((results) => {
                             for (let k = 0, kMax = results.length ; k < kMax ; k++) {
                                 let content = results[k].cleanContent;
-                                updateMesageText.run([content, results[k].message_id]);
+                                updateMesageText.run([content, results[k].id]);
                             }
-                            getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
-                                for (let i = 0, iMax = rows.length; i < iMax; i++) {
-                                    finalMessage += i + ': ' + rows[i].quote_text + '\n';
-                                }
-                                target.send(finalMessage);
-                            });
                         });
                     } else {
                         for (let j = 0, jMax = builtMessages.length ; j < jMax ; j++) {
