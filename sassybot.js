@@ -11,6 +11,9 @@ let channelList = new Map();
 let addSpamChannel, removeSpamChannel, addQuote, getQuotesByUser,
     getQuoteCountByUser, updateMesageText;
 
+let isNormalInteger = function (str) {
+    return /^\+?(0|[1-9]\d*)$/.test(str);
+};
 
 client.on('ready', () => {
     console.log('I am ready!');
@@ -38,7 +41,7 @@ let chatFunctions = {
         message.reply('pong');
     },
     'echo': (message) => {
-        message.reply(JSON.stringify(message.embed.length, message.embed[0].fields));
+
     },
     'spam': (message) => {
         channelList.set(message.guild.id, message.channel.id);
@@ -48,28 +51,68 @@ let chatFunctions = {
     },
     'rquote': (message) => {
         if (message.mentions && message.mentions.members && message.mentions.members.array().length === 1) {
+            let content;
+            let parts =  message.content.match(/\!sassybot\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?/i);
             let quotedMember = message.mentions.members.first();
-            getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
-                if(!error && rows.length > 0) {
-                    let selectedQuoted = Math.floor(Math.random() * rows.length);
-                    let row = rows[selectedQuoted];
-                    selectedQuoted += 1;
-                    if (row.quote_text && row.quote_text !== '') {
-                        message.channel.send(quotedMember.displayName + ' said: "' + row.quote_text + '" (quote #' + selectedQuoted + ')', {disableEveryone: true});
-                        message.channel.send('and has ' + ((rows.length - 1) === 0 ? 'No' : (rows.length - 1)) + ' other quotes saved');
-                    } else {
-                        client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
-                            let content = recalledMessage.cleanContent;
-                            message.channel.send(quotedMember.displayName + ' said: "' + content + '" (quote #' + selectedQuoted + ')', {disableEveryone: true});
-                            message.channel.send('and has ' + ((rows.length - 1) === 0 ? 'No' : (rows.length - 1)) + ' other quotes saved');
-                            updateMesageText.run([content, row.message_id]);
-                        });
+            if (!parts) {
+                getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
+                    if(!error && rows.length > 0) {
+                        let selectedQuoted = Math.floor(Math.random() * rows.length);
+                        let row = rows[selectedQuoted];
+                        let quote = {
+                           content: row.quote_text ? row.quote_text : '',
+                           number: selectedQuoted + 1,
+                           count: rows.length
+                        };
+                        if (!row.quote_text || row.quote_text === '') {
+                            client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
+                                let content = recalledMessage.cleanContent;
+                                updateMesageText.run([content, row.message_id]);
+                                quote.content = content;
+                                message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
+                                message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
+                            });
+                        } else {
+                            message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
+                            message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');``
+                        }
                     }
-                }
-            });
+                });
+            } else if (parts.length >= 2 && parts[1].toLowerCase() === 'list') {
+                content = "I'm suppose to list all quotes, Sasner should probably get on that";
+                message.reply(content);
+            } else if (parts.length >= 2 && isNormalInteger(parts[1])) {
+                getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
+                    if(!error && rows.length > 0) {
+                        let selectedQuoted = Number(parts[1]);
+                        let row = rows[selectedQuoted - 1];
+                        let quote = {
+                            content: row.quote_text ? row.quote_text : '',
+                            number: selectedQuoted,
+                            count: rows.length
+                        };
+                        if (!row.quote_text || row.quote_text === '') {
+                            client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
+                                let content = recalledMessage.cleanContent;
+                                updateMesageText.run([content, row.message_id]);
+                                quote.content = content;
+                                message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
+                                message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
+                            });
+                        } else {
+                            message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
+                            message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
+                        }
+                    }
+                });
+            } else {
+                content = "ugh waht ? ";
+                message.reply(content);
+            }
         } else {
-            message.channel.send('You must specify who\'s quote you want to retrieve', {disableEveryone: true});
+            message.channel.send('You must specify whose quote you want to retrieve', {disableEveryone: true});
         }
+
     },
     'quote': (message) => {
         if (message.mentions && message.mentions.members && message.mentions.members.array().length === 1) {
