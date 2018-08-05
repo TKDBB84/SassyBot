@@ -88,9 +88,11 @@ let chatFunctions = {
                                     reaction.fetchUsers().then(
                                         (users) => {
                                             if (users.get(message.author.id) && !foundOne) {
-                                                addQuote.run([message.guild.id, reaction.message.author.id, activeChannel.id, reaction.message.id, reaction.message.cleanContent]);
-                                                message.reply(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent +  '"');
-                                                foundOne = true;
+                                                if (reaction.message.cleanContent !== '') {
+                                                    addQuote.run([message.guild.id, reaction.message.author.id, activeChannel.id, reaction.message.id, reaction.message.cleanContent]);
+                                                    message.reply(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"');
+                                                    foundOne = true;
+                                                }
                                             }
                                         }
                                     );
@@ -98,7 +100,8 @@ let chatFunctions = {
                             }
                         )
                     }
-                });
+                }
+            );
         }
     },
     'roll': (message) => {
