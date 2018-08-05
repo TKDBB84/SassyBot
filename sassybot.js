@@ -83,7 +83,7 @@ let chatFunctions = {
                 getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                     let builtMessages = [];
                     let fetches = [];
-                    let finalMessage = '----------------------------\n';
+                    let finalMessage = quotedMember.displayName + '\n ----------------------------\n';
                     for (let i = 0, iMax = rows.length; i < iMax; i++) {
                         let row = rows[i];
                         if (!row.quote_text || row.quote_text === '') {
@@ -100,7 +100,7 @@ let chatFunctions = {
                             }
                             getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                                 for (let i = 0, iMax = rows.length; i < iMax; i++) {
-                                    finalMessage += i + ': ' + rows[i].quote_text + '\n';
+                                    finalMessage += (i+1) + ': ' + rows[i].quote_text + '\n';
                                 }
                                 target.send(finalMessage);
                             });
