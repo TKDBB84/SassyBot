@@ -41,7 +41,7 @@ let chatFunctions = {
         message.reply('pong');
     },
     'echo': (message) => {
-
+        message.reply(message);
     },
     'spam': (message) => {
         channelList.set(message.guild.id, message.channel.id);
@@ -60,9 +60,9 @@ let chatFunctions = {
                         let selectedQuoted = Math.floor(Math.random() * rows.length);
                         let row = rows[selectedQuoted];
                         let quote = {
-                           content: row.quote_text ? row.quote_text : '',
-                           number: selectedQuoted + 1,
-                           count: rows.length
+                            content: row.quote_text ? row.quote_text : '',
+                            number: selectedQuoted + 1,
+                            count: rows.length
                         };
                         if (!row.quote_text || row.quote_text === '') {
                             client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
@@ -74,13 +74,44 @@ let chatFunctions = {
                             });
                         } else {
                             message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
-                            message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');``
+                            message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
                         }
                     }
                 });
             } else if (parts.length >= 2 && parts[1].toLowerCase() === 'list') {
-                content = "I'm suppose to list all quotes, Sasner should probably get on that";
-                message.reply(content);
+                let target = message.author;
+                getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
+                    let builtMessages = [];
+                    let fetches = [];
+                    let finalMessage = '----------------------------\n';
+                    for (let i = 0, iMax = rows.length; i < iMax; i++) {
+                        let row = rows[i];
+                        if (!row.quote_text || row.quote_text === '') {
+                            fetches.push(client.channels.get(row.channel_id).fetchMessage(row.message_id));
+                        } else {
+                            builtMessages[i] = row.quote_text;
+                        }
+                    }
+                    if (fetches.length > 0) {
+                        Promise.all(fetches).then((results) => {
+                            for (let k = 0, kMax = results.length ; k < kMax ; k++) {
+                                let content = results[k].cleanContent;
+                                updateMesageText.run([content, results[k].message_id]);
+                            }
+                            getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
+                                for (let i = 0, iMax = rows.length; i < iMax; i++) {
+                                    finalMessage += i + ': ' + rows[i].quote_text + '\n';
+                                }
+                                target.send(finalMessage);
+                            });
+                        });
+                    } else {
+                        for (let j = 0, jMax = builtMessages.length ; j < jMax ; j++) {
+                            finalMessage += (j+1) + ': ' + builtMessages[j] + '\n';
+                        }
+                        target.send(finalMessage + '----------------------------');
+                    }
+                });
             } else if (parts.length >= 2 && isNormalInteger(parts[1])) {
                 getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                     if(!error && rows.length > 0) {
@@ -112,7 +143,6 @@ let chatFunctions = {
         } else {
             message.channel.send('You must specify whose quote you want to retrieve', {disableEveryone: true});
         }
-
     },
     'quote': (message) => {
         if (message.mentions && message.mentions.members && message.mentions.members.array().length === 1) {
@@ -187,7 +217,7 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 });
 
 client.on('message', message => {
-    if (message.content.toLowerCase().startsWith('!sassybot')) {
+    if (message.content.toLowerCase().startsWith('!sassybot') || message.content.toLowerCase().startsWith('!sb')) {
         let parsed = message.content.toLowerCase().split(' ');
         if (chatFunctions.hasOwnProperty(parsed[1])) {
             chatFunctions[parsed[1]](message);
