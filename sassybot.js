@@ -52,7 +52,7 @@ let chatFunctions = {
     'rquote': (message) => {
         if (message.mentions && message.mentions.members && message.mentions.members.array().length === 1) {
             let content;
-            let parts =  message.content.match(/\!sassybot\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?/i);
+            let parts =  message.content.match(/\!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?/i);
             let quotedMember = message.mentions.members.first();
             if (!parts) {
                 getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
@@ -83,7 +83,7 @@ let chatFunctions = {
                 getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
                     let builtMessages = [];
                     let fetches = [];
-                    let finalMessage = quotedMember.displayName + '\n ----------------------------\n';
+                    let finalMessage = quotedMember.displayName + '\n----------------------------\n';
                     for (let i = 0, iMax = rows.length; i < iMax; i++) {
                         let row = rows[i];
                         if (!row.quote_text || row.quote_text === '') {
@@ -102,7 +102,7 @@ let chatFunctions = {
                                 for (let i = 0, iMax = rows.length; i < iMax; i++) {
                                     finalMessage += (i+1) + ': ' + rows[i].quote_text + '\n';
                                 }
-                                target.send(finalMessage);
+                                target.send(finalMessage + '----------------------------');
                             });
                         });
                     } else {
@@ -191,6 +191,9 @@ let chatFunctions = {
             }
             message.reply(' ' + JSON.stringify(diceRolls) + ' => ' + diceRolls.reduce((total, num)=> total + num))
         }
+    },
+    'help': (message) => {
+        message.reply('I can\'t help you yet, because Sasner is pretty damn lazy');
     }//, 'purge': (message) => { message.reply('ok: commencing a purge...'); }
 };
 
@@ -199,17 +202,17 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
     if (oldMember.voiceChannelID !== newMember.voiceChannelID) {
         if (oldMember.voiceChannelID && !newMember.voiceChannelID && channelList.has(oldMember.guild.id)) {
             let leftChannel = client.channels.get(oldMember.voiceChannelID);
-            let msg = now + oldMember.displayName + ' has left ' + leftChannel.name;
+            let msg = now + oldMember.displayName + ' (' + oldMember.user.username + ') has left ' + leftChannel.name;
             client.channels.get(channelList.get(oldMember.guild.id)).send(msg);
         } else if (!oldMember.voiceChannelID && newMember.voiceChannelID && channelList.has(newMember.guild.id)) {
             let joinedChannel = client.channels.get(newMember.voiceChannelID);
-            let msg = now + oldMember.displayName + ' has joined ' + joinedChannel.name;
+            let msg = now + oldMember.displayName + ' (' + oldMember.user.username + ') has joined ' + joinedChannel.name;
             client.channels.get(channelList.get(joinedChannel.guild.id)).send(msg);
         } else {
             if (channelList.has(oldMember.guild.id)) {
                 let leftChannel = client.channels.get(oldMember.voiceChannelID);
                 let joinedChannel = client.channels.get(newMember.voiceChannelID);
-                let msg = now + oldMember.displayName + ' has moved from: ' + leftChannel.name + ' to: ' + joinedChannel.name;
+                let msg = now + oldMember.displayName + ' (' + oldMember.user.username  + ') has moved from: ' + leftChannel.name + ' to: ' + joinedChannel.name;
                 client.channels.get(channelList.get(oldMember.guild.id)).send(msg);
             }
         }
