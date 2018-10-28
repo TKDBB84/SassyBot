@@ -18,7 +18,7 @@ const brigieID = '189195422114381824';
 const verianID = '159756239016820736';
 
 
-const pleaseRequired = {};
+const pleaseRequiredList = {};
 
 const getSecrets = () => {
   return JSON.parse(fs.readFileSync("/home/nodebot/src/client_secrets.json"));
@@ -26,10 +26,10 @@ const getSecrets = () => {
 
 let channelList = new Map();
 let addSpamChannel, removeSpamChannel, addQuote, getQuotesByUser,
-  getQuoteCountByUser, updateMesageText;
+  getQuoteCountByUser, updateMessageText;
 
-const isSassyBotCall = function (messageString) {
-  return messageString.toLowerCase().startsWith('!sassybot') || messageString.toLowerCase().startsWith('!sb')
+const isSassyBotCall = function (message) {
+  return message.content.toLowerCase().startsWith('!sassybot') || message.content.toLowerCase().startsWith('!sb')
 };
 
 const rollFunction = (message) => {
@@ -100,7 +100,7 @@ const rQuoteFunction = (message) => {
           if (!row.quote_text || row.quote_text === '') {
             client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
               let content = recalledMessage.cleanContent;
-              updateMesageText.run([content, row.message_id]);
+              updateMessageText.run([content, row.message_id]);
               quote.content = content;
               message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
               message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
@@ -129,7 +129,7 @@ const rQuoteFunction = (message) => {
           Promise.all(fetches).then((results) => {
             for (let k = 0, kMax = results.length; k < kMax; k++) {
               let content = results[k].cleanContent;
-              updateMesageText.run([content, results[k].id]);
+              updateMessageText.run([content, results[k].id]);
             }
             getQuotesByUser.all([message.guild.id, quotedMember.id], (error, rows) => {
               for (let i = 0, iMax = rows.length; i < iMax; i++) {
@@ -158,7 +158,7 @@ const rQuoteFunction = (message) => {
           if (!row.quote_text || row.quote_text === '') {
             client.channels.get(row.channel_id).fetchMessage(row.message_id).then((recalledMessage) => {
               let content = recalledMessage.cleanContent;
-              updateMesageText.run([content, row.message_id]);
+              updateMessageText.run([content, row.message_id]);
               quote.content = content;
               message.channel.send(quotedMember.displayName + ' said: "' + quote.content + '" (quote #' + quote.number + ')', {disableEveryone: true});
               message.channel.send('and has ' + ((quote.count - 1) === 0 ? 'No' : (quote.count - 1)) + ' other quotes saved');
@@ -196,9 +196,9 @@ const processMessage = function (message, randNumber) {
     return
   }
 
-  if (pleaseRequired.hasOwnProperty(author_id)) {
+  if (pleaseRequiredList.hasOwnProperty(author_id)) {
     if (!message.content.endsWith(' please')) {
-      pleaseRequired[author_id] = message;
+      pleaseRequiredList[author_id] = message;
       message.reply('only if you say "please"');
       return;
     } else {
@@ -291,7 +291,7 @@ client.on('ready', () => {
   addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp, quote_text) VALUES (?,?,?,?,strftime(\'%s\',\'now\'),?);');
   getQuotesByUser = db.prepare('SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ? ORDER BY message_id;');
   getQuoteCountByUser = db.prepare('SELECT COUNT(1) as cnt FROM user_quotes WHERE guild_id = ? AND user_id = ?;');
-  updateMesageText = db.prepare('UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;');
+  updateMessageText = db.prepare('UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;');
 
 });
 
@@ -313,13 +313,13 @@ const moreDots = (message) => {
 const pleaseRequired = (message) => {
   const author_id = getAuthorId(message);
   if (
-    pleaseRequired.hasOwnProperty(author_id)
-    && pleaseRequired[author_id] !== ''
+    pleaseRequiredList.hasOwnProperty(author_id)
+    && pleaseRequiredList[author_id] !== ''
     && message.content.toLowerCase() === 'please'
-    && isSassyBotCall(pleaseRequired[author_id].content)
+    && isSassyBotCall(pleaseRequiredList[author_id].content)
   ) {
-    processMessage(pleaseRequired[author_id]);
-    pleaseRequired[author_id] = '';
+    processMessage(pleaseRequiredList[author_id]);
+    pleaseRequiredList[author_id] = '';
     return false;
   }
   return true;
@@ -335,11 +335,11 @@ const commandTrollFunctions = {};
 const commandTrollFunctionChances = {};
 
 const preProcessTrollFunctions = {
-  shiftyEyes: shiftyEyes,
-  aPingRee: aPingRee,
-  moreDots: moreDots,
-  pleaseRequired: pleaseRequired,
-  pleaseShutUp: pleaseShutUp
+  'shiftyEyes': shiftyEyes,
+  'aPingRee': aPingRee,
+  'moreDots': moreDots,
+  'pleaseRequired': pleaseRequired,
+  'pleaseShutUp': pleaseShutUp
 };
 
 const preProcessTrollFunctionChances = {
@@ -414,7 +414,7 @@ client.on('message', message => {
     }
   }
 
-  if (isSassyBotCall(message.content)) {
+  if (isSassyBotCall(message)) {
     processMessage(message, random_number);
   }
 });
