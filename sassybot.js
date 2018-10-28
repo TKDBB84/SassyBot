@@ -195,6 +195,18 @@ const processMessage = function (message, randNumber) {
     message.reply('No, fuck you');
     return
   }
+
+  if (pleaseRequired.hasOwnProperty(author_id)) {
+    if (!message.content.endsWith(' please')) {
+      pleaseRequired[author_id] = message;
+      message.reply('only if you say "please"');
+      return;
+    } else {
+      message.content = message.content.slice(0, (-1 * ' please'.length));
+    }
+
+  }
+
   let parsed = message.content.toLowerCase().split(' ');
   if (chatFunctions.hasOwnProperty(parsed[1])) {
     chatFunctions[parsed[1]](message);
@@ -260,6 +272,7 @@ const shiftyEyes = function (message) {
   if (outMessage !== '') {
     message.channel.send(outMessage);
   }
+  return false;
 };
 
 client.on('ready', () => {
@@ -282,9 +295,69 @@ client.on('ready', () => {
 
 });
 
+const aPingRee = (message) => {
+  if (message.content.toLowerCase().includes(':apingree:')) {
+    message.reply('oh I hear you like being pinged!');
+  }
+  return false;
+};
+
+const moreDots = (message) => {
+  const dotMatch = message.content.match(/(\.)+/);
+  if (dotMatch && dotMatch[0].toString() === dotMatch['input'].toString()) {
+    message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString());
+  }
+  return false;
+};
+
+const pleaseRequired = (message) => {
+  const author_id = getAuthorId(message);
+  if (
+    pleaseRequired.hasOwnProperty(author_id)
+    && pleaseRequired[author_id] !== ''
+    && message.content.toLowerCase() === 'please'
+    && isSassyBotCall(pleaseRequired[author_id].content)
+  ) {
+    processMessage(pleaseRequired[author_id]);
+    pleaseRequired[author_id] = '';
+    return false;
+  }
+  return true;
+};
+
+const pleaseShutUp = (message) => {
+  message.reply('will you please shut up?');
+  return false;
+};
+
+const commandTrollFunctions = {};
+
+const commandTrollFunctionChances = {};
+
+const preProcessTrollFunctions = {
+  shiftyEyes: shiftyEyes,
+  aPingRee: aPingRee,
+  moreDots: moreDots,
+  pleaseRequired: pleaseRequired,
+  pleaseShutUp: pleaseShutUp
+};
+
+const preProcessTrollFunctionChances = {
+  // function name => % chance
+  shiftyEyes: 0.09,
+  aPingRee: 1.00,
+  moreDots: 1.00,
+  pleaseRequired: 1.00,
+  pleaseShutUp: 0.0001
+};
+
 let chatFunctions = {
-  'ping': (message) => { message.reply('pong'); },
-  'echo': (message) => { message.reply(message.content); },
+  'ping': (message) => {
+    message.reply('pong');
+  },
+  'echo': (message) => {
+    message.reply(message.content);
+  },
   'spam': spamFunction,
   'rquote': rQuoteFunction,
   'quote': quoteFunction,
@@ -315,55 +388,34 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 });
 
 client.on('message', message => {
-  const d = Math.random();
+  const random_number = Math.random();
   const author_id = getAuthorId(message);
-  const author_nickname = getDispalyName(message);
+
   if (author_id === sassybotID) {
+    // SassyBot is not allowed to respond to itself
     return;
   }
 
-  if (d <= 0.09 && author_id !== sasnerID) {
-    shiftyEyes(message);
-  }
 
-  if (message.content.toLowerCase().includes(':apingree:')) {
-    message.reply('oh I hear you like being pinged!');
-  }
+  if (author_id !== sasnerID) {
 
-  if ((dotMatch = message.content.match(/(\.)+/)) && author_id !== sasnerID) {
-    if (dotMatch[0].toString() === dotMatch['input'].toString()) {
-      message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString());
+    let continueProcess = true;
+    for (const funcName in preProcessTrollFunctionChances) {
+      if (preProcessTrollFunctionChances.hasOwnProperty(funcName) && preProcessTrollFunctions.hasOwnProperty(funcName)) {
+        const chance = preProcessTrollFunctionChances[funcName];
+        if (random_number < chance) {
+          continueProcess = preProcessTrollFunctions[funcName](message) && continueProcess;
+        }
+      }
+    }
+
+    if (!continueProcess) {
       return;
     }
   }
 
-  if (
-    pleaseRequired.hasOwnProperty(author_id)
-    && pleaseRequired[author_id] !== ''
-    && message.content.toLowerCase() === 'please'
-    && isSassyBotCall(pleaseRequired[author_id].content)
-  ) {
-    processMessage(pleaseRequired[author_id]);
-    pleaseRequired[author_id] = '';
-    return;
-  }
-
   if (isSassyBotCall(message.content)) {
-    if (pleaseRequired.hasOwnProperty(author_id)) {
-      if (!message.content.endsWith(' please')) {
-        pleaseRequired[author_id] = message;
-        message.reply('only if you say "please"');
-        return;
-      } else {
-        message.content = message.content.slice(0, (-1 * ' please'.length));
-      }
-
-    }
-    processMessage(message, d);
-  } else {
-    if (d < 0.0001) {
-      message.reply('will you please shut up?')
-    }
+    processMessage(message, random_number);
   }
 });
 
