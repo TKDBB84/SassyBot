@@ -4,25 +4,7 @@ const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database('/home/nodebot/data/nodebot.sqlite');
 const fs = require('fs');
 
-const rykID = '136276996261937152';
-const oniID = '181267070111973376';
-const sasnerID = '107435240686931968';
-const sassybotID = '402131531268882432';
-const rexID = '159868064228179968';
-const eitriID = '106004012347695104';
-const yoakeID = '215882287693299713';
-const kraysanID = '177926353373364224';
-const urikoID = '157324426076094474';
-const hallyID = '158533023736791041';
-const brigieID = '189195422114381824';
-
-
 const pleaseRequired = {
-//    '136276996261937152': '', // ryk
-//    '181267070111973376': '', // oni
-//    '124854733096615937': '', // lev
-//    '107435240686931968': '', // sasner
-//    '159868064228179968': '', // Rex
 };
 
 let getSecrets = () => {
