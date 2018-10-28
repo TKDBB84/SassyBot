@@ -33,18 +33,16 @@ const isSassyBotCall = function (message) {
 };
 
 const rollFunction = (message) => {
-  let parsed = message.content.split(' ');
-  let parsedDice = parsed[2];
-  let diceRegex = /^\s*(\d+)d(\d+)$/i;
-  let result = parsedDice.match(diceRegex);
-  if (result.length === 3) {
-    let numDice = parseInt(result[1], 10);
-    let diceSides = parseInt(result[2], 10);
+  const parsedDice = message.content.split(' ')[2];
+  const result = parsedDice.match(/^\s*(\d+)d(\d+)$/i);
+  if (result && result.length === 3) {
+    const numDice = parseInt(result[1], 10);
+    const diceSides = parseInt(result[2], 10);
     let diceRolls = [];
     for (let i = 0; i < numDice; i++) {
       diceRolls.push(Math.floor(Math.random() * diceSides) + 1);
     }
-    message.reply(' ' + JSON.stringify(diceRolls) + ' => ' + diceRolls.reduce((total, num) => total + num))
+    message.reply(' ' + JSON.stringify(diceRolls, null, 1).replace(/\n/g, '') + ' => ' + diceRolls.reduce((total, num) => total + num))
   }
 };
 
@@ -186,7 +184,7 @@ const isNormalInteger = (str) => {
   return /^\+?(0|[1-9]\d*)$/.test(str);
 };
 
-const getDispalyName = function (message) {
+const getDisplayName = function (message) {
   return message.member.nickname ? message.member.nickname : message.author.username;
 };
 
@@ -256,30 +254,43 @@ const spamFunction = (message) => {
 };
 
 const shiftyEyes = function (message) {
-  const author_nickname = getDispalyName(message);
-
-  let mid;
   let outMessage = '';
-  if (mid = message.content.match(/.*\>(\s*.\s*)\>.*/)) {
-    outMessage = '<' + mid[1] + '<';
-  } else if (mid = message.content.match(/.*\<(\s*.\s*)\<.*/)) {
-    outMessage = '>' + mid[1] + '>';
-  } else if (mid = author_nickname.match(/.*\<(\s*.\s*)\<.*/)) {
-    outMessage = '>' + mid[1] + '> (but only because you named yourself that)';
-  } else if (mid = author_nickname.match(/.*\>(\s*.\s*)\>.*/)) {
-    outMessage = '<' + mid[1] + '< (but only because you named yourself that)';
+  const leftEyes = /.*\<(\s*.\s*)\<.*/;
+  const rightEyes = /.*\>(\s*.\s*)\>.*/;
+
+  const message_left = message.content.match(leftEyes);
+  const message_right = message.content.match(rightEyes);
+  if (message_left) {
+    outMessage = '>' + message_left[1] + '> ';
+  }
+  if (message_right) {
+    outMessage += '<' + message_right[1] + '<';
+  }
+
+  if (outMessage === '') {
+    const author_nickname = getDisplayName(message);
+    const author_left = author_nickname.match(leftEyes);
+    const author_right = author_nickname.match(rightEyes);
+    if (author_left) {
+      outMessage = '>' + author_left[1] + '>  (but only because you named yourself that)';
+    } else if (author_right) {
+      outMessage = '<' + author_right[1] + '<  (but only because you named yourself that)';
+    }
   }
 
   if (outMessage !== '') {
     message.channel.send(outMessage, {disableEveryone: true});
+    return false;
   }
   return true;
 };
 
 client.on('ready', () => {
-  console.log('I am ready!');
+  // create tables if they don't exists:
   db.exec('CREATE TABLE IF NOT EXISTS spam_channels (guild_id TEXT PRIMARY KEY, channel_id TEXT) WITHOUT ROWID;');
   db.exec('CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, channel_id TEXT, message_id TEXT, timestamp INTEGER, quote_text TEXT);');
+
+  // fetch channels per server to spam joining an leaving
   db.all('SELECT * FROM spam_channels', (error, rows) => {
     if (!error) {
       rows.forEach((row) => {
@@ -287,6 +298,8 @@ client.on('ready', () => {
       });
     }
   });
+
+  // setup runtime queries as prepared to negate sql injection
   addSpamChannel = db.prepare('INSERT INTO spam_channels (guild_id, channel_id) VALUES (?,?);');
   removeSpamChannel = db.prepare('DELETE FROM spam_channels WHERE guild_id = ?;');
   addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp, quote_text) VALUES (?,?,?,?,strftime(\'%s\',\'now\'),?);');
@@ -294,24 +307,31 @@ client.on('ready', () => {
   getQuoteCountByUser = db.prepare('SELECT COUNT(1) as cnt FROM user_quotes WHERE guild_id = ? AND user_id = ?;');
   updateMessageText = db.prepare('UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;');
 
+  // setup ready to go
+  console.log('I am ready!');
 });
+
 
 const aPingRee = (message) => {
   if (message.content.toLowerCase().includes(':apingree:')) {
     message.channel.send('oh I hear you like being pinged!', {disableEveryone: true});
+    return false;
   }
   return true;
 };
+
 
 const moreDots = (message) => {
   const dotMatch = message.content.match(/(\.)+/);
   if (dotMatch && dotMatch[0].toString() === dotMatch['input'].toString()) {
     message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString(), {disableEveryone: true});
+    return false;
   }
   return true;
 };
 
-const pleaseRequired = (message) => {
+
+const processPleaseStatement = (message) => {
   const author_id = getAuthorId(message);
   if (
     pleaseRequiredList.hasOwnProperty(author_id)
@@ -326,6 +346,7 @@ const pleaseRequired = (message) => {
   return true;
 };
 
+
 const pleaseShutUp = (message) => {
   message.reply('will you please shut up?');
   return false;
@@ -339,7 +360,7 @@ const preProcessTrollFunctions = {
   'shiftyEyes': shiftyEyes,
   'aPingRee': aPingRee,
   'moreDots': moreDots,
-  'pleaseRequired': pleaseRequired,
+  'processPleaseStatement': processPleaseStatement,
   'pleaseShutUp': pleaseShutUp
 };
 
@@ -348,7 +369,7 @@ const preProcessTrollFunctionChances = {
   shiftyEyes: 0.09,
   aPingRee: 1.00,
   moreDots: 1.00,
-  pleaseRequired: 1.00,
+  processPleaseStatement: 1.00,
   pleaseShutUp: 0.0001
 };
 
