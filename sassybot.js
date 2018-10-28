@@ -191,6 +191,7 @@ const getDispalyName = function (message) {
 };
 
 const processMessage = function (message, randNumber) {
+  const author_id = getAuthorId(message);
   if (randNumber < 0.01) {
     message.channel.send('No, fuck you');
     return
@@ -272,7 +273,7 @@ const shiftyEyes = function (message) {
   if (outMessage !== '') {
     message.channel.send(outMessage, {disableEveryone: true});
   }
-  return false;
+  return true;
 };
 
 client.on('ready', () => {
@@ -299,7 +300,7 @@ const aPingRee = (message) => {
   if (message.content.toLowerCase().includes(':apingree:')) {
     message.channel.send('oh I hear you like being pinged!', {disableEveryone: true});
   }
-  return false;
+  return true;
 };
 
 const moreDots = (message) => {
@@ -307,7 +308,7 @@ const moreDots = (message) => {
   if (dotMatch && dotMatch[0].toString() === dotMatch['input'].toString()) {
     message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString(), {disableEveryone: true});
   }
-  return false;
+  return true;
 };
 
 const pleaseRequired = (message) => {
