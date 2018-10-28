@@ -56,7 +56,7 @@ const quoteFunction = (message) => {
     let activeChannel = message.channel;
     activeChannel.fetchMessages({limit: 50, before: message.id}).then(
       (messages) => {
-        let messagesWithReactions = messages.filterArray(item => item.author.id === quotedMember.id && item.reactions && item.reactions.array().length > 0 && item.reactions.find(reaction => reaction.emoji.name.includes('quote')));
+        let messagesWithReactions = messages.filter((item) => item.author.id === quotedMember.id && item.reactions && item.reactions.array().length > 0 && item.reactions.find(reaction => reaction.emoji.name.includes('quote'))).array();
         let foundOne = false;
         for (let i = 0, iMax = messagesWithReactions.length; i < iMax; i++) {
           messagesWithReactions[i].reactions.forEach(
@@ -67,7 +67,7 @@ const quoteFunction = (message) => {
                     if (users.get(message.author.id) && !foundOne) {
                       if (reaction.message.cleanContent !== '') {
                         addQuote.run([message.guild.id, reaction.message.author.id, activeChannel.id, reaction.message.id, reaction.message.cleanContent]);
-                        message.channel.send(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"', {disableEveryone: true});
+                        message.channel.send("I've noted that " + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"', {disableEveryone: true});
                         foundOne = true;
                       }
                     }
