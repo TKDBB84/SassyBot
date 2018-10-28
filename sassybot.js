@@ -67,7 +67,7 @@ const quoteFunction = (message) => {
                     if (users.get(message.author.id) && !foundOne) {
                       if (reaction.message.cleanContent !== '') {
                         addQuote.run([message.guild.id, reaction.message.author.id, activeChannel.id, reaction.message.id, reaction.message.cleanContent]);
-                        message.reply(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"');
+                        message.channel.send(' ' + 'I\'ve noted that ' + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"', {disableEveryone: true});
                         foundOne = true;
                       }
                     }
@@ -171,7 +171,7 @@ const rQuoteFunction = (message) => {
       });
     } else {
       content = "ugh waht ? ";
-      message.reply(content);
+      message.channel.send(content, {disableEveryone: true});
     }
   } else {
     message.channel.send('You must specify whose quote you want to retrieve', {disableEveryone: true});
@@ -192,14 +192,14 @@ const getDispalyName = function (message) {
 
 const processMessage = function (message, randNumber) {
   if (randNumber < 0.01) {
-    message.reply('No, fuck you');
+    message.channel.send('No, fuck you');
     return
   }
 
   if (pleaseRequiredList.hasOwnProperty(author_id)) {
     if (!message.content.endsWith(' please')) {
       pleaseRequiredList[author_id] = message;
-      message.reply('only if you say "please"');
+      message.channel.send('only if you say "please"', {disableEveryone: true});
       return;
     } else {
       message.content = message.content.slice(0, (-1 * ' please'.length));
@@ -211,7 +211,7 @@ const processMessage = function (message, randNumber) {
   if (chatFunctions.hasOwnProperty(parsed[1])) {
     chatFunctions[parsed[1]](message);
   } else {
-    message.reply('Sorry I Don\'t Know That Command');
+    message.channel.send('Sorry I Don\'t Know That Command', {disableEveryone: true});
   }
 };
 
@@ -239,7 +239,7 @@ const helpFunction = (message) => {
   } else {
     reply = 'Available commands are:\n' + JSON.stringify(commands) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
   }
-  message.reply(reply);
+  message.channel.send(reply, {disableEveryone: true});
 };
 
 const spamFunction = (message) => {
@@ -248,9 +248,9 @@ const spamFunction = (message) => {
     channelList.set(message.guild.id, message.channel.id);
     removeSpamChannel.run([message.guild.id]);
     addSpamChannel.run([message.guild.id, message.channel.id]);
-    message.reply('Ok, I\'ll spam this channel');
+    message.channel.send('Ok, I\'ll spam this channel', {disableEveryone: true});
   } else {
-    message.reply('This functionality is limited to Verian & Sasner')
+    message.channel.send('This functionality is limited to Verian & Sasner', {disableEveryone: true})
   }
 };
 
@@ -270,7 +270,7 @@ const shiftyEyes = function (message) {
   }
 
   if (outMessage !== '') {
-    message.channel.send(outMessage);
+    message.channel.send(outMessage, {disableEveryone: true});
   }
   return false;
 };
@@ -297,7 +297,7 @@ client.on('ready', () => {
 
 const aPingRee = (message) => {
   if (message.content.toLowerCase().includes(':apingree:')) {
-    message.reply('oh I hear you like being pinged!');
+    message.channel.send('oh I hear you like being pinged!', {disableEveryone: true});
   }
   return false;
 };
@@ -305,7 +305,7 @@ const aPingRee = (message) => {
 const moreDots = (message) => {
   const dotMatch = message.content.match(/(\.)+/);
   if (dotMatch && dotMatch[0].toString() === dotMatch['input'].toString()) {
-    message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString());
+    message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString(), {disableEveryone: true});
   }
   return false;
 };
@@ -353,10 +353,10 @@ const preProcessTrollFunctionChances = {
 
 let chatFunctions = {
   'ping': (message) => {
-    message.reply('pong');
+    message.channel.send('pong');
   },
   'echo': (message) => {
-    message.reply(message.content);
+    message.channel.send(message.content, {disableEveryone: true});
   },
   'spam': spamFunction,
   'rquote': rQuoteFunction,
