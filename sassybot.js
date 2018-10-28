@@ -4,19 +4,19 @@ const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database('/home/nodebot/data/nodebot.sqlite');
 const fs = require('fs');
 
-const rykID = '136276996261937152';
+const brigieID = '189195422114381824';
+const eitriID = '106004012347695104';
+const hallyID = '158533023736791041';
+const kraysanID = '177926353373364224';
+const nymID = '98075883549519872';
 const oniID = '181267070111973376';
+const rexID = '159868064228179968';
+const rykID = '136276996261937152';
 const sasnerID = '107435240686931968';
 const sassybotID = '402131531268882432';
-const rexID = '159868064228179968';
-const eitriID = '106004012347695104';
-const yoakeID = '215882287693299713';
-const kraysanID = '177926353373364224';
 const urikoID = '157324426076094474';
-const hallyID = '158533023736791041';
-const brigieID = '189195422114381824';
 const verianID = '159756239016820736';
-
+const yoakeID = '215882287693299713';
 
 const pleaseRequiredList = {};
 
