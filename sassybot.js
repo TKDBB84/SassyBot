@@ -4,19 +4,47 @@ const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database('/home/nodebot/data/nodebot.sqlite');
 const fs = require('fs');
 
-const brigieID = '189195422114381824';
-const eitriID = '106004012347695104';
-const hallyID = '158533023736791041';
-const kraysanID = '177926353373364224';
-const nymID = '98075883549519872';
-const oniID = '181267070111973376';
-const rexID = '159868064228179968';
-const rykID = '136276996261937152';
-const sasnerID = '107435240686931968';
-const sassybotID = '402131531268882432';
-const urikoID = '157324426076094474';
-const verianID = '159756239016820736';
-const yoakeID = '215882287693299713';
+const Users = {
+  brigie: {
+    id: '189195422114381824'
+  },
+  eitri: {
+    id: '106004012347695104'
+  },
+  hally: {
+    id: '158533023736791041'
+  },
+  kraysan: {
+    id: '177926353373364224'
+  },
+  nym: {
+    id: '98075883549519872'
+  },
+  oni: {
+    id: '181267070111973376'
+  },
+  rex: {
+    id: '159868064228179968'
+  },
+  ryk: {
+    id: '136276996261937152'
+  },
+  sasner: {
+    id: '107435240686931968'
+  },
+  sassybot: {
+    id: '402131531268882432'
+  },
+  uriko: {
+    id: '157324426076094474'
+  },
+  verian: {
+    id: '159756239016820736'
+  },
+  yoake: {
+    id: '215882287693299713'
+  },
+};
 
 const pleaseRequiredList = {};
 
@@ -243,7 +271,7 @@ const helpFunction = (message) => {
 
 const spamFunction = (message) => {
   const author_id = getAuthorId(message);
-  if (author_id === sasnerID || author_id === verianID) {
+  if (author_id === Users.sasner.id || author_id === Users.verian.id) {
     channelList.set(message.guild.id, message.channel.id);
     removeSpamChannel.run([message.guild.id]);
     addSpamChannel.run([message.guild.id, message.channel.id]);
@@ -413,13 +441,13 @@ client.on('message', message => {
   const random_number = Math.random();
   const author_id = getAuthorId(message);
 
-  if (author_id === sassybotID) {
+  if (author_id === Users.sassybot.id) {
     // SassyBot is not allowed to respond to itself
     return;
   }
 
 
-  if (author_id !== sasnerID) {
+  if (author_id !== Users.sasner.id) {
 
     let continueProcess = true;
     for (const funcName in preProcessTrollFunctionChances) {
