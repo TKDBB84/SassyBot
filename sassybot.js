@@ -248,11 +248,27 @@ const shiftyEyes = function (message) {
 
   const message_left = message.content.match(leftEyes);
   const message_right = message.content.match(rightEyes);
+  let left_response = '', left_eyes = '',
+      right_response = '', right_eyes = '';
   if (message_left) {
-    outMessage = '>' + message_left[1] + '> ';
+    left_eyes = '<' + message_left[1] + '<';
+    left_response = '>' + message_left[1] + '>';
   }
   if (message_right) {
-    outMessage += '<' + message_right[1] + '<';
+    right_eyes = '>' + message_right[1] + '>';
+    right_response = '<' + message_right[1] + '<';
+  }
+
+  if (message_left && message_right) {
+    if (message.content.indexOf(left_eyes) < message.content.indexOf(right_eyes)) {
+      outMessage = left_response + '  ' + right_response;
+    } else {
+      outMessage = right_response + '  ' + left_response;
+    }
+  } else if (message_left) {
+    outMessage = left_response;
+  } else if (message_right) {
+    outMessage = right_response;
   }
 
   if (outMessage === '') {
