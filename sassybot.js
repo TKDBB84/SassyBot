@@ -4,47 +4,7 @@ const sqlite3 = require('sqlite3');
 const db = new sqlite3.Database('/home/nodebot/data/nodebot.sqlite');
 const fs = require('fs');
 
-const Users = {
-  brigie: {
-    id: '189195422114381824'
-  },
-  eitri: {
-    id: '106004012347695104'
-  },
-  hally: {
-    id: '158533023736791041'
-  },
-  kraysan: {
-    id: '177926353373364224'
-  },
-  nym: {
-    id: '98075883549519872'
-  },
-  oni: {
-    id: '181267070111973376'
-  },
-  rex: {
-    id: '159868064228179968'
-  },
-  ryk: {
-    id: '136276996261937152'
-  },
-  sasner: {
-    id: '107435240686931968'
-  },
-  sassybot: {
-    id: '402131531268882432'
-  },
-  uriko: {
-    id: '157324426076094474'
-  },
-  verian: {
-    id: '159756239016820736'
-  },
-  yoake: {
-    id: '215882287693299713'
-  },
-};
+const Users = require('./Users.js');
 
 const pleaseRequiredList = {};
 
