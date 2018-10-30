@@ -26,6 +26,9 @@ const rollFunction = (message) => {
   if (result && result.length === 3) {
     const numDice = parseInt(result[1], 10);
     const diceSides = parseInt(result[2], 10);
+    if (numDice === 0 || diceSides === 0) {
+      return;
+    }
     let diceRolls = [];
     for (let i = 0; i < numDice; i++) {
       diceRolls.push(Math.floor(Math.random() * diceSides) + 1);
