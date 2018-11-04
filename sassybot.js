@@ -5,6 +5,7 @@ const db = new sqlite3.Database('/home/nodebot/data/nodebot.sqlite');
 const fs = require('fs');
 
 const Users = require('./Users.js');
+const quoteFunctions = require('./Quotes.js');
 
 const pleaseRequiredList = {};
 
@@ -320,7 +321,10 @@ client.on('ready', () => {
 
 
 const aPingRee = (message) => {
-  if (message.content.toLowerCase().includes(':apingree:')) {
+  if (
+    message.content.toLowerCase().includes(':apingree:')
+    || message.content.toLowerCase().includes(':angeryping:')
+  ) {
     message.channel.send('oh I hear you like being pinged!', {disableEveryone: true});
     return false;
   }
@@ -364,20 +368,26 @@ const commandTrollFunctions = {};
 const commandTrollFunctionChances = {};
 
 const preProcessTrollFunctions = {
-  'shiftyEyes': shiftyEyes,
-  'aPingRee': aPingRee,
-  'moreDots': moreDots,
-  'processPleaseStatement': processPleaseStatement,
-  'pleaseShutUp': pleaseShutUp
-};
-
-const preProcessTrollFunctionChances = {
-  // function name => % chance
-  shiftyEyes: 0.09,
-  aPingRee: 1.00,
-  moreDots: 1.00,
-  processPleaseStatement: 1.00,
-  pleaseShutUp: 0.0001
+  'shiftyEyes': {
+    'process': shiftyEyes,
+    'chance': 0.09
+  },
+  'aPingRee': {
+    'process': aPingRee,
+    'chance': 1.00
+  },
+  'moreDots': {
+    'process': moreDots,
+    'chance': 0.50
+  },
+  'processPleaseStatement': {
+    'process': processPleaseStatement,
+    'chance': 1.00
+  },
+  'pleaseShutUp': {
+    'process': pleaseShutUp,
+    'chance': 0.0001
+  }
 };
 
 let chatFunctions = {
@@ -393,6 +403,8 @@ let chatFunctions = {
   'roll': rollFunction,
   'help': helpFunction
 };
+
+// chatFunctions = Object.assign({}, quoteFunctions, chatFunctions);
 
 client.on('voiceStateUpdate', (oldMember, newMember) => {
   let now = '(' + (new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')) + ' GMT) ';
@@ -429,11 +441,10 @@ client.on('message', message => {
   if (author_id !== Users.sasner.id) {
 
     let continueProcess = true;
-    for (const funcName in preProcessTrollFunctionChances) {
-      if (preProcessTrollFunctionChances.hasOwnProperty(funcName) && preProcessTrollFunctions.hasOwnProperty(funcName)) {
-        const chance = preProcessTrollFunctionChances[funcName];
-        if (random_number < chance) {
-          continueProcess = preProcessTrollFunctions[funcName](message) && continueProcess;
+    for (const funcName in preProcessTrollFunctions) {
+      if (preProcessTrollFunctions.hasOwnProperty(funcName)) {
+        if (random_number < preProcessTrollFunctions[funcName].chance) {
+          continueProcess = preProcessTrollFunctions[funcName].process(message) && continueProcess;
         }
       }
     }
