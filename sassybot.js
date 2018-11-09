@@ -7,6 +7,10 @@ const fs = require('fs');
 const Users = require('./Users.js');
 const quoteFunctions = require('./Quotes.js');
 
+const functionImports = [
+  quoteFunctions
+];
+
 const pleaseRequiredList = {};
 
 const getSecrets = () => {
@@ -218,17 +222,24 @@ const helpFunction = (message) => {
     'help': 'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
     'ping': 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
     'roll': 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll`',
-    'rquote': 'usage: `!{sassybot|sb} rquote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.',
     'spam': 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified',
-    'quote': 'usage: `!{sassybot|sb} quote {@User}` -- This command causes me to search through this room\'s chat history (last 50 messages) for a message sent by the specified @User, which as a :quote: reaction from you, and record that message.'
   };
+
+  for ( let j = 0 ; j < functionImports.length ; j++ ) {
+    commandList = Object.assign({}, quoteFunctions[j].help, commandList);
+  }
+
+  const orderedList = {};
+  Object.keys(commandList).sort().forEach((key) => {
+    orderedList[key] = commandList[key];
+  });
 
   let commands = Object.keys(commandList);
   let reply = '';
   if (commands.includes(firstWord)) {
     reply = commandList[firstWord];
   } else {
-    reply = 'Available commands are:\n' + JSON.stringify(commands) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
+    reply = 'Available commands are:\n' + JSON.stringify(orderedList) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
   }
   message.channel.send(reply, {disableEveryone: true});
 };
@@ -407,13 +418,13 @@ let chatFunctions = {
     message.channel.send(message.content, {disableEveryone: true});
   },
   'spam': spamFunction,
-  'rquote': rQuoteFunction,
-  'quote': quoteFunction,
   'roll': rollFunction,
   'help': helpFunction
 };
 
-// chatFunctions = Object.assign({}, quoteFunctions, chatFunctions);
+for ( let j = 0 ; j < functionImports.length ; j++ ) {
+  chatFunctions = Object.assign({}, quoteFunctions[j].functions, chatFunctions);
+}
 
 client.on('voiceStateUpdate', (oldMember, newMember) => {
   let now = '(' + (new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')) + ' GMT) ';

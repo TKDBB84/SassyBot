@@ -154,9 +154,11 @@ const rQuoteFunction = (message) => {
 };
 
 module.exports = {
-  'quote': quoteFunction,
-  'rquote': rQuoteFunction,
-  'help': {
+  functions: {
+    'quote': quoteFunction,
+    'rquote': rQuoteFunction,
+  },
+  help: {
     'rquote': 'usage: `!{sassybot|sb} rquote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.',
     'quote': 'usage: `!{sassybot|sb} quote {@User}` -- This command causes me to search through this room\'s chat history (last 50 messages) for a message sent by the specified @User, which as a :quote: reaction from you, and record that message.'
   }
