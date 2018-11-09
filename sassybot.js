@@ -85,7 +85,7 @@ const helpFunction = (message) => {
     'echo': 'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging',
     'help': 'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
     'ping': 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
-    'roll': 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll`',
+    'roll': 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll',
     'spam': 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified',
   };
 
@@ -98,12 +98,12 @@ const helpFunction = (message) => {
     orderedList[key] = commandList[key];
   });
 
-  let commands = Object.keys(commandList);
+  let commands = Object.keys(orderedList);
   let reply = '';
   if (commands.includes(firstWord)) {
     reply = commandList[firstWord];
   } else {
-    reply = 'Available commands are:\n' + JSON.stringify(orderedList) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
+    reply = 'Available commands are:\n' + JSON.stringify(commands) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
   }
   message.channel.send(reply, {disableEveryone: true});
 };
