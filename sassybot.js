@@ -364,7 +364,10 @@ const pleaseShutUp = (message) => {
 };
 
 const teaIsBad = (message) => {
-  message.channel.send('_dumps all the tea into the harbor... where it belongs_');
+  if (message.content.toLowerCase().includes('tea') ) {
+    message.channel.send('_dumps all the tea into the harbor... where it belongs_');
+  }
+  return true;
 };
 
 const commandTrollFunctions = {};
