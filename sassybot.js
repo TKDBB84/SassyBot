@@ -363,9 +363,11 @@ const pleaseShutUp = (message) => {
   return false;
 };
 
-const commandTrollFunctions = {};
+const teaIsBad = (message) => {
+  message.channel.send('_dumps all the tea into the harbor... where it belongs_');
+};
 
-const commandTrollFunctionChances = {};
+const commandTrollFunctions = {};
 
 const preProcessTrollFunctions = {
   'shiftyEyes': {
@@ -387,6 +389,10 @@ const preProcessTrollFunctions = {
   'pleaseShutUp': {
     'process': pleaseShutUp,
     'chance': 0.0001
+  },
+  'teaIsBad': {
+    'process': teaIsBad,
+    'chance': 1.00
   }
 };
 
