@@ -395,7 +395,7 @@ const preProcessTrollFunctions = {
   },
   'teaIsBad': {
     'process': teaIsBad,
-    'chance': 1.00
+    'chance': 0.25
   }
 };
 
