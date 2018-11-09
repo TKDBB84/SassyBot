@@ -17,7 +17,7 @@ const getSecrets = () => {
 };
 
 let channelList = new Map();
-let addSpamChannel, removeSpamChannel, addQuote, getQuotesByUser, updateMessageText;
+let addSpamChannel, removeSpamChannel;
 
 const isSassyBotCall = function (message) {
   return message.content.toLowerCase().startsWith('!sassybot') || message.content.toLowerCase().startsWith('!sb')
