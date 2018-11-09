@@ -1,3 +1,9 @@
+const db = require('./SassyDB.js');
+
+db.exec('CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, channel_id TEXT, message_id TEXT, timestamp INTEGER, quote_text TEXT);');
+const addQuote = db.prepare('INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp, quote_text) VALUES (?,?,?,?,strftime(\'%s\',\'now\'),?);');
+const getQuotesByUser = db.prepare('SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ? ORDER BY message_id;');
+const updateMessageText = db.prepare('UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;');
 
 const hasSingleMention = (message) => {
   return message.mentions && message.mentions.members && message.mentions.members.array().length === 1;
@@ -13,6 +19,10 @@ const hasQuoteReaction = (message) => {
         return reaction.emoji.name.includes('quote')
       }
     );
+};
+
+const isNormalInteger = (str) => {
+  return /^\+?(0|[1-9]\d*)$/.test(str);
 };
 
 const quoteFunction = (message) => {
