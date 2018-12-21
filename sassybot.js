@@ -309,6 +309,7 @@ client.on('voiceStateUpdate', (oldMember, newMember) => {
 });
 
 client.on('message', message => {
+  let random_number;
   const author_id = getAuthorId(message);
 
   if (author_id === Users.sassybot.id) {
@@ -322,7 +323,7 @@ client.on('message', message => {
     let continueProcess = true;
     for (const funcName in preProcessTrollFunctions) {
       if (preProcessTrollFunctions.hasOwnProperty(funcName)) {
-        const random_number = Math.random();
+        random_number = Math.random();
         if (random_number < preProcessTrollFunctions[funcName].chance) {
           continueProcess = preProcessTrollFunctions[funcName].process(message) && continueProcess;
         }
