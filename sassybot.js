@@ -196,12 +196,122 @@ const aPingRee = (message) => {
     message.content.toLowerCase().includes(':apingree:')
     || message.content.toLowerCase().includes(':angeryping:')
   ) {
-    message.channel.send('oh I hear you like being pinged!', {disableEveryone: true});
+    message.reply('oh I hear you like being pinged!', {disableEveryone: true});
     return false;
   }
   return true;
 };
 
+
+const ss = (message) => {
+  let reply = 'You didn\'t sign up for the secret santa';
+  switch (getAuthorId(message)) {
+    case Users.yoake.id:
+      reply = 'S\'astra \n\n Justin Harper \n  137 Circle Lake Dr\n Charleston, WV 25311 \n Are you a sandwich traditionalist or a sandwich anarchist?\nI\'m not having this conversation. <.<\n\n' +
+        'hobbies outside of video games?\nReading, board games, some model painting\n\n' +
+        'Any food allergies?\nNo\n\n' +
+        'Do you like food?\nYes?\n\n' +
+        'What is your quest?\nTo travel across the land, searching far and wide.\n\n' +
+        'Favorite snack type thing?\nTart candies\n\n\n\n "Love anything sci-fi or fantasy\n' +
+        'Foxes/any animal are a yes\n' +
+        'Love a good book\n' +
+        'Complete and total surprises are also fun!"'
+      // sastra
+      break;
+    case Users.oni.id:
+      // lev
+      reply = 'Vera\n\nTimo Poutanen\nHeino Kasken Katu 4 D 79\n' +
+        '00180 Helsinki\n' +
+        'Finland\n\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nAnarchist\n' +
+        'hobbies outside of video games?\nWriting, cooking\n' +
+        'Any food allergies?\nNone\n' +
+        'Do you like food?\nYes\n' +
+        'What is your quest?\nTo seek the... to make others happy\n\n\nDon\'t feel the need to send anything overtly big, I\'m fine with quite literally anything, don\'t pay too much out of your pocket to send a heavy package all the way over here.';
+
+      break;
+    case Users.ryk.id:
+      reply = 'Halyen\n\nHal Calder\nFlat 9\n' +
+        '7 Trinity Crescent\n' +
+        'Folkestone\n' +
+        'Kent\n' +
+        'CT20 2ES\n\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nYes\n' +
+        'hobbies outside of video games?\nReading, photography\n' +
+        'Any food allergies?\nNope\n' +
+        'Do you like food?\nVery much so, except jam - the english jam.\n' +
+        'What is your quest?\nI seek the Holy Grail\n' +
+        'Favorite snack type thing?\nAny kind of sweets\n\n\n"Love anything sci-fi or fantasy\n' +
+        'Foxes/any animal are a yes\n' +
+        'Love a good book\n' +
+        'Complete and total surprises are also fun!"';
+      // hally
+      break;
+    case Users.lev.id:
+      reply = 'Oni\n\n"oni \n' +
+        '1255 Arcadia Avenue Apt. A\n' +
+        'Vista, CA 92084\n' +
+        'USA \n\nAre you a sandwich traditionalist or a sandwich anarchist?\nanarchist\n' +
+        'hobbies outside of video games?\nlol other hobbies.....ummm eating? sleeping? DnD, other times of games I guess\n' +
+        'Any food allergies?\nnope\n' +
+        'Do you like food?\nyes, alot\n' +
+        'What is your quest?\nto become the best around\n' +
+        'Favorite snack type thing?\nall, tho love chocolate but other treats, more savory types. I also like teas and coffee and all types of drinks. ';
+      // oni
+      break;
+    case Users.brigie.id:
+      reply = 'Lehv \n\n Olivia C\n"39 Victoria Road,\n' +
+        'Marlow,\n' +
+        'Buckinghamshire,\n' +
+        'SL7 1DW,\n' +
+        'United Kingdom\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nTraditionalist\n\n' +
+        'hobbies outside of video games?\nReading, seeing films, uhhh more games... umm..... breathing?\n\n' +
+        'Any food allergies?\nPeanuts!\n\n' +
+        'Do you like food?\nYes\n\n\n\nI love fiction and romance books (both are awesome), I love video game related stuff, clothes, statues etc, I love cosplay, I love trying new foods and drinks, I\'m allergic to peanuts, ';
+      // vera
+      break;
+    case Users.vera.id:
+      reply = 'Brigie\n\nJessie High\n16720 NORTH RD APT F307\n' +
+        'BOTHELL, WA 98012\n' +
+        'United States\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nanarchist 100%\n' +
+        'hobbies outside of video games?\neating\n' +
+        'Any food allergies?\nno\n' +
+        'Do you like food?\nvery much\n\n\n\nim moving and don\'t have a lot of space so stuff i could eat would be grand';
+      // brigie
+      break;
+    case Users.hally.id:
+      reply = 'Pas\n\nMatt Strachan\n10402 Shangri La Drive\n' +
+        'Huntington Beach, CA 92646\n\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nChoco Tacos are sandwiches\n' +
+        'hobbies outside of video games?\nWEEB SHIT\n' +
+        'Any food allergies?\nnah\n' +
+        'Do you like food?\nyea\n' +
+        'What is your quest?\nI don\'t negotiate with terrorists\n' +
+        'Favorite snack type thing?\nchips, pocky/weeb shit, anything chocolatey\n\n\n\nCan\'t go wrong, the thought is what counts for me.  (gayyy)';
+      // pas
+      break;
+    case Users.sastra.id:
+      reply = 'Yoake Dazkar\n\n\nNicholas Kurus\n2124 Arbor Bend St.\n' +
+        'Bonham TX 75418\n\n\nAre you a sandwich traditionalist or a sandwich anarchist?\ntraditionalist\n' +
+        'hobbies outside of video games?\nanime, computers in general, dnd, coffee\n' +
+        'Any food allergies?\nnope\n' +
+        'Do you like food?\nyes\n' +
+        'What is your quest?\nyes\n' +
+        'Favorite snack type thing?\nis coffee a snack?\n\n\n\n\nNo chocolate pls';
+      // yoake
+      break;
+    case Users.pas.id:
+      reply = 'Rykkata\n\n\nNicholas Stuter\n102 Superior Drive, Unit C,\n' +
+        'Mooresville, North Carolina 28117-6300\n' +
+        'USA\n\n\n\n\nAre you a sandwich traditionalist or a sandwich anarchist?\nYes\n' +
+        'hobbies outside of video games?\nDeveloping games, reading books, horror stuffs\n' +
+        'Any food allergies?\nN/A\n' +
+        'Do you like food?\nYes\n\n\n\n\nDon\'t over think it, sentinmental means a lot to me so no need to worry if I\'ll like something ^^';
+      // ryk
+      break;
+  }
+
+  message.author.send(reply);
+
+
+};
 
 const moreDots = (message) => {
   const dotMatch = message.content.match(/(\.)+/);
@@ -277,6 +387,7 @@ let chatFunctions = {
   'echo': (message) => {
     message.channel.send(message.content, {disableEveryone: true});
   },
+  'ss': ss,
   'spam': spamFunction,
   'roll': rollFunction,
   'help': helpFunction
