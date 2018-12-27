@@ -38,8 +38,8 @@ const rollDice = (parsedDice) => {
   }
 
   let diceRolls = [];
-  for (let i = 0; i < numDice; i++) {
-    diceRolls.push(Math.floor(Math.random() * diceSides) + 1);
+  for (let i = 0; i < numberOfDice; i++) {
+    diceRolls.push(Math.floor(Math.random() * numberOfSides) + 1);
   }
   return diceRolls;
 };
@@ -76,22 +76,22 @@ const parseKeepOrDrops = (message) => {
 const actionKeepOrDrops = (keepOrDrops, rolls) => {
   const numDiceToAction = keepOrDrops.numDice;
   const sortedRolls = rolls.sort();
-  let kept = rolls;
+  let kept = sortedRolls;
   let dropped = [];
 
   if (numDiceToAction > 0) {
     if (keepOrDrops.keep) {
       if (numDiceToAction < rolls.length) {
         kept = sortedRolls.reverse().splice(0, numDiceToAction);
-        dropped = sortedRolls.reverse().splice(numDiceToAction, sortedRolls.length);
+        dropped = sortedRolls;
       }
     } else if (keepOrDrops.drop) {
       if (numDiceToAction > rolls.length) {
         kept = [];
         dropped = rolls;
       } else {
-        kept = sortedRolls.splice(0, numDiceToAction);
-        dropped = sortedRolls.splice(numDiceToAction, sortedRolls.length);
+        dropped = sortedRolls.splice(0, numDiceToAction);
+        kept = sortedRolls;
       }
     }
   }
@@ -153,10 +153,14 @@ const parseStaticAdditions = (message) => {
 
 const rollFunction = (message) => {
   let keptAndDropped = actionKeepOrDrops(parseKeepOrDrops(message), rollDice(parseDice(message)));
-
   let additions = parseStaticAdditions(message);
+  let total;
 
-  let total = keptAndDropped.kept.reduce((total, num) => total + num);
+  if (keptAndDropped.kept.length > 0) {
+    total = keptAndDropped.kept.reduce((total, num) => total + num);
+  } else {
+    total = 0;
+  }
 
   let replyMessage = '[ ';
   for (let i = 0 ; i < keptAndDropped.kept.length ; i++) {
@@ -167,10 +171,10 @@ const rollFunction = (message) => {
   }
 
   for (let i = 0 ; i < keptAndDropped.dropped.length ; i++) {
-    if (i > 0) {
-      replyMessage += ', ~~'
+    if (keptAndDropped.kept.length > 0 || i > 0) {
+      replyMessage += ', ';
     }
-    replyMessage += keptAndDropped.dropped.toString() + '~~';
+    replyMessage += '~~' + keptAndDropped.dropped[i].toString() + '~~';
   }
   replyMessage += ' ] ';
 
