@@ -327,7 +327,7 @@ client.on('message', message => {
   }
 
   if (isSassyBotCall(message)) {
-    processMessage(message, random_number);
+    processMessage(message, Math.random());
   }
 });
 
