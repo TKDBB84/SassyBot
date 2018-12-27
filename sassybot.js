@@ -80,7 +80,7 @@ const helpFunction = (message) => {
   };
 
   for ( let j = 0 ; j < functionImports.length ; j++ ) {
-    if (functionImports[j].hasOwnProperty(help)) {
+    if (functionImports[j].hasOwnProperty('help')) {
       commandList = Object.assign({}, functionImports[j].help, commandList);
     }
   }
