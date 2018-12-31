@@ -49,7 +49,7 @@ const rollDice = (parsedDice) => {
  * @returns {{drop: boolean, keep: boolean, numDice: number}}
  */
 const parseKeepOrDrops = (message) => {
-  const parsedMessage = message.content.split(' ')[2]
+  const parsedMessage = message.content.split(' ')[2];
   const result = parsedMessage.match(/^\s*\d+d\d+([d|k])(\d+).*$/i);
 
   let ret = {
@@ -129,8 +129,8 @@ const shuffle = (array) => {
  * @returns {{minus: boolean, constant: number, plus: boolean}}
  */
 const parseStaticAdditions = (message) => {
-  const parsedMessage = message.content.split(' ')[2]
-  const result = parsedMessage.match(/^.*([\+\-])\s*(\d+)$/i);
+  const parsedMessage = message.content.split(' ')[2];
+  const result = parsedMessage.match(/^.*([+\-])\s*(\d+)$/i);
 
   let ret = {
     plus: false,
