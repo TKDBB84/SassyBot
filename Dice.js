@@ -75,7 +75,7 @@ const parseKeepOrDrops = (message) => {
  */
 const actionKeepOrDrops = (keepOrDrops, rolls) => {
   const numDiceToAction = keepOrDrops.numDice;
-  const sortedRolls = rolls.sort();
+  const sortedRolls = rolls.sort((a, b) => a - b);
   let kept = sortedRolls;
   let dropped = [];
 
