@@ -154,12 +154,10 @@ const parseStaticAdditions = (message) => {
 const rollFunction = (message) => {
   let keptAndDropped = actionKeepOrDrops(parseKeepOrDrops(message), rollDice(parseDice(message)));
   let additions = parseStaticAdditions(message);
-  let total;
+  let total = 0;
 
   if (keptAndDropped.kept.length > 0) {
     total = keptAndDropped.kept.reduce((total, num) => total + num);
-  } else {
-    total = 0;
   }
 
   let replyMessage = '[ ';
