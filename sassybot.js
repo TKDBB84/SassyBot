@@ -7,7 +7,7 @@ const Users = require('./Users.js');
 
 const functionImports = [
   require('./Quotes.js'),
-  require('./SecretSanta.js'),
+  // require('./SecretSanta.js'),
   require('./Dice.js')
 ];
 
@@ -232,6 +232,12 @@ const teaIsBad = (message) => {
   return true;
 };
 
+const levDice = (message) => {
+  if(getAuthorId(message) === Users.lev.id && message.content.toLowerCase() === '!sb roll 1d1000') {
+    message.channel.send('https://i.imgur.com/y8Ea8jB.gif');
+  }
+};
+
 const commandTrollFunctions = {};
 
 const preProcessTrollFunctions = {
@@ -258,6 +264,10 @@ const preProcessTrollFunctions = {
 
   'processPleaseStatement': {
     'process': processPleaseStatement,
+    'chance': 1.00
+  },
+  'levDice': {
+    'proccess': levDice,
     'chance': 1.00
   }
 };

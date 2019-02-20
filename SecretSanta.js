@@ -1,12 +1,7 @@
 const Users = require('./Users.js');
 
 const ss = (message) => {
-  let reply = 'You didn\'t sign up for the secret santa';
-  switch (getAuthorId(message)) {
-    // man wouldn't you guys like to know
-  }
-
-  message.author.send(reply);
+  // do nothing, SS is over
 };
 
 module.exports = {
