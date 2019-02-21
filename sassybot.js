@@ -225,13 +225,6 @@ const pleaseShutUp = (message) => {
   return false;
 };
 
-const teaIsBad = (message) => {
-  if (message.content.toLowerCase().includes('tea') ) {
-    message.channel.send('_dumps all the tea into the harbor... where it belongs_');
-  }
-  return true;
-};
-
 const levDice = (message) => {
   if(getAuthorId(message) === Users.lev.id && message.content.toLowerCase() === '!sb roll 1d1000') {
     message.channel.send('https://i.imgur.com/y8Ea8jB.gif');
@@ -257,17 +250,12 @@ const preProcessTrollFunctions = {
     'process': pleaseShutUp,
     'chance': 0.0001
   },
-  'teaIsBad': {
-    'process': teaIsBad,
-    'chance': 0.25
-  },
-
   'processPleaseStatement': {
     'process': processPleaseStatement,
     'chance': 1.00
   },
   'levDice': {
-    'proccess': levDice,
+    'process': levDice,
     'chance': 1.00
   }
 };
