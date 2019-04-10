@@ -1,15 +1,11 @@
-const Discord = require('discord.js');
+const Discord = require("discord.js");
 const client = new Discord.Client();
 
-const db = require('./SassyDB.js');
-const fs = require('fs');
-const Users = require('./Users.js');
+const db = require("./SassyDB.js");
+const fs = require("fs");
+const Users = require("./Users.js");
 
-const functionImports = [
-  require('./Quotes.js'),
-  // require('./SecretSanta.js'),
-  require('./Dice.js')
-];
+const functionImports = [require("./Quotes.js"), require("./Dice.js")];
 
 const pleaseRequiredList = {};
 
@@ -20,144 +16,172 @@ const getSecrets = () => {
 let channelList = new Map();
 let addSpamChannel, removeSpamChannel;
 
-const isSassyBotCall = function (message) {
-  return message.content.toLowerCase().startsWith('!sassybot')
-    || message.content.toLowerCase().startsWith('!sb');
+const isSassyBotCall = function(message) {
+  return (
+    message.content.toLowerCase().startsWith("!sassybot") ||
+    message.content.toLowerCase().startsWith("!sb")
+  );
 };
 
 /**
  * @param message
  * @returns {Snowflake}
  */
-const getAuthorId = (message) => {
+const getAuthorId = message => {
   return message.author.id;
 };
 
-const getDisplayName = function (message) {
-  return message.member.nickname ? message.member.nickname : message.author.username;
+const getDisplayName = function(message) {
+  return message.member.nickname
+    ? message.member.nickname
+    : message.author.username;
 };
 
-const processMessage = function (message, randNumber) {
+const processMessage = function(message, randNumber) {
   const author_id = getAuthorId(message);
   if (randNumber < 0.01) {
-    message.channel.send('No, fuck you');
-    return
+    message.channel.send("No, fuck you");
+    return;
   }
 
   if (pleaseRequiredList.hasOwnProperty(author_id)) {
-    if (!message.content.endsWith(' please')) {
+    if (!message.content.endsWith(" please")) {
       pleaseRequiredList[author_id] = message;
-      message.channel.send('only if you say "please"', {disableEveryone: true});
+      message.channel.send('only if you say "please"', {
+        disableEveryone: true
+      });
       return;
     } else {
-      message.content = message.content.slice(0, (-1 * ' please'.length));
+      message.content = message.content.slice(0, -1 * " please".length);
     }
-
   }
 
-  let parsed = message.content.toLowerCase().split(' ');
+  let parsed = message.content.toLowerCase().split(" ");
   if (chatFunctions.hasOwnProperty(parsed[1])) {
     chatFunctions[parsed[1]](message);
   } else {
-    message.channel.send('Sorry I Don\'t Know That Command', {disableEveryone: true});
+    message.channel.send("Sorry I Don't Know That Command", {
+      disableEveryone: true
+    });
   }
 };
 
-const helpFunction = (message) => {
-  let wordArray = message.content.split(' ');
+const helpFunction = message => {
+  let wordArray = message.content.split(" ");
 
   let firstWord;
   if (wordArray.length < 2) {
-    firstWord = 'default';
+    firstWord = "default";
   } else {
     firstWord = wordArray[2];
   }
   let commandList = {
-    'echo': 'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging',
-    'help': 'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
-    'ping': 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
-    'spam': 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified',
+    echo:
+      "usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging",
+    help:
+      "usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command",
+    ping:
+      'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
+    spam:
+      "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified"
   };
 
-  for ( let j = 0 ; j < functionImports.length ; j++ ) {
-    if (functionImports[j].hasOwnProperty('help')) {
+  for (let j = 0; j < functionImports.length; j++) {
+    if (functionImports[j].hasOwnProperty("help")) {
       commandList = Object.assign({}, functionImports[j].help, commandList);
     }
   }
 
   const orderedList = {};
-  Object.keys(commandList).sort().forEach((key) => {
-    orderedList[key] = commandList[key];
-  });
+  Object.keys(commandList)
+    .sort()
+    .forEach(key => {
+      orderedList[key] = commandList[key];
+    });
 
   let commands = Object.keys(orderedList);
-  let reply = '';
+  let reply = "";
   if (commands.includes(firstWord)) {
     reply = commandList[firstWord];
   } else {
-    reply = 'Available commands are:\n' + JSON.stringify(commands) + '\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command';
+    reply =
+      "Available commands are:\n" +
+      JSON.stringify(commands) +
+      "\nfor more information, you can specify `!{sassybot|sb} help [command]` to get more information about that command";
   }
-  message.channel.send(reply, {disableEveryone: true});
+  message.channel.send(reply, { disableEveryone: true });
 };
 
-const spamFunction = (message) => {
+const spamFunction = message => {
   const author_id = getAuthorId(message);
   if (author_id === Users.sasner.id || author_id === Users.verian.id) {
     channelList.set(message.guild.id, message.channel.id);
     removeSpamChannel.run([message.guild.id]);
     addSpamChannel.run([message.guild.id, message.channel.id]);
-    message.channel.send('Ok, I\'ll spam this channel', {disableEveryone: true});
+    message.channel.send("Ok, I'll spam this channel", {
+      disableEveryone: true
+    });
   } else {
-    message.channel.send('This functionality is limited to Verian & Sasner', {disableEveryone: true})
+    message.channel.send("This functionality is limited to Verian & Sasner", {
+      disableEveryone: true
+    });
   }
 };
 
-client.on('ready', () => {
-
+client.on("ready", () => {
   // fetch channels per server to spam joining an leaving
-  db.all('SELECT * FROM spam_channels', (error, rows) => {
+  db.all("SELECT * FROM spam_channels", (error, rows) => {
     if (!error) {
-      rows.forEach((row) => {
+      rows.forEach(row => {
         channelList.set(row.guild_id, row.channel_id);
       });
     }
   });
 
   // create tables if they don't exists:
-  db.exec('CREATE TABLE IF NOT EXISTS spam_channels (guild_id TEXT PRIMARY KEY, channel_id TEXT) WITHOUT ROWID;');
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS spam_channels (guild_id TEXT PRIMARY KEY, channel_id TEXT) WITHOUT ROWID;"
+  );
 
   // setup runtime queries as prepared to negate sql injection
-  addSpamChannel = db.prepare('INSERT INTO spam_channels (guild_id, channel_id) VALUES (?,?);');
-  removeSpamChannel = db.prepare('DELETE FROM spam_channels WHERE guild_id = ?;');
+  addSpamChannel = db.prepare(
+    "INSERT INTO spam_channels (guild_id, channel_id) VALUES (?,?);"
+  );
+  removeSpamChannel = db.prepare(
+    "DELETE FROM spam_channels WHERE guild_id = ?;"
+  );
 
   // setup ready to go
-  console.log('I am ready!');
+  console.log("I am ready!");
 });
 
-
-const shiftyEyes = function (message) {
-  let outMessage = '';
+const shiftyEyes = function(message) {
+  let outMessage = "";
   const leftEyes = /.*\<(\s*.\s*)\<.*/;
   const rightEyes = /.*\>(\s*.\s*)\>.*/;
 
   const message_left = message.content.match(leftEyes);
   const message_right = message.content.match(rightEyes);
-  let left_response = '', left_eyes = '',
-    right_response = '', right_eyes = '';
+  let left_response = "",
+    left_eyes = "",
+    right_response = "",
+    right_eyes = "";
   if (message_left) {
-    left_eyes = '<' + message_left[1] + '<';
-    left_response = '>' + message_left[1] + '>';
+    left_eyes = "<" + message_left[1] + "<";
+    left_response = ">" + message_left[1] + ">";
   }
   if (message_right) {
-    right_eyes = '>' + message_right[1] + '>';
-    right_response = '<' + message_right[1] + '<';
+    right_eyes = ">" + message_right[1] + ">";
+    right_response = "<" + message_right[1] + "<";
   }
 
   if (message_left && message_right) {
-    if (message.content.indexOf(left_eyes) < message.content.indexOf(right_eyes)) {
-      outMessage = left_response + '  ' + right_response;
+    if (
+      message.content.indexOf(left_eyes) < message.content.indexOf(right_eyes)
+    ) {
+      outMessage = left_response + "  " + right_response;
     } else {
-      outMessage = right_response + '  ' + left_response;
+      outMessage = right_response + "  " + left_response;
     }
   } else if (message_left) {
     outMessage = left_response;
@@ -165,139 +189,170 @@ const shiftyEyes = function (message) {
     outMessage = right_response;
   }
 
-  if (outMessage === '') {
+  if (outMessage === "") {
     const author_nickname = getDisplayName(message);
     const author_left = author_nickname.match(leftEyes);
     const author_right = author_nickname.match(rightEyes);
     if (author_left) {
-      outMessage = '>' + author_left[1] + '>  (but only because you named yourself that)';
+      outMessage =
+        ">" + author_left[1] + ">  (but only because you named yourself that)";
     } else if (author_right) {
-      outMessage = '<' + author_right[1] + '<  (but only because you named yourself that)';
+      outMessage =
+        "<" + author_right[1] + "<  (but only because you named yourself that)";
     }
   }
 
-  if (outMessage !== '') {
-    message.channel.send(outMessage, {disableEveryone: true});
+  if (outMessage !== "") {
+    message.channel.send(outMessage, { disableEveryone: true });
     return false;
   }
   return true;
 };
 
-const aPingRee = (message) => {
+const aPingRee = message => {
   if (
-    message.content.toLowerCase().includes(':apingree:')
-    || message.content.toLowerCase().includes(':angeryping:')
+    message.content.toLowerCase().includes(":apingree:") ||
+    message.content.toLowerCase().includes(":angeryping:")
   ) {
-    message.reply('oh I hear you like being pinged!', {disableEveryone: true});
+    message.reply("oh I hear you like being pinged!", {
+      disableEveryone: true
+    });
     return false;
   }
   return true;
 };
 
-const moreDots = (message) => {
+const moreDots = message => {
   const dotMatch = message.content.match(/(\.)+/);
-  if (dotMatch && dotMatch[0].toString() === dotMatch['input'].toString()) {
-    message.channel.send(dotMatch['input'].toString() + dotMatch['input'].toString(), {disableEveryone: true});
+  if (dotMatch && dotMatch[0].toString() === dotMatch["input"].toString()) {
+    message.channel.send(
+      dotMatch["input"].toString() + dotMatch["input"].toString(),
+      { disableEveryone: true }
+    );
     return false;
   }
   return true;
 };
 
-
-const processPleaseStatement = (message) => {
+const processPleaseStatement = message => {
   const author_id = getAuthorId(message);
   if (
-    pleaseRequiredList.hasOwnProperty(author_id)
-    && pleaseRequiredList[author_id] !== ''
-    && message.content.toLowerCase() === 'please'
-    && isSassyBotCall(pleaseRequiredList[author_id].content)
+    pleaseRequiredList.hasOwnProperty(author_id) &&
+    pleaseRequiredList[author_id] !== "" &&
+    message.content.toLowerCase() === "please" &&
+    isSassyBotCall(pleaseRequiredList[author_id].content)
   ) {
     processMessage(pleaseRequiredList[author_id]);
-    pleaseRequiredList[author_id] = '';
+    pleaseRequiredList[author_id] = "";
     return false;
   }
   return true;
 };
 
-
-const pleaseShutUp = (message) => {
-  message.reply('will you please shut up?');
+const pleaseShutUp = message => {
+  message.reply("will you please shut up?");
   return false;
 };
 
-const levDice = (message) => {
-  if(getAuthorId(message) === Users.lev.id && message.content.toLowerCase() === '!sb roll 1d1000') {
-    message.channel.send('https://i.imgur.com/y8Ea8jB.gif');
-  }
-};
-
-const commandTrollFunctions = {};
-
 const preProcessTrollFunctions = {
-  'shiftyEyes': {
-    'process': shiftyEyes,
-    'chance': 0.07
+  shiftyEyes: {
+    process: shiftyEyes,
+    chance: 0.07
   },
-  'aPingRee': {
-    'process': aPingRee,
-    'chance': 1.00
+  aPingRee: {
+    process: aPingRee,
+    chance: 1.0
   },
-  'moreDots': {
-    'process': moreDots,
-    'chance': 0.25
+  moreDots: {
+    process: moreDots,
+    chance: 0.25
   },
-  'pleaseShutUp': {
-    'process': pleaseShutUp,
-    'chance': 0.0001
+  pleaseShutUp: {
+    process: pleaseShutUp,
+    chance: 0.0001
   },
-  'processPleaseStatement': {
-    'process': processPleaseStatement,
-    'chance': 1.00
-  },
-  'levDice': {
-    'process': levDice,
-    'chance': 1.00
+  processPleaseStatement: {
+    process: processPleaseStatement,
+    chance: 1.0
   }
 };
 
 let chatFunctions = {
-  'ping': (message) => {
-    message.channel.send('pong');
+  ping: message => {
+    message.channel.send("pong");
   },
-  'echo': (message) => {
-    message.channel.send(message.content, {disableEveryone: true});
+  echo: message => {
+    message.channel.send(message.content, { disableEveryone: true });
   },
-  'spam': spamFunction,
-  'help': helpFunction
+  spam: spamFunction,
+  help: helpFunction
 };
 
-for ( let j = 0 ; j < functionImports.length ; j++ ) {
-  chatFunctions = Object.assign({}, functionImports[j].functions, chatFunctions);
+for (let j = 0; j < functionImports.length; j++) {
+  chatFunctions = Object.assign(
+    {},
+    functionImports[j].functions,
+    chatFunctions
+  );
 }
 
-client.on('voiceStateUpdate', (oldMember, newMember) => {
-  let now = '(' + (new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')) + ' GMT) ';
+client.on("voiceStateUpdate", (oldMember, newMember) => {
+  let now =
+    "(" +
+    new Date()
+      .toISOString()
+      .replace(/T/, " ")
+      .replace(/\..+/, "") +
+    " GMT) ";
   if (oldMember.voiceChannelID !== newMember.voiceChannelID) {
-    if (oldMember.voiceChannelID && !newMember.voiceChannelID && channelList.has(oldMember.guild.id)) {
+    if (
+      oldMember.voiceChannelID &&
+      !newMember.voiceChannelID &&
+      channelList.has(oldMember.guild.id)
+    ) {
       let leftChannel = client.channels.get(oldMember.voiceChannelID);
-      let msg = now + oldMember.displayName + ' (' + oldMember.user.username + ') has left ' + leftChannel.name;
+      let msg =
+        now +
+        oldMember.displayName +
+        " (" +
+        oldMember.user.username +
+        ") has left " +
+        leftChannel.name;
       client.channels.get(channelList.get(oldMember.guild.id)).send(msg);
-    } else if (!oldMember.voiceChannelID && newMember.voiceChannelID && channelList.has(newMember.guild.id)) {
+    } else if (
+      !oldMember.voiceChannelID &&
+      newMember.voiceChannelID &&
+      channelList.has(newMember.guild.id)
+    ) {
       let joinedChannel = client.channels.get(newMember.voiceChannelID);
-      let msg = now + oldMember.displayName + ' (' + oldMember.user.username + ') has joined ' + joinedChannel.name;
+      let msg =
+        now +
+        oldMember.displayName +
+        " (" +
+        oldMember.user.username +
+        ") has joined " +
+        joinedChannel.name;
       client.channels.get(channelList.get(joinedChannel.guild.id)).send(msg);
     } else {
       if (channelList.has(oldMember.guild.id)) {
         let leftChannel = client.channels.get(oldMember.voiceChannelID);
         let joinedChannel = client.channels.get(newMember.voiceChannelID);
-        let msg = now + oldMember.displayName + ' (' + oldMember.user.username + ') has moved from: ' + leftChannel.name + ' to: ' + joinedChannel.name;
+        let msg =
+          now +
+          oldMember.displayName +
+          " (" +
+          oldMember.user.username +
+          ") has moved from: " +
+          leftChannel.name +
+          " to: " +
+          joinedChannel.name;
         client.channels.get(channelList.get(oldMember.guild.id)).send(msg);
       }
     }
   }
 });
 
-client.on('message', message => {
+client.on("message", message => {
   let random_number;
   const author_id = getAuthorId(message);
 
@@ -306,15 +361,15 @@ client.on('message', message => {
     return;
   }
 
-
   if (author_id !== Users.sasner.id) {
-
     let continueProcess = true;
     for (const funcName in preProcessTrollFunctions) {
       if (preProcessTrollFunctions.hasOwnProperty(funcName)) {
         random_number = Math.random();
         if (random_number < preProcessTrollFunctions[funcName].chance) {
-          continueProcess = preProcessTrollFunctions[funcName].process(message) && continueProcess;
+          continueProcess =
+            preProcessTrollFunctions[funcName].process(message) &&
+            continueProcess;
         }
       }
     }

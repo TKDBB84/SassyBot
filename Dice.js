@@ -1,10 +1,12 @@
+const Discord = require("discord.js");
+
 /**
  *
  * @param message
  * @returns {{num: number, sides: number}}
  */
-const parseDice = (message) => {
-  const parsedMessage = message.content.split(' ')[2];
+const parseDice = message => {
+  const parsedMessage = message.content.split(" ")[2];
   const result = parsedMessage.match(/^\s*(\d+)d(\d+).*$/i);
 
   let ret = {
@@ -26,7 +28,7 @@ const parseDice = (message) => {
  * @param parsedDice {{num: number, sides: number}}
  * @returns array
  */
-const rollDice = (parsedDice) => {
+const rollDice = parsedDice => {
   const numberOfDice = parsedDice.num;
   const numberOfSides = parsedDice.sides;
 
@@ -48,8 +50,8 @@ const rollDice = (parsedDice) => {
  * @param message
  * @returns {{drop: boolean, keep: boolean, numDice: number}}
  */
-const parseKeepOrDrops = (message) => {
-  const parsedMessage = message.content.split(' ')[2];
+const parseKeepOrDrops = message => {
+  const parsedMessage = message.content.split(" ")[2];
   const result = parsedMessage.match(/^\s*\d+d\d+([d|k])(\d+).*$/i);
 
   let ret = {
@@ -60,8 +62,8 @@ const parseKeepOrDrops = (message) => {
 
   if (result && result.length === 3) {
     ret = {
-      keep: result[1].toLowerCase() === 'k',
-      drop: result[1].toLowerCase() === 'd',
+      keep: result[1].toLowerCase() === "k",
+      drop: result[1].toLowerCase() === "d",
       numDice: parseInt(result[2], 10)
     };
   }
@@ -106,11 +108,10 @@ const actionKeepOrDrops = (keepOrDrops, rolls) => {
  * @param array
  * @returns array
  */
-const shuffle = (array) => {
+const shuffle = array => {
   let currentIndex = array.length;
   // While there remain elements to shuffle...
   while (0 !== currentIndex) {
-
     // Pick a remaining element...
     const randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex -= 1;
@@ -128,8 +129,8 @@ const shuffle = (array) => {
  * @param message
  * @returns {{minus: boolean, constant: number, plus: boolean}}
  */
-const parseStaticAdditions = (message) => {
-  const parsedMessage = message.content.split(' ')[2];
+const parseStaticAdditions = message => {
+  const parsedMessage = message.content.split(" ")[2];
   const result = parsedMessage.match(/^.*([+\-])\s*(\d+)$/i);
 
   let ret = {
@@ -140,19 +141,20 @@ const parseStaticAdditions = (message) => {
 
   if (result && result.length === 3) {
     ret = {
-      plus: result[1].trim() === '+',
-      minus: result[1].trim() === '-',
+      plus: result[1].trim() === "+",
+      minus: result[1].trim() === "-",
       constant: parseInt(result[2], 10)
-    }
+    };
   }
 
   return ret;
 };
 
-
-
-const rollFunction = (message) => {
-  let keptAndDropped = actionKeepOrDrops(parseKeepOrDrops(message), rollDice(parseDice(message)));
+const rollFunction = message => {
+  let keptAndDropped = actionKeepOrDrops(
+    parseKeepOrDrops(message),
+    rollDice(parseDice(message))
+  );
   let additions = parseStaticAdditions(message);
   let total = 0;
 
@@ -160,40 +162,49 @@ const rollFunction = (message) => {
     total = keptAndDropped.kept.reduce((total, num) => total + num);
   }
 
-  let replyMessage = '[ ';
-  for (let i = 0 ; i < keptAndDropped.kept.length ; i++) {
+  let replyMessage = "[ ";
+  for (let i = 0; i < keptAndDropped.kept.length; i++) {
     if (i > 0) {
-      replyMessage += ', '
+      replyMessage += ", ";
     }
     replyMessage += keptAndDropped.kept[i].toString();
   }
 
-  for (let i = 0 ; i < keptAndDropped.dropped.length ; i++) {
+  for (let i = 0; i < keptAndDropped.dropped.length; i++) {
     if (keptAndDropped.kept.length > 0 || i > 0) {
-      replyMessage += ', ';
+      replyMessage += ", ";
     }
-    replyMessage += '~~' + keptAndDropped.dropped[i].toString() + '~~';
+    replyMessage += "~~" + keptAndDropped.dropped[i].toString() + "~~";
   }
-  replyMessage += ' ] ';
+  replyMessage += " ] ";
 
   if (additions.constant > 0 && (additions.plus || additions.minus)) {
-    replyMessage += (additions.plus ? ' + ' : '') + (additions.minus ? ' - ' : '') + additions.constant;
+    replyMessage +=
+      (additions.plus ? " + " : "") +
+      (additions.minus ? " - " : "") +
+      additions.constant;
     if (additions.minus) {
       additions.constant *= -1;
     }
   }
   total += additions.constant;
-  replyMessage += ' => ' + total.toString();
-  message.reply(replyMessage)
+  replyMessage += " => " + total.toString();
+  const replies = Discord.Util.splitMessage(replyMessage, { char: " " });
+  const numReplies = replies.length;
+  message.reply(replies[0]);
+  if (numReplies > 1) {
+    for (let i = 1; i < numReplies; i++) {
+      message.channel.send(replies[1]);
+    }
+  }
 };
-
-
 
 module.exports = {
   functions: {
-    'roll': rollFunction
+    roll: rollFunction
   },
   help: {
-    'roll': 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll',
+    roll:
+      "usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll"
   }
 };
