@@ -1,9 +1,10 @@
 export type SassyBotImport = { functions: { [key: string]: SassyBotCommand }, help: { [key: string]: string } }
 type SassyBotImportList = SassyBotImport[]
-export type SassyBotCommand = (message: Message) => boolean;
+export type SassyBotCommand = (message: Message) => void;
 type SassyBotCommandList = { [key: string]: SassyBotCommand };
 type PleaseRequiredList = { [key: string]: { id: string, lastMessage: Message | null } };
-type TrollObject = { [key: string]: { process: SassyBotCommand, chance: number } }
+type SassybotTrollList = { process: SassybotTrollCommand, chance: number }[]
+export type SassybotTrollCommand = (message: Message) => boolean;
 
 import * as fs from "fs";
 import * as Discord from 'discord.js';
@@ -42,7 +43,7 @@ const getDisplayName: (message: Message) => string = function (message: Message)
     return message.member.nickname ? message.member.nickname : message.author.username;
 };
 
-const shiftyEyes: SassyBotCommand = function shiftyEyes(message: Message): boolean {
+const shiftyEyes: SassybotTrollCommand = function shiftyEyes(message: Message): boolean {
     let outMessage = "";
     const leftEyes = /.*<(\s*.\s*)<.*/;
     const rightEyes = /.*>(\s*.\s*)>.*/;
@@ -96,7 +97,7 @@ const shiftyEyes: SassyBotCommand = function shiftyEyes(message: Message): boole
     return true;
 };
 
-const aPingRee: SassyBotCommand = (message: Message): boolean => {
+const aPingRee: SassybotTrollCommand = (message: Message): boolean => {
     if (
         message.content.toLowerCase().includes(":apingree:") ||
         message.content.toLowerCase().includes(":angeryping:")
@@ -109,7 +110,7 @@ const aPingRee: SassyBotCommand = (message: Message): boolean => {
     return true;
 };
 
-const moreDots: SassyBotCommand = (message: Message): boolean => {
+const moreDots: SassybotTrollCommand = (message: Message): boolean => {
     const dotMatch = message.content.match(/(\.)+/);
     if (!dotMatch || !dotMatch['input']) {
         return true;
@@ -121,12 +122,12 @@ const moreDots: SassyBotCommand = (message: Message): boolean => {
     return true;
 };
 
-const pleaseShutUp: SassyBotCommand = (message: Message): boolean => {
+const pleaseShutUp: SassybotTrollCommand = (message: Message): boolean => {
     sassybotReply(message, "will you please shut up?");
     return false;
 };
 
-const processPleaseStatement: SassyBotCommand = (message: Message): boolean => {
+const processPleaseStatement: SassybotTrollCommand = (message: Message): boolean => {
     const author_id = getAuthorId(message);
     if (pleaseRequiredList.hasOwnProperty(author_id)) {
         const pleaseRequired = pleaseRequiredList[author_id];
@@ -141,7 +142,7 @@ const processPleaseStatement: SassyBotCommand = (message: Message): boolean => {
     return true;
 };
 
-const justSayNo: SassyBotCommand = (message: Message): boolean => {
+const justSayNo: SassybotTrollCommand = (message: Message): boolean => {
     if (isSassyBotCall(message)) {
         sassybotRespond(message, 'No, Fuck you.');
         return false;
@@ -149,39 +150,39 @@ const justSayNo: SassyBotCommand = (message: Message): boolean => {
     return true;
 };
 
-const preProcessTrollFunctions: TrollObject = {
-    shiftyEyes: {
+const preProcessTrollFunctions: SassybotTrollList = [
+    {
         process: shiftyEyes,
         chance: 0.07
     },
-    aPingRee: {
+    {
         process: aPingRee,
         chance: 1.0
     },
-    moreDots: {
+    {
         process: moreDots,
         chance: 0.25
     },
-    pleaseShutUp: {
+    {
         process: pleaseShutUp,
         chance: 0.0
     },
-    processPleaseStatement: {
+    {
         process: processPleaseStatement,
         chance: 1.0
     },
-    no: {
+    {
         process: justSayNo,
         chance: 0.01
     }
-};
+];
 
 const isSassyBotCall: (message: Message) => boolean = function (message: Message): boolean {
     return message.content.toLowerCase().startsWith("!sassybot") ||
         message.content.toLowerCase().startsWith("!sb");
 };
 
-const spamFunction: SassyBotCommand = (message: Message): boolean => {
+const spamFunction: SassyBotCommand = (message: Message): void => {
     const author_id = getAuthorId(message);
     if (author_id === Users.Sasner.id || author_id === Users.Verian.id) {
         channelList.set(message.guild.id, message.channel.id);
@@ -191,10 +192,9 @@ const spamFunction: SassyBotCommand = (message: Message): boolean => {
     } else {
         sassybotRespond(message, "This functionality is limited to Verian & Sasner");
     }
-    return false;
 };
 
-const helpFunction: SassyBotCommand = (message: Message): boolean => {
+const helpFunction: SassyBotCommand = (message: Message): void => {
     let wordArray = message.content.split(" ");
     let firstWord;
     if (wordArray.length < 2) {
@@ -236,19 +236,18 @@ const helpFunction: SassyBotCommand = (message: Message): boolean => {
             `for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`;
     }
     sassybotRespond(message, reply);
-    return false;
 };
 
+const pingFunction: SassyBotCommand = (message: Message): void => {
+    sassybotReply(message, "pong");
+};
+const echoFunction: SassyBotCommand = (message: Message): void => {
+    sassybotRespond(message, message.content);
+};
 
 let chatFunctions: SassyBotCommandList = {
-    ping: (message: Message): boolean => {
-        sassybotReply(message, "pong");
-        return false;
-    },
-    echo: (message: Message): boolean => {
-        sassybotRespond(message, message.content);
-        return false;
-    },
+    ping: pingFunction,
+    echo: echoFunction,
     spam: spamFunction,
     help: helpFunction
 };
@@ -272,6 +271,8 @@ const getAuthorId: (message: Message) => string = (message: Message): string => 
 };
 
 const processSassybotCommand: (message: Message) => void = function processSassybotCommand(message: Message): void {
+    if (!isSassyBotCall(message)) return;
+
     const author_id = getAuthorId(message);
 
     if (pleaseRequiredList.hasOwnProperty(author_id)) {
@@ -292,37 +293,25 @@ const processSassybotCommand: (message: Message) => void = function processSassy
     }
 };
 
-const messageEventHandler: (message: Message) => void = async (message: Message): Promise<null> => {
-    const result = Promise.resolve(null);
+const messageEventHandler: (message: Message) => void = (message: Message): void => {
     let random_number: number;
     const author_id: string = getAuthorId(message);
+    let continueProcess = author_id !== Users.Sassybot.id;
 
-    if (author_id === Users.Sassybot.id) {
-        // SassyBot is not allowed to respond to itself
-        return result;
-    }
-
-    let continueProcess = true;
-    if (author_id !== Users.Sasner.id) {
-        for (const funcName in preProcessTrollFunctions) {
-            if (preProcessTrollFunctions.hasOwnProperty(funcName)) {
-                random_number = Math.random();
-                if (random_number < preProcessTrollFunctions[funcName].chance) {
-                    continueProcess =
-                        continueProcess && preProcessTrollFunctions[funcName].process(message);
-                    if (!continueProcess) {
-                        break;
-                    }
+    if (continueProcess && author_id !== Users.Sasner.id) {
+        for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
+            random_number = Math.random();
+            if (random_number < preProcessTrollFunctions[i].chance) {
+                continueProcess = continueProcess && preProcessTrollFunctions[i].process(message);
+                if (!continueProcess) {
+                    return
                 }
             }
         }
     }
-
-    if (isSassyBotCall(message) && continueProcess) {
+    if (continueProcess) {
         processSassybotCommand(message);
     }
-
-    return result;
 };
 
 client.on("voiceStateUpdate", ((oldMember, newMember) => {

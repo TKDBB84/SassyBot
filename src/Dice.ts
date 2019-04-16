@@ -143,7 +143,7 @@ const parseStaticAdditions: (message: Message) => {minus: boolean, constant: num
     return ret;
 };
 
-const rollFunction: SassyBotCommand = (message: Message): boolean => {
+const rollFunction: SassyBotCommand = (message: Message): void => {
     let keptAndDropped = actionKeepOrDrops(
         parseKeepOrDrops(message),
         rollDice(parseDice(message))
@@ -183,7 +183,6 @@ const rollFunction: SassyBotCommand = (message: Message): boolean => {
     total += additions.constant;
     replyMessage += " => " + total.toString();
     sassybotReply(message, replyMessage);
-    return false;
 };
 
 const diceExport: SassyBotImport = {

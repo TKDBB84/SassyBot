@@ -1,5 +1,5 @@
 import {Statement} from "better-sqlite3";
-import {Channel, Collection, Message, MessageOptions, MessageReaction, Snowflake, TextChannel, User} from "discord.js";
+import {Collection, Message, MessageOptions, MessageReaction, Snowflake, TextChannel, User} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import * as Discord from 'discord.js';
 
@@ -50,7 +50,7 @@ const hasQuoteReaction: (message: Message) => boolean = (message: Message ): boo
 
 const isNormalInteger: (str: string) => boolean = (str: string): boolean => /^\+?(0|[1-9]\d*)$/.test(str);
 
-const quoteFunction: SassyBotCommand = (message: Message): boolean => {
+const quoteFunction: SassyBotCommand = (message: Message): void => {
     if (hasSingleMention(message)) {
         /** @var GuildMember quotedMember */
         const quotedMember = message.mentions.members.first();
@@ -100,10 +100,9 @@ const quoteFunction: SassyBotCommand = (message: Message): boolean => {
             }
         });
     }
-    return false;
 };
 
-const rQuoteFunction: SassyBotCommand = (message: Message): boolean => {
+const rQuoteFunction: SassyBotCommand = (message: Message): void => {
     if (hasSingleMention(message)) {
         let parts = message.content.match(
             /!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?/i
@@ -155,7 +154,7 @@ const rQuoteFunction: SassyBotCommand = (message: Message): boolean => {
             }
         } else if (parts.length >= 2 && parts[1].toLowerCase() === "list") {
             let target = message.author;
-            const rows: QuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id])
+            const rows: QuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
 
             let builtMessages = [];
             let fetches = [];
@@ -242,8 +241,6 @@ const rQuoteFunction: SassyBotCommand = (message: Message): boolean => {
     } else {
         sassybotRespond(message, "You must specify whose quote you want to retrieve");
     }
-
-    return false;
 };
 
 const quoteExport: SassyBotImport = {
