@@ -31,6 +31,14 @@ const parseDice: (message: Message) => {num: number, sides: number} = (message: 
         };
     }
 
+    if (ret.num > 300) {
+        ret.num = 300
+    }
+
+    if (ret.sides > 300) {
+        ret.sides = 300
+    }
+
     return ret;
 };
 
