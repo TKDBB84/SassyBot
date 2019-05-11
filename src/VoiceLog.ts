@@ -1,4 +1,4 @@
-import {Client, GuildMember, Snowflake, TextChannel, VoiceChannel} from "discord.js";
+import {Client, GuildMember, TextChannel, VoiceChannel} from "discord.js";
 
 export default function VoiceLogHandler(client: Client, channelList: Map<string, string>, previousMemberState: GuildMember, currentMemberState: GuildMember): void {
     const now = `(${new Date().toISOString().replace(/T/, " ").replace(/\..+/, "")} GMT)`;
@@ -9,6 +9,14 @@ export default function VoiceLogHandler(client: Client, channelList: Map<string,
     if (currentMemberState.voiceChannelID) {
         joinedChannel = client.channels.get(currentMemberState.voiceChannelID);
     }
+
+    if (
+        (leftChannel && leftChannel.id === '333750400861863936') ||
+        (joinedChannel && joinedChannel.id === '333750400861863936')
+    ) {
+        return;
+    }
+
     let msg = `${now} ${previousMemberState.displayName} (${previousMemberState.user.username}) `;
 
     if (previousMemberState.voiceChannelID !== currentMemberState.voiceChannelID) { // if the voice channel changed:
