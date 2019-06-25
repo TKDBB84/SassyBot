@@ -194,6 +194,22 @@ const spamFunction: SassyBotCommand = (message: Message): void => {
     }
 };
 
+const censusFunction: SassyBotCommand = (message: Message): void => {
+    let wordArray = message.content.split(" ");
+    let firstWord;
+    if (wordArray.length >= 2) {
+        firstWord = wordArray[2];
+    }
+
+    switch (firstWord) {
+        case '2019':
+        default:
+            sassybotRespond(message, 'https://bit.ly/2IFwzke  -- Thanks to Astra');
+            break
+    }
+    return
+};
+
 const helpFunction: SassyBotCommand = (message: Message): void => {
     let wordArray = message.content.split(" ");
     let firstWord;
@@ -246,10 +262,11 @@ const echoFunction: SassyBotCommand = (message: Message): void => {
 };
 
 let chatFunctions: SassyBotCommandList = {
-    ping: pingFunction,
+    census: censusFunction,
     echo: echoFunction,
+    help: helpFunction,
+    ping: pingFunction,
     spam: spamFunction,
-    help: helpFunction
 };
 
 for (let j = 0; j < importedFunctions.length; j++) {

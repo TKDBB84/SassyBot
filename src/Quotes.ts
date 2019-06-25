@@ -1,10 +1,19 @@
 import {Statement} from "better-sqlite3";
-import {Collection, Message, MessageOptions, MessageReaction, Snowflake, TextChannel, User} from "discord.js";
+import {
+    Collection,
+    GuildMember,
+    Message,
+    MessageOptions,
+    MessageReaction,
+    Snowflake,
+    TextChannel,
+    User
+} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import * as Discord from 'discord.js';
 
 type QuoteRow = { guild_id: string, user_id: string, channel_id: string, message_id: string, timestamp: string, quote_text: string }
-
+type QuoteCountRow = { cnt: string, user_id: string }
 
 import SassyDb from './SassyDb'
 const db = new SassyDb();
@@ -29,6 +38,10 @@ const getQuotesByUser: Statement = db.connection.prepare(
 );
 const updateMessageText: Statement = db.connection.prepare(
     "UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;"
+);
+
+const getQuoteCounts: Statement = db.connection.prepare(
+    "SELECT COUNT(1) as cnt, user_id FROM user_quotes WHERE guild_id = ? GROUP BY user_id"
 );
 
 const hasSingleMention: (message: Message) => boolean = (message: Message ): boolean => {
@@ -103,11 +116,23 @@ const quoteFunction: SassyBotCommand = (message: Message): void => {
 };
 
 const rQuoteFunction: SassyBotCommand = (message: Message): void => {
+    let parts = message.content.match(
+        /!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i
+    );
+    let quotedMember = message.mentions.members.first();
+    if (parts && parts[0] === '!sb rquote list all') {
+        const countRows: QuoteCountRow[] = getQuoteCounts.all([message.guild.id]);
+        let outputString = '';
+        for (let j = 0, jMax = countRows.length ; j < jMax ; j++) {
+            const member = message.guild.members.get(countRows[j].user_id);
+            if (member) {
+                outputString += member.displayName + '(' + member.user.username + '): ' + countRows[j].cnt + ' saved quotes' + "\n"
+            }
+        }
+        sassybotRespond(message, outputString);
+        return;
+    }
     if (hasSingleMention(message)) {
-        let parts = message.content.match(
-            /!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?/i
-        );
-        let quotedMember = message.mentions.members.first();
         if (!parts) {
             const rows: QuoteRow[] = getQuotesByUser.all(message.guild.id, quotedMember.id);
             if (rows.length > 0) {
