@@ -153,7 +153,7 @@ const justSayNo: SassybotTrollCommand = (message: Message): boolean => {
 const preProcessTrollFunctions: SassybotTrollList = [
     {
         process: shiftyEyes,
-        chance: 0.07
+        chance: 0.0
     },
     {
         process: aPingRee,
@@ -161,7 +161,7 @@ const preProcessTrollFunctions: SassybotTrollList = [
     },
     {
         process: moreDots,
-        chance: 0.25
+        chance: 0.0
     },
     {
         process: pleaseShutUp,
