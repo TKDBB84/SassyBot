@@ -165,12 +165,12 @@ const requestStartDate = (message: Message, activityList: activityList) => {
 
 const requestEndDate = (message: Message, activityList: activityList) => {
     activityList[message.author.id].next = storeEndDate;
-    sassybotPrivateReply(message, "What day will you be back?\nIf your not sure add a few days on the end\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
+    sassybotPrivateReply(message, "What day will you be back?\nIf you're not sure add a few days on the end\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
 };
 
 const storeFFName = (message: Message, activityList: activityList) => {
     activityList[message.author.id].name = message.cleanContent;
-    sassybotPrivateReply(message, `ok i have your name as ${activityList[message.author.id].name}`);
+    sassybotPrivateReply(message, `ok i have your name as ${activityList[message.author.id].name}\n\n`);
     requestStartDate(message, activityList);
 };
 
@@ -181,7 +181,7 @@ const storeStartDate = (message: Message, activityList: activityList) => {
     if (day && month && year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
         activityList[message.author.id].startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
         const dateString = activityList[message.author.id].startDate.toDateString();
-        sassybotPrivateReply(message, `ok i have your start date as: ${dateString}`);
+        sassybotPrivateReply(message, `ok i have your start date as: ${dateString}\n\n`);
         requestEndDate(message, activityList)
     } else {
         activityList[message.author.id].next = storeStartDate;
@@ -198,7 +198,7 @@ const storeEndDate = (message: Message, activityList: activityList) => {
 
     if (!error) {
         activityList[message.author.id].endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        sassybotPrivateReply(message, `ok i have your end date as: ${activityList[message.author.id].endDate.toDateString()}`);
+        sassybotPrivateReply(message, `ok i have your end date as: ${activityList[message.author.id].endDate.toDateString()}\n\n`);
         completeAbsent(message, activityList)
     } else {
         activityList[message.author.id].next = storeStartDate;
@@ -218,7 +218,7 @@ const completeAbsent = (message: Message, activityList: activityList) => {
 
     const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id].guildId, message.author.id]);
     if (fetchedData.length) {
-        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}`);
+        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}\n`);
     } else {
         sassybotPrivateReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
     }
