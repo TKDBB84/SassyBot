@@ -14,13 +14,14 @@ import VoiceLogHandler from './VoiceLog'
 import SassyDb from './SassyDb'
 
 import DiceFunctions from './Dice';
-import QuoteFunctions from './Quotes'
+import QuoteFunctions from './Quotes';
+import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
 
 const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: PleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions];
+const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions];
 
 const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
     const options: MessageOptions = {
@@ -311,23 +312,29 @@ const processSassybotCommand: (message: Message) => void = function processSassy
 };
 
 const messageEventHandler: (message: Message) => void = (message: Message): void => {
-    let random_number: number;
-    const author_id: string = getAuthorId(message);
-    let continueProcess = author_id !== Users.Sassybot.id;
+    if (message.type === 'dm') {
+        // sassybot DM things
+        resumeAbsentOrPromote(message);
+        return;
+    } else {
+        let random_number: number;
+        const author_id: string = getAuthorId(message);
+        let continueProcess = author_id !== Users.Sassybot.id;
 
-    if (continueProcess && author_id !== Users.Sasner.id) {
-        for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
-            random_number = Math.random();
-            if (random_number < preProcessTrollFunctions[i].chance) {
-                continueProcess = continueProcess && preProcessTrollFunctions[i].process(message);
-                if (!continueProcess) {
-                    return
+        if (continueProcess && author_id !== Users.Sasner.id) {
+            for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
+                random_number = Math.random();
+                if (random_number < preProcessTrollFunctions[i].chance) {
+                    continueProcess = continueProcess && preProcessTrollFunctions[i].process(message);
+                    if (!continueProcess) {
+                        return;
+                    }
                 }
             }
         }
-    }
-    if (continueProcess) {
-        processSassybotCommand(message);
+        if (continueProcess) {
+            processSassybotCommand(message);
+        }
     }
 };
 
