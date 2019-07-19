@@ -21,12 +21,12 @@ const addPromotion: Statement = db.connection.prepare(
 
 type allAbsentsRow = {user_id: string, name: string, start_date: string, end_date: string, timestamp: string}
 const getAllAbsents: Statement = db.connection.prepare(
-    'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name'
+    'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE'
 );
 
 type allPromotionsRow = {user_id: string, name: string, timestamp: string}
 const getAllPromotions: Statement = db.connection.prepare(
-    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ?'
+    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE'
 );
 
 type userAbsentsRow = {name: string, start_date: string, end_date: string, timestamp: string}
