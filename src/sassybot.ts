@@ -312,7 +312,7 @@ const processSassybotCommand: (message: Message) => void = function processSassy
 };
 
 const messageEventHandler: (message: Message) => void = (message: Message): void => {
-    if (message.type === 'dm') {
+    if (message.channel.type === 'dm') {
         // sassybot DM things
         resumeAbsentOrPromote(message);
         return;

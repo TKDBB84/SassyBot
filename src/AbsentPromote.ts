@@ -51,6 +51,7 @@ const ACTIVE_SERVERS = [
 type activityList = {
     [key: string]: {
         next: (message: Message, activityList: activityList) => void,
+        guildId: string,
         initDate: Date,
         name: string,
         startDate: Date,
@@ -99,7 +100,7 @@ setInterval(() => {
         ]);
 
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
-            const [day, month, year] = allAbsentRows[i].end_date.split("-").map(i => parseInt(i, 10));
+            const [year, month, day] = allAbsentRows[i].end_date.split("-").map(i => parseInt(i, 10));
             const endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
             if (endDate < tomorrow) {
                 deleteUserAbsentRow.run([
@@ -125,6 +126,7 @@ const sassybotPrivateReply: (message: Message, reply: string) => void = (message
 const requestFFName = (message: Message, activityList: activityList) => {
     activityList[message.author.id] = {
         next: storeFFName,
+        guildId: message.guild.id,
         initDate: new Date(),
         startDate: new Date(0),
         endDate: new Date(0),
@@ -151,7 +153,7 @@ const storeFFName = (message: Message, activityList: activityList) => {
 
 const storeStartDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [day, month, year] = possibleDate.split("-").map(i => parseInt(i, 10));
+    const [year, month, day] = possibleDate.split("-").map(i => parseInt(i, 10));
 
 
     if (day && month && year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
@@ -169,7 +171,7 @@ const storeStartDate = (message: Message, activityList: activityList) => {
 
 const storeEndDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [day, month, year] = possibleDate.split("-").map(i => parseInt(i, 10));
+    const [year, month, day] = possibleDate.split("-").map(i => parseInt(i, 10));
     const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
 
     if (!error) {
@@ -185,14 +187,14 @@ const storeEndDate = (message: Message, activityList: activityList) => {
 
 const completeAbsent = (message: Message, activityList: activityList) => {
     addAbsent.run([
-        message.guild.id,
+        activityList[message.author.id].guildId,
         message.author.id,
         activityList[message.author.id].name,
         formatDate(activityList[message.author.id].startDate),
         formatDate(activityList[message.author.id].endDate),
     ]);
 
-    const fetchedData: userAbsentsRow[] = getUserAbsent.all([message.guild.id, message.author.id]);
+    const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id].guildId, message.author.id]);
     if (fetchedData.length) {
         sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName: ${fetchedData[0].name}\nStart Date:${fetchedData[0].start_date}\nEnd Date:${fetchedData[0].end_date}`);
     } else {
