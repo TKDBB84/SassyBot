@@ -196,7 +196,7 @@ const completeAbsent = (message: Message, activityList: activityList) => {
 
     const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id].guildId, message.author.id]);
     if (fetchedData.length) {
-        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName: ${fetchedData[0].name}\nStart Date:${fetchedData[0].start_date}\nEnd Date:${fetchedData[0].end_date}`);
+        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}`);
     } else {
         sassybotPrivateReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
     }
