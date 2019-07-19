@@ -3,6 +3,7 @@ import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
 
+import Users from './Users';
 const db = new SassyDb();
 db.connection.exec(
     'CREATE TABLE IF NOT EXISTS user_absent (guild_id TEXT, user_id TEXT, name TEXT, start_date TEXT, end_date TEXT, timestamp INTEGER);'
@@ -20,7 +21,7 @@ const addPromotion: Statement = db.connection.prepare(
 
 type allAbsentsRow = {user_id: string, name: string, start_date: string, end_date: string, timestamp: string}
 const getAllAbsents: Statement = db.connection.prepare(
-    'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ?'
+    'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name'
 );
 
 type allPromotionsRow = {user_id: string, name: string, timestamp: string}
@@ -42,6 +43,7 @@ const deleteUserAbsentRow: Statement = db.connection.prepare(
     'DELETE FROM user_absent WHERE guild_id = ? and user_id = ?'
 );
 
+let OFFICER_ROLE_ID: string;
 const ONE_HOUR = 3600000;
 const ACTIVE_SERVERS = [
     '324682549206974473', // Crown Of Thrones,
@@ -203,22 +205,60 @@ const completeAbsent = (message: Message, activityList: activityList) => {
     delete activeAbsentList[message.author.id];
 };
 
+const listAllAbsent = (message: Message) => {
+    const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([
+        message.guild.id
+    ]);
+
+    let response: string = '';
+    for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
+        response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
+    }
+    sassybotPrivateReply(message, response)
+};
+
+const listAllPromotions = (message: Message) => {
+    // this should do something eventually
+};
+
 const absentFunction: SassyBotCommand = (message: Message) => {
-    if (activeAbsentList[message.author.id]) {
-        activeAbsentList[message.author.id].next(message, activeAbsentList);
-    }else {
-        return requestFFName(message, activeAbsentList);
+    if (!OFFICER_ROLE_ID) {
+        const role = message.guild.roles.find(role => role.name === 'Office');
+        if (role && role.id) {
+            OFFICER_ROLE_ID = role.id;
+        }
+    }
+
+    if (message.member.roles.has(OFFICER_ROLE_ID) || message.author.id === Users.Sasner.id) {
+        return listAllAbsent(message);
+    } else {
+        if (activeAbsentList[message.author.id]) {
+            activeAbsentList[message.author.id].next(message, activeAbsentList);
+        } else {
+            return requestFFName(message, activeAbsentList);
+        }
     }
 };
 
 const promotionFunction: SassyBotCommand = (message: Message) => {
-    sassybotPrivateReply(message, 'sasner is shit and hasn\'t dont this yet, so use !sb absent for now');
-    return;
-    // if (activePromotionList[message.author.id]) {
-    //     activePromotionList[message.author.id].next(message, activePromotionList);
-    // } else {
-    //     return requestFFName(message, activePromotionList);
-    // }
+    if (!OFFICER_ROLE_ID) {
+        const role = message.guild.roles.find(role => role.name === 'Office');
+        if (role && role.id) {
+            OFFICER_ROLE_ID = role.id;
+        }
+    }
+
+    if (message.member.roles.has(OFFICER_ROLE_ID) || message.author.id === Users.Sasner.id) {
+        return listAllPromotions(message);
+    } else {
+        sassybotPrivateReply(message, 'sasner is shit and hasn\'t dont this yet, so use !sb absent for now');
+        return;
+        // if (activePromotionList[message.author.id]) {
+        //     activePromotionList[message.author.id].next(message, activePromotionList);
+        // } else {
+        //     return requestFFName(message, activePromotionList);
+        // }
+    }
 };
 
 const resumeCommand: SassyBotCommand = (message: Message) => {

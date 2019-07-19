@@ -312,27 +312,26 @@ const processSassybotCommand: (message: Message) => void = function processSassy
 };
 
 const messageEventHandler: (message: Message) => void = (message: Message): void => {
-    if (message.channel.type === 'dm') {
-        // sassybot DM things
-        resumeAbsentOrPromote(message);
-        return;
-    } else {
-        let random_number: number;
-        const author_id: string = getAuthorId(message);
-        let continueProcess = author_id !== Users.Sassybot.id;
-
-        if (continueProcess && author_id !== Users.Sasner.id) {
-            for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
-                random_number = Math.random();
-                if (random_number < preProcessTrollFunctions[i].chance) {
-                    continueProcess = continueProcess && preProcessTrollFunctions[i].process(message);
-                    if (!continueProcess) {
-                        return;
+    const author_id: string = getAuthorId(message);
+    let isFromSassyBot = author_id !== Users.Sassybot.id;
+    if (!isFromSassyBot) {
+        if (message.channel.type === 'dm') {
+            // sassybot DM things
+            resumeAbsentOrPromote(message);
+            return;
+        } else {
+            let random_number: number;
+            if (author_id !== Users.Sasner.id) {
+                for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
+                    random_number = Math.random();
+                    if (random_number < preProcessTrollFunctions[i].chance) {
+                        const continueProcessing = preProcessTrollFunctions[i].process(message);
+                        if (!continueProcessing) {
+                            return;
+                        }
                     }
                 }
             }
-        }
-        if (continueProcess) {
             processSassybotCommand(message);
         }
     }
