@@ -4,6 +4,7 @@ import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
 
 import Users from './Users';
+import {isObject} from "util";
 const db = new SassyDb();
 db.connection.exec(
     'CREATE TABLE IF NOT EXISTS user_absent (guild_id TEXT, user_id TEXT, name TEXT, start_date TEXT, end_date TEXT, timestamp INTEGER);'
@@ -43,7 +44,7 @@ const deleteUserAbsentRow: Statement = db.connection.prepare(
     'DELETE FROM user_absent WHERE guild_id = ? and user_id = ?'
 );
 
-let OFFICER_ROLE_ID: string;
+let OFFICER_ROLE_ID: string = '';
 const ONE_HOUR = 3600000;
 const ACTIVE_SERVERS = [
     '324682549206974473', // Crown Of Thrones,
@@ -124,6 +125,26 @@ const sassybotPrivateReply: (message: Message, reply: string) => void = (message
     message.author.send(reply, options)
 };
 
+const getOfficerRoleId = (message: Message): string => {
+    if (!OFFICER_ROLE_ID && message.guild && message.guild.roles) {
+        const role = message.guild.roles.find(role => role.name === 'Officer');
+        if (role && role.id) {
+            OFFICER_ROLE_ID = role.id;
+        }
+    }
+    return OFFICER_ROLE_ID;
+};
+
+const isOfficer = (message: Message, activityList: activityList): boolean => {
+    let isOfficer = false;
+
+    const officerId = getOfficerRoleId(message);
+    if (officerId && message.member && message.member.roles) {
+        isOfficer = message.member.roles.has(officerId)
+    }
+
+    return isOfficer;
+};
 
 const requestFFName = (message: Message, activityList: activityList) => {
     activityList[message.author.id] = {
@@ -155,8 +176,7 @@ const storeFFName = (message: Message, activityList: activityList) => {
 
 const storeStartDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [year, month, day] = possibleDate.split("-").map(i => parseInt(i, 10));
-
+    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
 
     if (day && month && year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
         activityList[message.author.id].startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
@@ -173,7 +193,7 @@ const storeStartDate = (message: Message, activityList: activityList) => {
 
 const storeEndDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [year, month, day] = possibleDate.split("-").map(i => parseInt(i, 10));
+    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
     const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
 
     if (!error) {
@@ -222,14 +242,7 @@ const listAllPromotions = (message: Message) => {
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
-    if (!OFFICER_ROLE_ID) {
-        const role = message.guild.roles.find(role => role.name === 'Office');
-        if (role && role.id) {
-            OFFICER_ROLE_ID = role.id;
-        }
-    }
-
-    if (message.member.roles.has(OFFICER_ROLE_ID) || message.author.id === Users.Sasner.id) {
+    if (isOfficer(message, activeAbsentList) || message.author.id === Users.Sasner.id) {
         return listAllAbsent(message);
     } else {
         if (activeAbsentList[message.author.id]) {
@@ -241,14 +254,7 @@ const absentFunction: SassyBotCommand = (message: Message) => {
 };
 
 const promotionFunction: SassyBotCommand = (message: Message) => {
-    if (!OFFICER_ROLE_ID) {
-        const role = message.guild.roles.find(role => role.name === 'Office');
-        if (role && role.id) {
-            OFFICER_ROLE_ID = role.id;
-        }
-    }
-
-    if (message.member.roles.has(OFFICER_ROLE_ID) || message.author.id === Users.Sasner.id) {
+    if (isOfficer(message, activeAbsentList) || message.author.id === Users.Sasner.id) {
         return listAllPromotions(message);
     } else {
         sassybotPrivateReply(message, 'sasner is shit and hasn\'t dont this yet, so use !sb absent for now');
