@@ -313,7 +313,7 @@ const processSassybotCommand: (message: Message) => void = function processSassy
 
 const messageEventHandler: (message: Message) => void = (message: Message): void => {
     const author_id: string = getAuthorId(message);
-    let isFromSassyBot = author_id !== Users.Sassybot.id;
+    let isFromSassyBot = author_id === Users.Sassybot.id;
     if (!isFromSassyBot) {
         if (message.channel.type === 'dm') {
             // sassybot DM things
