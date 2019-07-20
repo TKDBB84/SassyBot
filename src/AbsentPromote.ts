@@ -1,9 +1,12 @@
+import * as Discord from "discord.js";
 import {CollectorFilter, Message, MessageOptions, ReactionCollector, ReactionEmoji, User} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
 
 import Users from './Users';
+
+const client = new Discord.Client();
 
 const db = new SassyDb();
 db.connection.exec(
@@ -320,14 +323,14 @@ const listAllPromotions = (message: Message) => {
                 .then((sentMessages) => {
                     if (Array.isArray(sentMessages)) {
                         sentMessages.forEach(msg => {
-                            msg.react('no');
+                            msg.react(client.emojis.find(e => e.name === 'no').toString());
                             msg.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
                                 deleteUserPromotionRow.run([message.guild.id, response.userId]);
                                 msg.delete(100);
                             })
                         })
                     } else {
-                        sentMessages.react('no');
+                        sentMessages.react(client.emojis.find(e => e.name === 'no').toString());
                         sentMessages.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
                             deleteUserPromotionRow.run([message.guild.id, response.userId]);
                             sentMessages.delete(100)
