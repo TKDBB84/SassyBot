@@ -323,14 +323,14 @@ const listAllPromotions = (message: Message) => {
                 .then((sentMessages) => {
                     if (Array.isArray(sentMessages)) {
                         sentMessages.forEach(msg => {
-                            msg.react(client.emojis.find(e => e.name === 'no').toString());
+                            msg.react('<:no:344861453146259466>');
                             msg.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
                                 deleteUserPromotionRow.run([message.guild.id, response.userId]);
                                 msg.delete(100);
                             })
                         })
                     } else {
-                        sentMessages.react(client.emojis.find(e => e.name === 'no').toString());
+                        sentMessages.react('<:no:344861453146259466>');
                         sentMessages.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
                             deleteUserPromotionRow.run([message.guild.id, response.userId]);
                             sentMessages.delete(100)
