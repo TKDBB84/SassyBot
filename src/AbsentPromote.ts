@@ -1,10 +1,10 @@
-import {Message, MessageOptions} from "discord.js";
+import {CollectorFilter, Message, MessageOptions, ReactionCollector, ReactionEmoji, User} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
 
 import Users from './Users';
-import {isObject} from "util";
+
 const db = new SassyDb();
 db.connection.exec(
     'CREATE TABLE IF NOT EXISTS user_absent (guild_id TEXT, user_id TEXT, name TEXT, start_date TEXT, end_date TEXT, timestamp INTEGER);'
@@ -42,6 +42,9 @@ const getUserPromotions: Statement = db.connection.prepare(
 
 const deleteUserAbsentRow: Statement = db.connection.prepare(
     'DELETE FROM user_absent WHERE guild_id = ? and user_id = ?'
+);
+const deleteUserPromotionRow: Statement = db.connection.prepare(
+    'DELETE FROM user_promote WHERE guild_id = ? and user_id = ?'
 );
 
 let OFFICER_ROLE_ID: string = '';
@@ -123,6 +126,14 @@ const sassybotPrivateReply: (message: Message, reply: string) => void = (message
         split: true,
     };
     message.author.send(reply, options)
+};
+
+const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
+    const options: MessageOptions = {
+        disableEveryone: true,
+        split: true
+    };
+    message.channel.send(text, options).catch(console.error);
 };
 
 const getOfficerRoleId = (message: Message): string => {
@@ -276,13 +287,48 @@ const listAllPromotions = (message: Message) => {
         message.guild.id
     ]);
 
-    let response: string = '';
+    let responses: {
+       message: string,
+       userId: string,
+    }[] = [];
     for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
         const requestDate = new Date();
         requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10));
-        response += `${i+1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`;
+        responses.push({
+            userId: allPromotionsRows[i].user_id,
+            message: `${i + 1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
+        });
     }
-    sassybotPrivateReply(message, response)
+
+    const options: MessageOptions = {
+        disableEveryone: true,
+        split: true
+    };
+
+    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+        return reaction.emoji.name === 'no' && user.id === message.author.id;
+    };
+    responses.forEach(response => {
+        message.channel.send(response.message, options)
+            .then((sentMessages) => {
+                if (Array.isArray(sentMessages)) {
+                    sentMessages.forEach(msg => {
+                        msg.react('no');
+                        msg.awaitReactions(reactionFilter, { max: 1, maxEmojis: 1, maxUsers: 1 }).then(() => {
+                            deleteUserPromotionRow.run([message.guild.id, response.userId]);
+                            msg.delete(100);
+                        })
+                    })
+                } else {
+                    sentMessages.react('no');
+                    sentMessages.awaitReactions(reactionFilter, { max: 1, maxEmojis: 1, maxUsers: 1 }).then(() => {
+                        deleteUserPromotionRow.run([message.guild.id, response.userId]);
+                        sentMessages.delete(100)
+                    })
+                }
+            })
+            .catch(console.error);
+    })
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
