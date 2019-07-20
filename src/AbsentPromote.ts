@@ -275,11 +275,15 @@ const listAllAbsent = (message: Message) => {
         message.guild.id
     ]);
 
-    let response: string = '';
-    for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
-        response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
+    if (allAbsentRows.length === 0) {
+        sassybotRespond(message, 'No Current Absentees');
+    } else {
+        let response: string = '';
+        for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
+            response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
+        }
+        sassybotPrivateReply(message, response)
     }
-    sassybotPrivateReply(message, response)
 };
 
 const listAllPromotions = (message: Message) => {
@@ -287,48 +291,52 @@ const listAllPromotions = (message: Message) => {
         message.guild.id
     ]);
 
-    let responses: {
-       message: string,
-       userId: string,
-    }[] = [];
-    for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
-        const requestDate = new Date();
-        requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10));
-        responses.push({
-            userId: allPromotionsRows[i].user_id,
-            message: `${i + 1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
-        });
-    }
+    if (allPromotionsRows.length === 0) {
+        sassybotRespond(message, 'No Current Promotion Requests');
+    } else {
+        let responses: {
+            message: string,
+            userId: string,
+        }[] = [];
+        for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
+            const requestDate = new Date();
+            requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10));
+            responses.push({
+                userId: allPromotionsRows[i].user_id,
+                message: `${i + 1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
+            });
+        }
 
-    const options: MessageOptions = {
-        disableEveryone: true,
-        split: true
-    };
+        const options: MessageOptions = {
+            disableEveryone: true,
+            split: true
+        };
 
-    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-        return reaction.emoji.name === 'no' && user.id === message.author.id;
-    };
-    responses.forEach(response => {
-        message.channel.send(response.message, options)
-            .then((sentMessages) => {
-                if (Array.isArray(sentMessages)) {
-                    sentMessages.forEach(msg => {
-                        msg.react('no');
-                        msg.awaitReactions(reactionFilter, { max: 1, maxEmojis: 1, maxUsers: 1 }).then(() => {
-                            deleteUserPromotionRow.run([message.guild.id, response.userId]);
-                            msg.delete(100);
+        const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+            return reaction.emoji.name === 'no' && user.id === message.author.id;
+        };
+        responses.forEach(response => {
+            message.channel.send(response.message, options)
+                .then((sentMessages) => {
+                    if (Array.isArray(sentMessages)) {
+                        sentMessages.forEach(msg => {
+                            msg.react('no');
+                            msg.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
+                                deleteUserPromotionRow.run([message.guild.id, response.userId]);
+                                msg.delete(100);
+                            })
                         })
-                    })
-                } else {
-                    sentMessages.react('no');
-                    sentMessages.awaitReactions(reactionFilter, { max: 1, maxEmojis: 1, maxUsers: 1 }).then(() => {
-                        deleteUserPromotionRow.run([message.guild.id, response.userId]);
-                        sentMessages.delete(100)
-                    })
-                }
-            })
-            .catch(console.error);
-    })
+                    } else {
+                        sentMessages.react('no');
+                        sentMessages.awaitReactions(reactionFilter, {max: 1, maxEmojis: 1, maxUsers: 1}).then(() => {
+                            deleteUserPromotionRow.run([message.guild.id, response.userId]);
+                            sentMessages.delete(100)
+                        })
+                    }
+                })
+                .catch(console.error);
+        })
+    }
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
