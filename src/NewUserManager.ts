@@ -58,7 +58,11 @@ const newMemberJoined = (member: GuildMember) => {
                 name: '',
                 joined: new Date(),
             };
-            cotNewUserChannel.send('do something to gain access', options).then((message: Message | Message[]) => {
+            cotNewUserChannel.send('Hey, welcome to the Crowne of Thorne server! \n' +
+                '\n' +
+                'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
+                '\n' +
+                'Once you\'ve done that, you\'ll be granted full access to the server! We hope you enjoy your stay 😃', options).then((message: Message | Message[]) => {
                 if (!Array.isArray(message)) {
                     message = [message];
                 }

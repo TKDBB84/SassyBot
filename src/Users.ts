@@ -1,60 +1,28 @@
-import {Snowflake} from "discord.js";
 
-abstract class User {
-    public static id: Snowflake
+export class User {
+    public id: string;
+    public constructor(id: string) {
+        this.id = id;
+    }
 }
 
-class Brigie extends User {
-    public static id = "189195422114381824";
-}
-class Eitri extends User {
-     public static id = "106004012347695104";
-}
-class Hally extends User {
-     public static id = "158533023736791041";
-}
-class Kraysan extends User {
-     public static id = "177926353373364224";
-}
-class Nym extends User {
-     public static id = "98075883549519872";
-}
-class Oni extends User {
-     public static id = "181267070111973376";
-}
-class Rex extends User {
-     public static id = "159868064228179968";
-}
-class Ryk extends User {
-     public static id = "136276996261937152";
-}
-class Sasner extends User {
-     public static id = "107435240686931968";
-}
-class Sassybot extends User {
-     public static id = "402131531268882432";
-}
-class Uriko extends User {
-     public static id = "157324426076094474";
-}
-class Verian extends User {
-     public static id = "159756239016820736";
-}
-class Yoake extends User {
-     public static id = "215882287693299713";
-}
-class Lev extends User {
-     public static id = "124854733096615937";
-}
-class Vera extends User {
-     public static id = "210082031282028554";
-}
-class Sastra extends User {
-     public static id = "293238959449047041";
-}
-class Pas extends User {
-     public static id = "85871040374259712";
-}
+const Brigie = new User("189195422114381824");
+const Eitri = new User("106004012347695104");
+const Hally = new User("158533023736791041");
+const Kraysan = new User("177926353373364224");
+const Nym = new User("98075883549519872");
+const Oni = new User("181267070111973376");
+const Rex = new User("159868064228179968");
+const Ryk = new User("136276996261937152");
+const Sasner = new User("107435240686931968");
+const Sassybot = new User("402131531268882432");
+const Uriko = new User("157324426076094474");
+const Verian = new User("159756239016820736");
+const Yoake = new User("215882287693299713");
+const Lev = new User("124854733096615937");
+const Vera = new User("210082031282028554");
+const Sastra = new User("293238959449047041");
+const Pas = new User("85871040374259712");
 
 export default {
     Brigie,
