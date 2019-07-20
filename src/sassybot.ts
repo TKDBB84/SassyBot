@@ -8,7 +8,7 @@ export type SassybotTrollCommand = (message: Message) => boolean;
 
 import * as fs from "fs";
 import * as Discord from 'discord.js';
-import {Message, MessageOptions} from "discord.js";
+import {GuildMember, Message, MessageOptions, Role, TextChannel} from "discord.js";
 import Users from './Users';
 import VoiceLogHandler from './VoiceLog'
 import SassyDb from './SassyDb'
@@ -16,6 +16,7 @@ import SassyDb from './SassyDb'
 import DiceFunctions from './Dice';
 import QuoteFunctions from './Quotes';
 import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
+import {newMemberJoinedCallback, newMemberListener} from './NewUserManager';
 
 const db = new SassyDb();
 const client = new Discord.Client();
@@ -320,6 +321,10 @@ const messageEventHandler: (message: Message) => void = (message: Message): void
             resumeAbsentOrPromote(message);
             return;
         } else {
+            const isNewMemberMessage = newMemberListener(message);
+            if (isNewMemberMessage) {
+                return;
+            }
             let random_number: number;
             if (author_id !== Users.Sasner.id) {
                 for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
@@ -342,6 +347,7 @@ client.on("voiceStateUpdate", ((oldMember, newMember) => {
 }));
 client.on("message", messageEventHandler);
 client.on("ready", () => console.log("I am ready!"));
+client.on('guildMemberAdd', newMemberJoinedCallback);
 
 client.login(getSecrets().token)
     .then(console.log)
