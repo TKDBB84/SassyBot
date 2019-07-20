@@ -11,6 +11,7 @@
     "@types/node": "^11.13.4",
     "better-sqlite3": "^5.4.0",
     "discord.js": "^11.4.2",
-    "node-gyp": "^3.8.0"
+    "node-gyp": "^3.8.0",
+    "xivapi-js": "^0.2.4"
   }
 }
