@@ -18,11 +18,22 @@ import QuoteFunctions from './Quotes';
 import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
 import {newMemberJoinedCallback, newMemberListener} from './NewUserManager';
 
+const XIVApi = require('xivapi-js');
 const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: PleaseRequiredList = {};
 const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions];
+
+type client_secrets = { token: string, xivApiToken: string }
+const getSecrets: () => client_secrets = (): client_secrets => {
+    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
+    return JSON.parse(fileData.toString());
+};
+
+const xivClient = new XIVApi({
+    private_key: getSecrets().xivApiToken
+});
 
 const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
     const options: MessageOptions = {
@@ -269,6 +280,9 @@ let chatFunctions: SassyBotCommandList = {
     help: helpFunction,
     ping: pingFunction,
     spam: spamFunction,
+    test: (message: Message) => {
+        sassybotRespond(message, xivClient.character.search('Sasner Rensas', {server: 'Jenova'}).toString())
+    }
 };
 
 for (let j = 0; j < importedFunctions.length; j++) {
@@ -278,12 +292,6 @@ for (let j = 0; j < importedFunctions.length; j++) {
         chatFunctions
     );
 }
-
-type client_secrets = { token: string }
-const getSecrets: () => client_secrets = (): client_secrets => {
-    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
-    return JSON.parse(fileData.toString());
-};
 
 const getAuthorId: (message: Message) => string = (message: Message): string => {
     return message.author.id;
