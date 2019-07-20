@@ -303,7 +303,7 @@ const listAllPromotions = (message: Message) => {
         }[] = [];
         for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
             const requestDate = new Date();
-            requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10));
+            requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10) * 1000);
             responses.push({
                 userId: allPromotionsRows[i].user_id,
                 message: `${i + 1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
@@ -361,7 +361,7 @@ const promotionFunction: SassyBotCommand = (message: Message) => {
         if (activePromotionList[message.author.id]) {
             activePromotionList[message.author.id].next(message, activePromotionList);
         } else {
-            return requestFFName(message, activePromotionList);
+            return requestFFNameAndStop(message, activePromotionList);
         }
     }
 };
