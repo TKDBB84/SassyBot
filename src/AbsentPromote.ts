@@ -174,6 +174,24 @@ const storeFFName = (message: Message, activityList: activityList) => {
     requestStartDate(message, activityList);
 };
 
+const requestFFNameAndStop = (message: Message, activityList: activityList) => {
+    activityList[message.author.id] = {
+        next: storeFFNameAndStop,
+        guildId: message.guild.id,
+        initDate: new Date(),
+        startDate: new Date(0),
+        endDate: new Date(0),
+        name: '',
+    };
+    sassybotPrivateReply(message, 'First, Tell Me Your Full Character Name')
+};
+
+const storeFFNameAndStop = (message: Message, activityList: activityList) => {
+    activityList[message.author.id].name = message.cleanContent;
+    sassybotPrivateReply(message, `ok i have your name as ${activityList[message.author.id].name}\n\n`);
+    completePromotion(message, activityList);
+};
+
 const storeStartDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
     const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
@@ -225,6 +243,22 @@ const completeAbsent = (message: Message, activityList: activityList) => {
     delete activeAbsentList[message.author.id];
 };
 
+const completePromotion = (message: Message, activityList: activityList) => {
+    addPromotion.run([
+        activityList[message.author.id].guildId,
+        message.author.id,
+        activityList[message.author.id].name,
+    ]);
+
+    const fetchedData: userPromotionsRow[] = getUserPromotions.all([activityList[message.author.id].guildId, message.author.id]);
+    if (fetchedData.length) {
+        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\n\nI'll Make Sure The Officers See Your Request!`);
+    } else {
+        sassybotPrivateReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
+    }
+    delete activeAbsentList[message.author.id];
+};
+
 const listAllAbsent = (message: Message) => {
     const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([
         message.guild.id
@@ -238,7 +272,17 @@ const listAllAbsent = (message: Message) => {
 };
 
 const listAllPromotions = (message: Message) => {
-    // this should do something eventually
+    const allPromotionsRows: allPromotionsRow[] = getAllPromotions.all([
+        message.guild.id
+    ]);
+
+    let response: string = '';
+    for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
+        const requestDate = new Date();
+        requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10));
+        response += `${i+1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`;
+    }
+    sassybotPrivateReply(message, response)
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
@@ -257,13 +301,11 @@ const promotionFunction: SassyBotCommand = (message: Message) => {
     if (isOfficer(message, activeAbsentList) || message.author.id === Users.Sasner.id) {
         return listAllPromotions(message);
     } else {
-        sassybotPrivateReply(message, 'sasner is shit and hasn\'t dont this yet, so use !sb absent for now');
-        return;
-        // if (activePromotionList[message.author.id]) {
-        //     activePromotionList[message.author.id].next(message, activePromotionList);
-        // } else {
-        //     return requestFFName(message, activePromotionList);
-        // }
+        if (activePromotionList[message.author.id]) {
+            activePromotionList[message.author.id].next(message, activePromotionList);
+        } else {
+            return requestFFName(message, activePromotionList);
+        }
     }
 };
 
