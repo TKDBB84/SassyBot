@@ -54,20 +54,20 @@ if (mbrCount && mbrCount.cnt === 0) {
         (result: { FreeCompany: {}, FreeCompanyMembers: FreeCompanyMember[], Info: {FreeCompanyMembers: {Updated: number}}}) => {
             cotMemberList = result.FreeCompanyMembers;
             lastImport.setTime(result.Info.FreeCompanyMembers.Updated * 1000);
+            cotMemberList.forEach(member => {
+                upsertMember.run([
+                    '',
+                    member.Name,
+                    member.Rank,
+                    member.ID,
+                    lastImport.getTime()/1000,
+                    member.Name,
+                    member.Rank,
+                    lastImport.getTime()/1000
+                ])
+            })
         }
     );
-    cotMemberList.forEach(member => {
-        upsertMember.run([
-            '',
-            member.Name,
-            member.Rank,
-            member.ID,
-            lastImport.getTime()/1000,
-            member.Name,
-            member.Rank,
-            lastImport.getTime()/1000
-        ])
-    })
 }
 
 const addMember = db.connection.prepare(
