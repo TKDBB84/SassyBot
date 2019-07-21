@@ -3,6 +3,7 @@ import * as Discord from "discord.js";
 import { FreeCompanyMember, CoTMember } from "./CoTMembers";
 import { xivClient } from "./sassybot";
 
+let TESTING = false;
 const client = new Discord.Client();
 const COT_ID = '324682549206974473';
 const COT_NEW_USER_CHANNEL = '601971412000833556';
@@ -17,6 +18,7 @@ const cotRoles: roleList = {
     Member: null,
     Veteran: null,
     Officer: null,
+    'new role': null,
 };
 
 type newMemberList = {
@@ -57,19 +59,25 @@ const newMemberJoined = (member: GuildMember) => {
     }
 
     if (member.guild.id === COT_ID && cotRoles.New) {
-        member.addRole(cotRoles.New.id, 'new member').then(() => {
-            const options: MessageOptions = {
-                disableEveryone: true,
-                split: true,
-                reply: member.user.id,
-            };
-            newMemberList[member.user.id] = {
-                name: '',
-                joined: new Date(),
-                step: 1,
-            };
-            sendMessageToNewChannel(member,'Hey, welcome to the Crowne of Thorne server! \n\n' + 'First Can you please type your FULL FFXIV character name?');
-        });
+        let roleToAdd: Role | null = cotRoles.New;
+        if (TESTING && cotRoles['new role']) {
+            roleToAdd = cotRoles['new role'];
+        }
+        if (roleToAdd) {
+            member.addRole(roleToAdd.id, 'new member').then(() => {
+                const options: MessageOptions = {
+                    disableEveryone: true,
+                    split: true,
+                    reply: member.user.id,
+                };
+                newMemberList[member.user.id] = {
+                    name: '',
+                    joined: new Date(),
+                    step: 1,
+                };
+                sendMessageToNewChannel(member, 'Hey, welcome to the Crowne of Thorne server! \n\n' + 'First Can you please type your FULL FFXIV character name?');
+            });
+        }
     }
 };
 
@@ -123,8 +131,12 @@ const newMemberListen = (message: Message) => {
                 break;
             case 2:
                 if (message.cleanContent.trim().toLowerCase() === 'i agree') {
-                    if (cotRoles.New) {
-                        message.member.removeRole(cotRoles.New.id);
+                    let roleToRemove: Role | null = cotRoles.New;
+                    if (TESTING) {
+                        roleToRemove = cotRoles['new role'];
+                    }
+                    if (roleToRemove) {
+                        message.member.removeRole(roleToRemove.id);
                         const memberObject = CoTMember.fetchMember(message.member.id);
                         if (memberObject instanceof CoTMember) {
                             const memRank = memberObject.rank;
@@ -151,3 +163,8 @@ export let newMemberJoinedCallback = newMemberJoined;
 export function newMemberListener(message: Message) {
     return newMemberListen(message);
 };
+
+export function setNewUserWorkflow(message: Message) {
+    TESTING = true;
+    newMemberJoined(message.member)
+}

@@ -16,7 +16,7 @@ import SassyDb from './SassyDb'
 import DiceFunctions from './Dice';
 import QuoteFunctions from './Quotes';
 import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
-import {newMemberJoinedCallback, newMemberListener} from './NewUserManager';
+import {newMemberJoinedCallback, newMemberListener, setNewUserWorkflow} from './NewUserManager';
 
 const XIVApi = require('xivapi-js');
 const db = new SassyDb();
@@ -280,8 +280,8 @@ let chatFunctions: SassyBotCommandList = {
     help: helpFunction,
     ping: pingFunction,
     spam: spamFunction,
-    test: (message: Message) => {
-        sassybotRespond(message, xivClient.character.search('Sasner Rensas', {server: 'Jenova'}).toString())
+    testNewUser: (message: Message) => {
+        setNewUserWorkflow(message);
     }
 };
 
