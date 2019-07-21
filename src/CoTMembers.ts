@@ -76,15 +76,6 @@ const addMember = db.connection.prepare(
 const updateMember = db.connection.prepare(
     "UPDATE cot_member SET name = ?, rank = ?, lodestoneId = ?, last_update = strftime('%s','now') WHERE user_id = ?"
 );
-type ExistRow = { ext: number }
-const memberExists = db.connection.prepare(
-    'SELECT 1 as ext FROM cot_member WHERE user_id = ?'
-);
-
-type UserRow = { name: string, rank: string, lodestoneId: string, last_update: number }
-const getUser = db.connection.prepare(
-    "SELECT name, rank, lodestoneId, last_update FROM cot_member WHERE user_id = ?"
-);
 
 export class CoTMember extends User {
     public id: string = '';
@@ -106,8 +97,8 @@ export class CoTMember extends User {
         if (!this.id) {
             return false;
         }
-        const exists: ExistRow = memberExists.get([this.id]);
-        if (exists && !!exists.ext) {
+        const exists: MemberRow = getMemberByUserId.get([this.id]);
+        if (exists && exists.user_id) {
             updateMember.run([
                 this.name,
                 this.rank,
