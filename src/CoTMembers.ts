@@ -1,6 +1,17 @@
 import { User } from './Users'
 import SassyDb from './SassyDb'
-import { xivClient } from "./sassybot";
+import * as fs from "fs";
+
+type client_secrets = { token: string, xivApiToken: string }
+const getSecrets: () => client_secrets = (): client_secrets => {
+    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
+    return JSON.parse(fileData.toString());
+};
+const XIVApi = require('xivapi-js');
+export const xivClient = new XIVApi({
+    private_key: getSecrets().xivApiToken
+});
+
 
 const db = new SassyDb();
 
