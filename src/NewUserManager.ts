@@ -96,7 +96,11 @@ const newMemberListen = (message: Message) => {
         return false;
     }
 
-    if (cotRoles.New && !message.member.roles.has(cotRoles.New.id)) {
+    let roleToCheck = cotRoles.New;
+    if (TESTING) {
+        roleToCheck = cotRoles['new role'];
+    }
+    if (roleToCheck && !message.member.roles.has(roleToCheck.id)) {
         return false;
     }
 
@@ -159,6 +163,7 @@ const newMemberListen = (message: Message) => {
                     } else {
                         sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
                     }
+                    TESTING = false;
                 }
                 break;
         }
