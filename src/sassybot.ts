@@ -282,7 +282,7 @@ let chatFunctions: SassyBotCommandList = {
     help: helpFunction,
     ping: pingFunction,
     spam: spamFunction,
-    testNewUser: (message: Message) => {
+    testnewuser: (message: Message) => {
         console.log('testNewUser');
         setNewUserWorkflow(message);
     }
