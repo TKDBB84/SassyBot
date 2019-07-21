@@ -32,7 +32,11 @@ const upsertMember = db.connection.prepare(
 );
 
 const getMemberByUserId = db.connection.prepare(
-    'SELECT * FROM cot_member where user_id = :id'
+    'SELECT * FROM cot_member where user_id = ?'
+);
+
+const getMemberByLodeId = db.connection.prepare(
+    'SELECT * FROM cot_member where lodestoneId = ?'
 );
 
 export type FreeCompanyMember =  {
@@ -71,10 +75,13 @@ if (mbrCount && mbrCount.cnt === 0) {
 }
 
 const addMember = db.connection.prepare(
-    "INSERT INTO cot_member (user_id, name, rank, lodestoneId, last_update) VALUES (?, ?, ?, ?, strftime('%s','now'))"
+    "INSERT INTO cot_member (user_id, name, rank, lodestoneId, last_update) VALUES (?, ?, ?, ?, ?)"
 );
 const updateMember = db.connection.prepare(
-    "UPDATE cot_member SET name = ?, rank = ?, lodestoneId = ?, last_update = strftime('%s','now') WHERE user_id = ?"
+    "UPDATE cot_member SET name = ?, rank = ?, lodestoneId = ?, last_update = ? WHERE user_id = ?"
+);
+const updateMemberByLode = db.connection.prepare(
+    "UPDATE cot_member SET name = ?, rank = ?, user_id = ?, last_update = ? WHERE lodestoneId = ?"
 );
 
 export class CoTMember extends User {
@@ -103,8 +110,24 @@ export class CoTMember extends User {
                 this.name,
                 this.rank,
                 this.lodestoneId,
+                this.lastUpdated.getTime() / 1000,
                 this.id
             ]);
+            return true;
+        }
+        if (this.lodestoneId) {
+            const lodeExists: MemberRow = getMemberByLodeId.get([this.lodestoneId]);
+            if (lodeExists && lodeExists.lodestoneId) {
+                if (this.id) {
+                    updateMember.run([
+                        this.name,
+                        this.rank,
+                        this.lodestoneId,
+                        this.lastUpdated.getTime() / 1000,
+                        this.id
+                    ]);
+                }
+            }
         } else {
             addMember.run([
                 this.id,
@@ -113,7 +136,7 @@ export class CoTMember extends User {
                 this.lodestoneId
             ]);
         }
-        return true
+        return true;
     }
 
     static fetchMember(user_id: string): CoTMember | false {
