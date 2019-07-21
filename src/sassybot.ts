@@ -241,7 +241,7 @@ const helpFunction: SassyBotCommand = (message: Message): void => {
             'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
         spam:
             "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified",
-        testNewUser:
+        testnewuser:
             'dfsad'
     };
 
@@ -316,6 +316,7 @@ const processSassybotCommand: (message: Message) => void = function processSassy
     }
 
     let parsed = message.content.toLowerCase().split(" ");
+    console.log({parsed, chatFunctions});
     if (chatFunctions.hasOwnProperty(parsed[1])) {
         chatFunctions[parsed[1]](message);
     } else {

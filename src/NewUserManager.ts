@@ -40,14 +40,14 @@ type newMemberList = {
 }
 const newMemberList: newMemberList = {};
 
-const sendMessageToNewChannel = (user: UserResolvable, text: String) => {
+const sendMessageToNewChannel = (user: GuildMember, text: String) => {
     const options: MessageOptions = {
         disableEveryone: true,
         split: true,
         reply: user,
     };
     if (!cotNewUserChannel) {
-        const cotChannel = client.channels.get(COT_NEW_USER_CHANNEL);
+        const cotChannel = user.client.channels.get(COT_NEW_USER_CHANNEL);
         if (cotChannel && cotChannel instanceof TextChannel) {
             cotNewUserChannel = cotChannel;
         }
@@ -56,7 +56,7 @@ const sendMessageToNewChannel = (user: UserResolvable, text: String) => {
 };
 
 const newMemberJoined = (member: GuildMember) => {
-    const cot = client.guilds.get(COT_ID);
+    const cot = member.guild;
     if (cot) {
         Object.keys(cotRoles).forEach((rank: string)=> {
             if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
