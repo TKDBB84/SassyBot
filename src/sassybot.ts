@@ -31,7 +31,7 @@ const getSecrets: () => client_secrets = (): client_secrets => {
     return JSON.parse(fileData.toString());
 };
 
-const xivClient = new XIVApi({
+export const xivClient = new XIVApi({
     private_key: getSecrets().xivApiToken
 });
 
