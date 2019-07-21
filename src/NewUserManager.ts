@@ -1,7 +1,17 @@
 import {GuildMember, Message, MessageOptions, Role, TextChannel, UserResolvable} from "discord.js";
 import * as Discord from "discord.js";
 import { FreeCompanyMember, CoTMember } from "./CoTMembers";
-import { xivClient } from "./sassybot";
+import * as fs from "fs";
+
+type client_secrets = { token: string, xivApiToken: string }
+const getSecrets: () => client_secrets = (): client_secrets => {
+    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
+    return JSON.parse(fileData.toString());
+};
+const XIVApi = require('xivapi-js');
+export const xivClient = new XIVApi({
+    private_key: getSecrets().xivApiToken
+});
 
 let TESTING = false;
 const client = new Discord.Client();
