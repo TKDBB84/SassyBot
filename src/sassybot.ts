@@ -240,7 +240,9 @@ const helpFunction: SassyBotCommand = (message: Message): void => {
         ping:
             'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
         spam:
-            "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified"
+            "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified",
+        testNewUser:
+            'dfsad'
     };
 
     for (let j = 0; j < importedFunctions.length; j++) {
@@ -281,6 +283,7 @@ let chatFunctions: SassyBotCommandList = {
     ping: pingFunction,
     spam: spamFunction,
     testNewUser: (message: Message) => {
+        console.log('testNewUser');
         setNewUserWorkflow(message);
     }
 };
