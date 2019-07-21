@@ -159,7 +159,7 @@ const newMemberListen = (message: Message) => {
                                 message.member.addRole(someRank.id);
                             }
                         }
-                        sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thrones');
+                        sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
                     } else {
                         sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
                     }
