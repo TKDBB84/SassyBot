@@ -14,7 +14,6 @@ export const xivClient = new XIVApi({
 });
 
 let TESTING = false;
-const client = new Discord.Client();
 const COT_ID = '324682549206974473';
 const COT_NEW_USER_CHANNEL = '601971412000833556';
 let cotNewUserChannel: TextChannel;
@@ -151,12 +150,18 @@ const newMemberListen = (message: Message) => {
                     }
                     if (roleToRemove) {
                         message.member.removeRole(roleToRemove.id);
-                        const memberObject = CoTMember.fetchMember(message.member.id);
+                        let memberObject = CoTMember.fetchMember(message.member.id);
                         if (memberObject instanceof CoTMember) {
                             const memRank = memberObject.rank;
                             const someRank = cotRoles[memRank];
                             if (someRank && someRank.id) {
                                 message.member.addRole(someRank.id);
+                            }
+                        } else {
+                            if (cotRoles.Recruit) {
+                                message.member.addRole(cotRoles.Recruit);
+                            } else {
+                                sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, i wasn't able to affix your rank, please contact @Sasner#1337 and tell him his a bad programmer.");
                             }
                         }
                         sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');

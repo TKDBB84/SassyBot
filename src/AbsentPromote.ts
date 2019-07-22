@@ -92,9 +92,13 @@ setInterval(() => {
     });
 
     Object.keys(activePromotionList).forEach((key) => {
-        const fiveMinAfterStart = activeAbsentList[key].initDate.getTime() + entryPersistenceDuration;
-        if (fiveMinAfterStart < Date.now()) {
-            delete activeAbsentList[key]
+        if (!activePromotionList[key].initDate) {
+            delete activePromotionList[key]
+        } else {
+            const fiveMinAfterStart = activePromotionList[key].initDate.getTime() + entryPersistenceDuration;
+            if (fiveMinAfterStart < Date.now()) {
+                delete activePromotionList[key]
+            }
         }
     })
 }, entryPersistenceDuration);
