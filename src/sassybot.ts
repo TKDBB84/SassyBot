@@ -283,7 +283,6 @@ let chatFunctions: SassyBotCommandList = {
     ping: pingFunction,
     spam: spamFunction,
     testnewuser: (message: Message) => {
-        console.log('testNewUser');
         setNewUserWorkflow(message);
     }
 };
@@ -316,7 +315,6 @@ const processSassybotCommand: (message: Message) => void = function processSassy
     }
 
     let parsed = message.content.toLowerCase().split(" ");
-    console.log({parsed, chatFunctions});
     if (chatFunctions.hasOwnProperty(parsed[1])) {
         chatFunctions[parsed[1]](message);
     } else {

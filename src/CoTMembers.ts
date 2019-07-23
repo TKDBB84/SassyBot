@@ -106,7 +106,6 @@ export class CoTMember extends User {
             return false;
         }
         const exists: MemberRow = getMemberByUserId.get([this.id]);
-        console.log({exists});
         if (exists && exists.user_id) {
             updateMember.run([
                 this.name,
@@ -119,7 +118,6 @@ export class CoTMember extends User {
         }
         if (this.lodestoneId) {
             const lodeExists: MemberRow = getMemberByLodeId.get([this.lodestoneId]);
-            console.log({lodeExists})
             if (lodeExists && lodeExists.lodestoneId) {
                 if (this.id) {
                     updateMemberByLode.run([
@@ -144,7 +142,6 @@ export class CoTMember extends User {
 
     static fetchMember(user_id: string): CoTMember | false {
         const row: MemberRow = getMemberByUserId.get([user_id]);
-        console.log({fetchedRow: row});
         if (!row) {
             return false
         }
