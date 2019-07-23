@@ -28,7 +28,7 @@ const getMemberByName = db.connection.prepare(
 );
 
 const upsertMember = db.connection.prepare(
-    'INSERT INTO cot_member (user_id, name, rank, lodestoneId, last_update) VALUES (?, ?, ?, ?, ?) ON CONFLICT(lodestoneId) DO UPDATE set name = ?, rank = ?, last_update = ?'
+    'INSERT INTO cot_member (user_id, name, rank, lodestoneId, last_update) VALUES (?, ?, ?, ?, ?) ON CONFLICT(lodestoneId) DO UPDATE set name = ?, rank = ?, last_update = ?, user_id = ?'
 );
 
 const getMemberByUserId = db.connection.prepare(
@@ -67,7 +67,8 @@ if (mbrCount && mbrCount.cnt === 0) {
                     lastImport.getTime()/1000,
                     member.Name,
                     member.Rank,
-                    lastImport.getTime()/1000
+                    lastImport.getTime()/1000,
+                    '',
                 ])
             })
         }
@@ -105,6 +106,7 @@ export class CoTMember extends User {
             return false;
         }
         const exists: MemberRow = getMemberByUserId.get([this.id]);
+        console.log({exists});
         if (exists && exists.user_id) {
             updateMember.run([
                 this.name,
@@ -117,14 +119,15 @@ export class CoTMember extends User {
         }
         if (this.lodestoneId) {
             const lodeExists: MemberRow = getMemberByLodeId.get([this.lodestoneId]);
+            console.log({lodeExists})
             if (lodeExists && lodeExists.lodestoneId) {
                 if (this.id) {
-                    updateMember.run([
+                    updateMemberByLode.run([
                         this.name,
                         this.rank,
-                        this.lodestoneId,
+                        this.id,
                         this.lastUpdated.getTime() / 1000,
-                        this.id
+                        this.lodestoneId,
                     ]);
                 }
             }
@@ -141,6 +144,7 @@ export class CoTMember extends User {
 
     static fetchMember(user_id: string): CoTMember | false {
         const row: MemberRow = getMemberByUserId.get([user_id]);
+        console.log({fetchedRow: row});
         if (!row) {
             return false
         }
