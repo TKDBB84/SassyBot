@@ -111,6 +111,7 @@ const newMemberListen = (message: Message) => {
                     'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
                 const possibleName = message.cleanContent;
                 const foundMembers = CoTMember.findByName(message.member.id, possibleName);
+                console.log({foundMembers});
                 let newMember: CoTMember;
                 if (!foundMembers) {
                     xivClient.character.search(possibleName, {server: 'Jenova'}).then(
@@ -121,6 +122,7 @@ const newMemberListen = (message: Message) => {
                             } else {
                                 newMember = new CoTMember(message.member.id, '', possibleName, 'Recruit');
                             }
+                            console.log({newMember1: newMember});
                             newMember.save();
                             sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
                             message.member.setNickname(newMember.name, 'Declared Character Name');
@@ -128,6 +130,7 @@ const newMemberListen = (message: Message) => {
                         }
                     ).catch(() => {
                         newMember = new CoTMember(message.member.id, '', possibleName, 'Recruit');
+                        console.log({newMember2: newMember});
                         newMember.save();
                         sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
                         message.member.setNickname(newMember.name, 'Declared Character Name');
@@ -136,6 +139,7 @@ const newMemberListen = (message: Message) => {
                 } else if (foundMembers.length === 1) {
                     newMember = foundMembers[0];
                     newMember.id = message.member.id;
+                    console.log({newMember3: newMember});
                     newMember.save();
                     sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
                     message.member.setNickname(newMember.name, 'Declared Character Name');
@@ -161,7 +165,7 @@ const newMemberListen = (message: Message) => {
                             if (cotRoles.Recruit) {
                                 message.member.addRole(cotRoles.Recruit);
                             } else {
-                                sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, i wasn't able to affix your rank, please contact @Sasner#1337 and tell him his a bad programmer.");
+                                sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, i wasn't able to affix your rank, please contact @Sasner#1337 and tell him he is a bad programmer.");
                             }
                         }
                         sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
