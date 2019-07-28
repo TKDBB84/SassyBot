@@ -201,7 +201,7 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
         endDate: new Date(0),
         name: '',
     };
-    sassybotPrivateReply(message, 'First, Tell Me Your Full Character Name')
+    sassybotPrivateReply(message, 'To Request an Office verify your join date, and promote you; please, tell me your Full Character Name')
 };
 
 const storeFFNameAndStop = (message: Message, activityList: activityList) => {
