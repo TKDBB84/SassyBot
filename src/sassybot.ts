@@ -8,7 +8,7 @@ export type SassybotTrollCommand = (message: Message) => boolean;
 
 import * as fs from "fs";
 import * as Discord from 'discord.js';
-import {GuildMember, Message, MessageOptions, Role, TextChannel} from "discord.js";
+import {Message, MessageOptions} from "discord.js";
 import Users from './Users';
 import VoiceLogHandler from './VoiceLog'
 import SassyDb from './SassyDb'
@@ -18,7 +18,6 @@ import QuoteFunctions from './Quotes';
 import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
 import {newMemberJoinedCallback, newMemberListener, setNewUserWorkflow} from './NewUserManager';
 
-const XIVApi = require('xivapi-js');
 const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
@@ -30,10 +29,6 @@ const getSecrets: () => client_secrets = (): client_secrets => {
     const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
     return JSON.parse(fileData.toString());
 };
-
-export const xivClient = new XIVApi({
-    private_key: getSecrets().xivApiToken
-});
 
 const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
     const options: MessageOptions = {

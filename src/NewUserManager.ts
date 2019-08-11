@@ -1,17 +1,5 @@
-import {GuildMember, Message, MessageOptions, Role, TextChannel, UserResolvable} from "discord.js";
-import * as Discord from "discord.js";
-import {FreeCompanyMember, CoTMember} from "./CoTMembers";
-import * as fs from "fs";
-
-type client_secrets = { token: string, xivApiToken: string }
-const getSecrets: () => client_secrets = (): client_secrets => {
-    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
-    return JSON.parse(fileData.toString());
-};
-const XIVApi = require('xivapi-js');
-export const xivClient = new XIVApi({
-    private_key: getSecrets().xivApiToken
-});
+import {GuildMember, Message, MessageOptions, Role, TextChannel} from "discord.js";
+import {CoTMember} from "./CoTMembers";
 
 let TESTING = false;
 const COT_ID = '324682549206974473';
@@ -30,16 +18,6 @@ const cotRoles: roleList = {
     'new role': null,
 };
 
-type xivApiCharacter = {
-    Avatar: string,
-    FeastMatches: number,
-    ID: number,
-    Name: string,
-    Rank: string,
-    RankIcon: string,
-    Server: 'Jenova'
-}
-
 type newMemberList = {
     [key: string]: {
         name: string,
@@ -48,6 +26,20 @@ type newMemberList = {
     }
 }
 const newMemberList: newMemberList = {};
+
+const fetchCoTRoles: (member: GuildMember) => void = (member) => {
+    const cot = member.guild;
+    if (cot) {
+        Object.keys(cotRoles).forEach((rank: string) => {
+            if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
+                const cotRole = cot.roles.find(role => role.name === rank);
+                if (cotRole) {
+                    cotRoles[rank] = cotRole;
+                }
+            }
+        });
+    }
+};
 
 const sendMessageToNewChannel = (user: GuildMember, text: String) => {
     const options: MessageOptions = {
@@ -65,17 +57,7 @@ const sendMessageToNewChannel = (user: GuildMember, text: String) => {
 };
 
 const newMemberJoined = (member: GuildMember) => {
-    const cot = member.guild;
-    if (cot) {
-        Object.keys(cotRoles).forEach((rank: string) => {
-            if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
-                const cotRole = cot.roles.find(role => role.name === rank);
-                if (cotRole) {
-                    cotRoles[rank] = cotRole;
-                }
-            }
-        });
-    }
+    fetchCoTRoles(member);
 
     if (member.guild.id === COT_ID && cotRoles.New) {
         let roleToAdd: Role | null = cotRoles.New;
@@ -84,19 +66,81 @@ const newMemberJoined = (member: GuildMember) => {
         }
         if (roleToAdd) {
             member.addRole(roleToAdd.id, 'new member').then(() => {
-                const options: MessageOptions = {
-                    disableEveryone: true,
-                    split: true,
-                    reply: member.user.id,
-                };
                 newMemberList[member.user.id] = {
                     name: '',
                     joined: new Date(),
                     step: 1,
                 };
                 sendMessageToNewChannel(member, 'Hey, welcome to the Crowne of Thorne server! \n\n' + 'First Can you please type your FULL FFXIV character name?');
-            });
+            }).catch(console.error);
+        } else {
+            console.error('Unable to find the necessary Ranks to add to new members', {cotRoles})
         }
+    }
+};
+
+const updateNickname = (member: GuildMember, newNickName: string, reason: string = 'Declared Character Name') => {
+    return member.setNickname(newNickName, reason)
+};
+
+const onboardingStep1 = (message: Message) => {
+    const nextStepMessage = 'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
+        '\n' +
+        'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
+    const declaredName = message.cleanContent;
+    const foundMembers = CoTMember.findByName(declaredName);
+    let newMember: CoTMember | null = null;
+    if (!foundMembers || foundMembers.length === 0) {
+        newMember = new CoTMember(message.member.id, declaredName);
+    } else {
+        newMember = foundMembers[0];
+        newMember.id = message.member.id;
+    }
+
+    if (newMember) {
+        try {
+            newMember.save();
+        } catch (e) {
+            console.error('unable to add to DB', {newMember})
+        }
+    }
+
+    updateNickname(message.member, declaredName).then(() => {
+        sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n\n${nextStepMessage}`);
+        newMemberList[message.member.id].step = 2;
+    }).catch(e => {
+        console.error('unable to update nickname: ', {e});
+        sendMessageToNewChannel(message.member, `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.\n\n${nextStepMessage}`);
+        newMemberList[message.member.id].step = 2;
+    });
+};
+
+const onboardingStep2 = (message: Message) => {
+    if (message.cleanContent.trim().toLowerCase() === 'i agree') {
+        let roleToRemove: Role | null = cotRoles.New;
+        if (TESTING) {
+            roleToRemove = cotRoles['new role'];
+        }
+        if (roleToRemove) {
+            message.member.removeRole(roleToRemove.id).catch((e) => {
+                console.error({error: e, member: message.member, rankToRemove: roleToRemove});
+                sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.");
+            });
+            if (cotRoles.Recruit) {
+                message.member.addRole(cotRoles.Recruit).catch((e) => {
+                    console.error({error: e, member: message.member, rankToRemove: cotRoles.Recruit});
+                    sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to add your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.");
+                });
+            } else {
+                console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
+                sendMessageToNewChannel(message.member, 'Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help');
+            }
+            sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
+        } else {
+            console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
+            sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
+        }
+        TESTING = false;
     }
 };
 
@@ -104,113 +148,36 @@ const newMemberListen = (message: Message) => {
     if (message.channel.id !== COT_NEW_USER_CHANNEL) {
         return false;
     }
+    if (!newMemberList.hasOwnProperty(message.member.id)) {
+        return false;
+    }
 
+    fetchCoTRoles(message.member);
     let roleToCheck = cotRoles.New;
     if (TESTING) {
         roleToCheck = cotRoles['new role'];
     }
-    if (roleToCheck && !message.member.roles.has(roleToCheck.id)) {
+    if (!roleToCheck) {
+        console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
+        return false
+    }
+    if (!message.member.roles.has(roleToCheck.id)) {
         return false;
     }
 
-    if (newMemberList.hasOwnProperty(message.member.id)) {
-        switch (newMemberList[message.member.id].step) {
-            case 1:
-                const nextStepMessage = 'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
-                    '\n' +
-                    'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
-                const possibleName = message.cleanContent;
-                const foundMembers = CoTMember.findByName(message.member.id, possibleName);
-                let newMember: CoTMember;
-                if (!foundMembers) {
-                    xivClient.character.search(possibleName, {server: 'Jenova'}).then((
-                        response: any
-                        ) => {
-                            const charMatch = response.Results.find((c: xivApiCharacter) => c.Name === possibleName);
-                            if (charMatch) {
-                                newMember = new CoTMember(message.member.id, charMatch.ID.toString(), possibleName, 'Recruit');
-                            } else {
-                                newMember = new CoTMember(message.member.id, '', possibleName, 'Recruit');
-                            }
-                            try {
-                                newMember.save();
-                            } catch (e) {
-                                console.error('unable to save character', { newMember, error: e })
-                            }
-                            sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
-                            message.member.setNickname(newMember.name, 'Declared Character Name');
-                            newMemberList[message.member.id].step = 2;
-                        }
-                    ).catch(() => {
-                        newMember = new CoTMember(message.member.id, '', possibleName, 'Recruit');
-                        newMember.save();
-                        sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
-                        message.member.setNickname(newMember.name, 'Declared Character Name');
-                        newMemberList[message.member.id].step = 2;
-                    });
-                } else if (foundMembers.length === 1) {
-                    newMember = foundMembers[0];
-                    newMember.id = message.member.id;
-                    try {
-                        newMember.save();
-                    } catch (e) {
-                        console.error('unable to add to DB', { newMember })
-                    }
-                    sendMessageToNewChannel(message.member, `Thank you, ${newMember.name}!\n\n${nextStepMessage}`);
-                    message.member.setNickname(newMember.name, 'Declared Character Name');
-                    newMemberList[message.member.id].step = 2;
-                }
-                break;
-            case 2:
-                if (message.cleanContent.trim().toLowerCase() === 'i agree') {
-                    let roleToRemove: Role | null = cotRoles.New;
-                    if (TESTING) {
-                        roleToRemove = cotRoles['new role'];
-                    }
-                    if (roleToRemove) {
-                        message.member.removeRole(roleToRemove.id).catch((e) => {
-                            console.error({error: e, member: message.member, rankToRemove: roleToRemove});
-                            sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.");
-                        });
-                        let memberObject = CoTMember.fetchMember(message.member.id);
-                        if (memberObject instanceof CoTMember) {
-                            const memRank = memberObject.rank;
-                            const someRank = cotRoles[memRank];
-                            if (someRank && someRank.id) {
-                                message.member.addRole(someRank.id).catch((e) => {
-                                    console.error({error: e, member: message.member, rankToAdd: someRank});
-                                    sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to add current FC Rank, please contact @Sasner#1337 or @Zed#8495 for help.");
-                                });
-                            }
-                        } else {
-                            if (cotRoles.Recruit) {
-                                message.member.addRole(cotRoles.Recruit).catch((e) => {
-                                    console.error({error: e, member: message.member, rankToRemove: cotRoles.Recruit});
-                                    sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to remove your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.");
-                                });
-                            } else {
-                                sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, i wasn't able to affix your rank, please contact @Sasner#1337 and tell him he is a bad programmer.");
-                            }
-                        }
-                        sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
-                    } else {
-                        sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
-                    }
-                    TESTING = false;
-                }
-                break;
-        }
-        return true;
+    if (newMemberList[message.member.id].step === 1) {
+        onboardingStep1(message);
+    } else if (newMemberList[message.member.id].step === 2) {
+        onboardingStep2(message);
     }
-
-    return false;
+    return true;
 };
 
 export let newMemberJoinedCallback = newMemberJoined;
 
 export function newMemberListener(message: Message) {
     return newMemberListen(message);
-};
+}
 
 export function setNewUserWorkflow(message: Message) {
     TESTING = true;
