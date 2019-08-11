@@ -1,7 +1,6 @@
 import {GuildMember, Message, MessageOptions, Role, TextChannel} from "discord.js";
 import {CoTMember} from "./CoTMembers";
 
-let TESTING = false;
 const COT_ID = '324682549206974473';
 const COT_NEW_USER_CHANNEL = '601971412000833556';
 let cotNewUserChannel: TextChannel;
@@ -61,9 +60,6 @@ const newMemberJoined = (member: GuildMember) => {
 
     if (member.guild.id === COT_ID && cotRoles.New) {
         let roleToAdd: Role | null = cotRoles.New;
-        if (TESTING && cotRoles['new role']) {
-            roleToAdd = cotRoles['new role'];
-        }
         if (roleToAdd) {
             member.addRole(roleToAdd.id, 'new member').then(() => {
                 newMemberList[member.user.id] = {
@@ -82,9 +78,6 @@ const newMemberJoined = (member: GuildMember) => {
 };
 
 const onboardingStep1 = (message: Message) => {
-    const nextStepMessage = 'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
-        '\n' +
-        'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
     const declaredName = message.cleanContent;
     const foundMember = CoTMember.fetchMember(message.member.id);
     if (!foundMember) {
@@ -96,6 +89,9 @@ const onboardingStep1 = (message: Message) => {
         }
     }
 
+    const nextStepMessage = 'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
+        '\n' +
+        'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
     message.member.setNickname(declaredName, 'Declared Character Name').then(() => {
         sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n\n${nextStepMessage}`);
         newMemberList[message.member.id].step = 2;
@@ -106,61 +102,65 @@ const onboardingStep1 = (message: Message) => {
     });
 };
 
-const onboardingStep2 = (message: Message) => {
+const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
     if (message.cleanContent.trim().toLowerCase() === 'i agree') {
         let roleToRemove: Role | null = cotRoles.New;
-        if (TESTING) {
-            roleToRemove = cotRoles['new role'];
-        }
         if (roleToRemove) {
             message.member.removeRole(roleToRemove.id).catch((e) => {
                 console.error({error: e, member: message.member, rankToRemove: roleToRemove});
                 sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.");
+                return Promise.resolve(false)
             });
             if (cotRoles.Recruit) {
-                message.member.addRole(cotRoles.Recruit).then(() => {
+                return message.member.addRole(cotRoles.Recruit).then(() => {
                     sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
+                    return true
                 }).catch((e) => {
                     console.error({error: e, member: message.member, rankToRemove: cotRoles.Recruit});
                     sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to add your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.");
+                    return false
                 });
             } else {
                 console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
                 sendMessageToNewChannel(message.member, 'Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help');
+                return Promise.resolve(false)
             }
         } else {
             console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
             sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
+            return Promise.resolve(false)
         }
-        TESTING = false;
     }
+    return Promise.resolve(true)
 };
 
 const newMemberListen = (message: Message) => {
-    if (message.channel.id !== COT_NEW_USER_CHANNEL) {
+    if (message.channel.id !== COT_NEW_USER_CHANNEL || !newMemberList.hasOwnProperty(message.member.id)) {
         return false;
     }
-    if (!newMemberList.hasOwnProperty(message.member.id)) {
-        return false;
-    }
-
     fetchCoTRoles(message.member);
     let roleToCheck = cotRoles.New;
-    if (TESTING) {
-        roleToCheck = cotRoles['new role'];
-    }
     if (!roleToCheck) {
         console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
+        sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
         return false
     }
     if (!message.member.roles.has(roleToCheck.id)) {
+        console.error('user without lower rank && on new member list is still in channel... ?');
         return false;
     }
 
     if (newMemberList[message.member.id].step === 1) {
         onboardingStep1(message);
     } else if (newMemberList[message.member.id].step === 2) {
-        onboardingStep2(message);
+        onboardingStep2(message).then(result => {
+            if (result) {
+                delete newMemberList[message.member.id];
+            }
+        });
+    } else {
+        console.error('onboarding step out of bounds', {newMember: newMemberList[message.member.id]});
+        sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
     }
     return true;
 };
@@ -172,6 +172,5 @@ export function newMemberListener(message: Message) {
 }
 
 export function setNewUserWorkflow(message: Message) {
-    TESTING = true;
     newMemberJoined(message.member)
 }
