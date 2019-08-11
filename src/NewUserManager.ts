@@ -72,15 +72,13 @@ const newMemberJoined = (member: GuildMember) => {
                     step: 1,
                 };
                 sendMessageToNewChannel(member, 'Hey, welcome to the Crowne of Thorne server! \n\n' + 'First Can you please type your FULL FFXIV character name?');
-            }).catch(console.error);
+            }).catch(e => {
+                console.error('unable to add new member rank:  member has no rank, and thus should have access to everything: ', {e})
+            });
         } else {
-            console.error('Unable to find the necessary Ranks to add to new members', {cotRoles})
+            console.error('Unable to find the necessary Ranks to add to new members: member has no rank, and thus should have access to everything: ', {cotRoles})
         }
     }
-};
-
-const updateNickname = (member: GuildMember, newNickName: string, reason: string = 'Declared Character Name') => {
-    return member.setNickname(newNickName, reason)
 };
 
 const onboardingStep1 = (message: Message) => {
@@ -98,7 +96,7 @@ const onboardingStep1 = (message: Message) => {
         }
     }
 
-    updateNickname(message.member, declaredName).then(() => {
+    message.member.setNickname(declaredName, 'Declared Character Name').then(() => {
         sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n\n${nextStepMessage}`);
         newMemberList[message.member.id].step = 2;
     }).catch(e => {
@@ -120,7 +118,9 @@ const onboardingStep2 = (message: Message) => {
                 sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.");
             });
             if (cotRoles.Recruit) {
-                message.member.addRole(cotRoles.Recruit).catch((e) => {
+                message.member.addRole(cotRoles.Recruit).then(() => {
+                    sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
+                }).catch((e) => {
                     console.error({error: e, member: message.member, rankToRemove: cotRoles.Recruit});
                     sendMessageToNewChannel(message.member, "Sorry I'm a terrible bot, I wasn't able to add your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.");
                 });
@@ -128,7 +128,6 @@ const onboardingStep2 = (message: Message) => {
                 console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
                 sendMessageToNewChannel(message.member, 'Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help');
             }
-            sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
         } else {
             console.error('Unable to find the necessary Ranks to add to new members', {cotRoles});
             sendMessageToNewChannel(message.member, 'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help');
