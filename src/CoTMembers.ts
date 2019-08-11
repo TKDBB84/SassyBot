@@ -78,7 +78,6 @@ export class CoTMember extends User {
     public id: string = '';
     public name: string = '';
     public first_seen_discord: string = '';
-    public first_seen_api: string = '';
     public last_promotion: string = '';
 
     public constructor(id: string, name: string = '') {

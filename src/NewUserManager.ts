@@ -88,16 +88,9 @@ const onboardingStep1 = (message: Message) => {
         '\n' +
         'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
     const declaredName = message.cleanContent;
-    const foundMembers = CoTMember.findByName(declaredName);
-    let newMember: CoTMember | null = null;
-    if (!foundMembers || foundMembers.length === 0) {
-        newMember = new CoTMember(message.member.id, declaredName);
-    } else {
-        newMember = foundMembers[0];
-        newMember.id = message.member.id;
-    }
-
-    if (newMember) {
+    const foundMember = CoTMember.fetchMember(message.member.id);
+    if (!foundMember) {
+        const newMember = new CoTMember(message.member.id, declaredName);
         try {
             newMember.save();
         } catch (e) {
