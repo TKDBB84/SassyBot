@@ -8,8 +8,8 @@
   "license": "ISC",
   "dependencies": {
     "@types/better-sqlite3": "^5.4.0",
-    "@types/node": "^11.13.18",
-    "better-sqlite3": "^5.4.1",
+    "@types/node": "^11.13.19",
+    "better-sqlite3": "^5.4.2",
     "discord.js": "^11.5.1",
     "node-gyp": "^3.8.0",
     "xivapi-js": "^0.2.4"
