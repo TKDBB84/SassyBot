@@ -16,12 +16,19 @@ import SassyDb from './SassyDb'
 import DiceFunctions from './Dice';
 import QuoteFunctions from './Quotes';
 import {AbsentOrPromoteFunctions, resumeAbsentOrPromote} from './AbsentPromote';
+import {newMemberJoinedCallback, newMemberListener, setNewUserWorkflow} from './NewUserManager';
 
 const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: PleaseRequiredList = {};
 const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions];
+
+type client_secrets = { token: string, xivApiToken: string }
+const getSecrets: () => client_secrets = (): client_secrets => {
+    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
+    return JSON.parse(fileData.toString());
+};
 
 const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
     const options: MessageOptions = {
@@ -228,7 +235,9 @@ const helpFunction: SassyBotCommand = (message: Message): void => {
         ping:
             'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
         spam:
-            "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified"
+            "usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified",
+        testnewuser:
+            'dfsad'
     };
 
     for (let j = 0; j < importedFunctions.length; j++) {
@@ -268,6 +277,9 @@ let chatFunctions: SassyBotCommandList = {
     help: helpFunction,
     ping: pingFunction,
     spam: spamFunction,
+    testnewuser: (message: Message) => {
+        setNewUserWorkflow(message);
+    }
 };
 
 for (let j = 0; j < importedFunctions.length; j++) {
@@ -277,12 +289,6 @@ for (let j = 0; j < importedFunctions.length; j++) {
         chatFunctions
     );
 }
-
-type client_secrets = { token: string }
-const getSecrets: () => client_secrets = (): client_secrets => {
-    const fileData = fs.readFileSync("/home/nodebot/src/client_secrets.json");
-    return JSON.parse(fileData.toString());
-};
 
 const getAuthorId: (message: Message) => string = (message: Message): string => {
     return message.author.id;
@@ -320,6 +326,10 @@ const messageEventHandler: (message: Message) => void = (message: Message): void
             resumeAbsentOrPromote(message);
             return;
         } else {
+            const isNewMemberMessage = newMemberListener(message);
+            if (isNewMemberMessage) {
+                return;
+            }
             let random_number: number;
             if (author_id !== Users.Sasner.id) {
                 for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
@@ -342,6 +352,7 @@ client.on("voiceStateUpdate", ((oldMember, newMember) => {
 }));
 client.on("message", messageEventHandler);
 client.on("ready", () => console.log("I am ready!"));
+client.on('guildMemberAdd', newMemberJoinedCallback);
 
 client.login(getSecrets().token)
     .then(console.log)

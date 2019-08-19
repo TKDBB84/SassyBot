@@ -1,12 +1,9 @@
-import * as Discord from "discord.js";
-import {CollectorFilter, Message, MessageOptions, ReactionCollector, ReactionEmoji, User} from "discord.js";
+import {CollectorFilter, Message, MessageOptions, User} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
 
 import Users from './Users';
-
-const client = new Discord.Client();
 
 const db = new SassyDb();
 db.connection.exec(
@@ -92,9 +89,13 @@ setInterval(() => {
     });
 
     Object.keys(activePromotionList).forEach((key) => {
-        const fiveMinAfterStart = activeAbsentList[key].initDate.getTime() + entryPersistenceDuration;
-        if (fiveMinAfterStart < Date.now()) {
-            delete activeAbsentList[key]
+        if (!activePromotionList[key].initDate) {
+            delete activePromotionList[key]
+        } else {
+            const fiveMinAfterStart = activePromotionList[key].initDate.getTime() + entryPersistenceDuration;
+            if (fiveMinAfterStart < Date.now()) {
+                delete activePromotionList[key]
+            }
         }
     })
 }, entryPersistenceDuration);
@@ -103,6 +104,7 @@ setInterval(() => {
     const currentDate = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(currentDate.getDate()+1);
+    tomorrow.setHours(23, 59, 59, 59);
     ACTIVE_SERVERS.forEach((serverId) => {
         const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([
             serverId,
@@ -149,7 +151,7 @@ const getOfficerRoleId = (message: Message): string => {
     return OFFICER_ROLE_ID;
 };
 
-const isOfficer = (message: Message, activityList: activityList): boolean => {
+const isOfficer = (message: Message): boolean => {
     let isOfficer = false;
 
     const officerId = getOfficerRoleId(message);
@@ -197,7 +199,7 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
         endDate: new Date(0),
         name: '',
     };
-    sassybotPrivateReply(message, 'First, Tell Me Your Full Character Name')
+    sassybotPrivateReply(message, 'To Request an Office verify your join date, and promote you; please, tell me your Full Character Name')
 };
 
 const storeFFNameAndStop = (message: Message, activityList: activityList) => {
@@ -343,7 +345,7 @@ const listAllPromotions = (message: Message) => {
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
-    if (isOfficer(message, activeAbsentList) || message.author.id === Users.Sasner.id) {
+    if (isOfficer(message) || message.author.id === Users.Sasner.id) {
         return listAllAbsent(message);
     } else {
         if (activeAbsentList[message.author.id]) {
@@ -355,7 +357,7 @@ const absentFunction: SassyBotCommand = (message: Message) => {
 };
 
 const promotionFunction: SassyBotCommand = (message: Message) => {
-    if (isOfficer(message, activeAbsentList) || message.author.id === Users.Sasner.id) {
+    if (isOfficer(message) || message.author.id === Users.Sasner.id) {
         return listAllPromotions(message);
     } else {
         if (activePromotionList[message.author.id]) {
