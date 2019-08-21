@@ -181,7 +181,7 @@ const preProcessTrollFunctions: SassybotTrollList = [
     },
     {
         process: justSayNo,
-        chance: 0.01
+        chance: 0.00
     }
 ];
 
