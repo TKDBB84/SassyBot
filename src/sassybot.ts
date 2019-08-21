@@ -192,13 +192,13 @@ const isSassyBotCall: (message: Message) => boolean = function (message: Message
 
 const spamFunction: SassyBotCommand = (message: Message): void => {
     const author_id = getAuthorId(message);
-    if (author_id === Users.Sasner.id || author_id === Users.Verian.id) {
+    if (author_id === Users.Sasner.id || author_id === Users.Verian.id || author_id === Users.Tyr.id) {
         channelList.set(message.guild.id, message.channel.id);
         db.removeSpamChannel(message.guild.id);
         db.addSpamChannel(message.guild.id, message.channel.id);
         sassybotRespond(message, "Ok, I'll spam this channel");
     } else {
-        sassybotRespond(message, "This functionality is limited to Verian & Sasner");
+        sassybotRespond(message, "This functionality is limited to Sasner & server owners");
     }
 };
 

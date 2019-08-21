@@ -23,6 +23,7 @@ const Lev = new User("124854733096615937");
 const Vera = new User("210082031282028554");
 const Sastra = new User("293238959449047041");
 const Pas = new User("85871040374259712");
+const Tyr = new User('168183160708923392');
 
 export default {
     Brigie,
@@ -41,5 +42,6 @@ export default {
     Lev,
     Vera,
     Sastra,
-    Pas
+    Pas,
+    Tyr,
 }
