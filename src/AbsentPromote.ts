@@ -453,7 +453,7 @@ const listAllPromotions = (message: Message) => {
                   max: 1,
                   maxEmojis: 1,
                   maxUsers: 1
-                })
+                , time: (ONE_HOUR * 2)})
                 .then(() => {
                   deleteUserPromotionRow.run([
                     message.guild.id,
@@ -469,7 +469,7 @@ const listAllPromotions = (message: Message) => {
                 max: 1,
                 maxEmojis: 1,
                 maxUsers: 1
-              })
+              , time: (ONE_HOUR * 2)})
               .then(() => {
                 deleteUserPromotionRow.run([message.guild.id, response.userId]);
                 sentMessages.delete(100);
