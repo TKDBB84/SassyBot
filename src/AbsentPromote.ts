@@ -192,7 +192,7 @@ const requestFFName = (message: Message, activityList: activityList) => {
 
 const requestStartDate = (message: Message, activityList: activityList) => {
     activityList[message.author.id]!.next = storeStartDate;
-    sassybotReply(message, "Whats the first day you'll be gone?\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
+    sassybotReply(message, "What's the first day you'll be gone?\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
 };
 
 const requestEndDate = (message: Message, activityList: activityList) => {
@@ -215,7 +215,7 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
         endDate: new Date(0),
         name: '',
     };
-    sassybotReply(message, 'To Request an Office verify your join date, and promote you; please, tell me your Full Character Name')
+    sassybotReply(message, 'To request an officer verify your join date, and promote you: please tell me your full character name')
 };
 
 const storeFFNameAndStop = (message: Message, activityList: activityList) => {
