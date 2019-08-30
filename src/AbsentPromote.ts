@@ -288,7 +288,7 @@ const listAllAbsent = (message: Message) => {
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
             response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
         }
-        sassybotReply(message, response)
+        sassybotRespond(message, response)
     }
 };
 
