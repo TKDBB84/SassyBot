@@ -321,29 +321,27 @@ const messageEventHandler: (message: Message) => void = (message: Message): void
     const author_id: string = getAuthorId(message);
     let isFromSassyBot = author_id === Users.Sassybot.id;
     if (!isFromSassyBot) {
-        if (message.channel.type === 'dm') {
+        if (resumeAbsentOrPromote(message)) {
             // sassybot DM things
-            resumeAbsentOrPromote(message);
             return;
-        } else {
-            const isNewMemberMessage = newMemberListener(message);
-            if (isNewMemberMessage) {
-                return;
-            }
-            let random_number: number;
-            if (author_id !== Users.Sasner.id) {
-                for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
-                    random_number = Math.random();
-                    if (random_number < preProcessTrollFunctions[i].chance) {
-                        const continueProcessing = preProcessTrollFunctions[i].process(message);
-                        if (!continueProcessing) {
-                            return;
-                        }
+        }
+        const isNewMemberMessage = newMemberListener(message);
+        if (isNewMemberMessage) {
+            return;
+        }
+        let random_number: number;
+        if (author_id !== Users.Sasner.id) {
+            for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
+                random_number = Math.random();
+                if (random_number < preProcessTrollFunctions[i].chance) {
+                    const continueProcessing = preProcessTrollFunctions[i].process(message);
+                    if (!continueProcessing) {
+                        return;
                     }
                 }
             }
-            processSassybotCommand(message);
         }
+        processSassybotCommand(message);
     }
 };
 
