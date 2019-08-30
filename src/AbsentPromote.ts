@@ -289,8 +289,8 @@ const completePromotion = (message: Message, activityList: activityList) => {
     } else {
         sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
     }
-    activeAbsentList[message.author.id] = undefined;
-    delete activeAbsentList[message.author.id];
+    activePromotionList[message.author.id] = undefined;
+    delete activePromotionList[message.author.id];
 };
 
 const listAllAbsent = (message: Message) => {
