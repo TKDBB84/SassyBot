@@ -76,8 +76,15 @@ function formatDate(d: moment.Moment) {
 setInterval(() => {
     const now = moment();
     Object.keys(activeAbsentList).forEach((key) => {
-        const initDate = activeAbsentList[key].initDate;
-        if (now.diff(initDate, 'minutes') > 5) {
+        const value = activeAbsentList[key];
+        if (!value) {
+            activeAbsentList[key] = undefined;
+            delete activeAbsentList[key];
+            return
+        }
+        let fiveMinAfterStart: number = value.initDate.getTime() + entryPersistenceDuration;
+        if (fiveMinAfterStart < Date.now()) {
+            activeAbsentList[key] = undefined;
             delete activeAbsentList[key]
         }
     });
@@ -224,10 +231,12 @@ const storeStartDate = (message: Message, activityList: activityList) => {
 
 const storeEndDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-        activityList[message.author.id].endDate = moment(possibleDate, 'YYYY-MM-DD');
-        const dateString = formatDate(activityList[message.author.id].startDate);
-        sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
+    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
+    const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
+
+    if (!error) {
+        activityList[message.author.id]!.endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        sassybotReply(message, `ok i have your end date as: ${activityList[message.author.id]!.endDate.toDateString()}\n\n`);
         completeAbsent(message, activityList)
     } else {
         activityList[message.author.id]!.next = storeEndDate;
