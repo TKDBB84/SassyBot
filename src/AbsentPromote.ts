@@ -227,7 +227,7 @@ const storeEndDate = (message: Message, activityList: activityList) => {
     if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
         activityList[message.author.id].endDate = moment(possibleDate, 'YYYY-MM-DD');
         const dateString = formatDate(activityList[message.author.id].startDate);
-        sassybotPrivateReply(message, `ok i have your end date as: ${dateString}\n\n`);
+        sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
         completeAbsent(message, activityList)
     } else {
         activityList[message.author.id]!.next = storeEndDate;
@@ -284,7 +284,7 @@ const listAllAbsent = (message: Message) => {
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
             response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
         }
-        sassybotRespond(message, response)
+        sassybotReply(message, response)
     }
 };
 
