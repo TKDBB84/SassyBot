@@ -63,50 +63,34 @@ type activityList = {
         startDate: moment.Moment,
         endDate: moment.Moment,
     } | undefined
-}
+};
                               // 5 is number of min
 const entryPersistenceDuration = 5 * 60 * 1000;
 const activePromotionList: activityList = {};
 const activeAbsentList: activityList = {};
 
 function formatDate(d: moment.Moment) {
-    return d.format('YYYY-MM-DD')
+    return d.format('MMM Do YYYY')
 }
+
 // remove entry when it's more than 5 min old
 setInterval(() => {
     const now = moment();
-    Object.keys(activeAbsentList).forEach((key) => {
-        const value = activeAbsentList[key];
-        if (!value) {
-            activeAbsentList[key] = undefined;
-            delete activeAbsentList[key];
-            return
-        }
-        let fiveMinAfterStart: number = value.initDate.getTime() + entryPersistenceDuration;
-        if (fiveMinAfterStart < Date.now()) {
-            activeAbsentList[key] = undefined;
-            delete activeAbsentList[key]
-        }
-    });
-
-    Object.keys(activePromotionList).forEach((key) => {
-        const value = activePromotionList[key];
-        if (!value) {
-            activePromotionList[key] = undefined;
-            delete activePromotionList[key];
-            return
-        }
-        if (!value.initDate) {
-            activePromotionList[key] = undefined;
-            delete activePromotionList[key]
-        } else {
-            const initDate = value.initDate;
-            if (now.diff(initDate, 'minutes') > 5) {
-                activePromotionList[key] = undefined;
-                delete activePromotionList[key]
+    [activeAbsentList, activePromotionList].forEach((activityList) => {
+        Object.keys(activityList).forEach((key) => {
+            const value = activityList[key];
+            if (value) {
+                const initDate = value.initDate;
+                if (now.diff(initDate, 'minutes') > 5) {
+                    activityList[key] = undefined;
+                    delete activityList[key]
+                }
+            } else {
+                activityList[key] = undefined;
+                delete activityList[key];
             }
-        }
-    })
+        });
+    });
 }, entryPersistenceDuration);
 
 setInterval(() => {
@@ -231,12 +215,10 @@ const storeStartDate = (message: Message, activityList: activityList) => {
 
 const storeEndDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
-    const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
-
-    if (!error) {
-        activityList[message.author.id]!.endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        sassybotReply(message, `ok i have your end date as: ${activityList[message.author.id]!.endDate.toDateString()}\n\n`);
+    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+        activityList[message.author.id]!.endDate = moment(possibleDate, 'YYYY-MM-DD');
+        const dateString = formatDate(activityList[message.author.id]!.endDate);
+        sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
         completeAbsent(message, activityList)
     } else {
         activityList[message.author.id]!.next = storeEndDate;
