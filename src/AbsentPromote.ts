@@ -2,7 +2,7 @@ import {Channel, CollectorFilter, Message, MessageOptions, User} from "discord.j
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
-
+import * as moment from 'moment'
 import Users from './Users';
 
 const db = new SassyDb();
@@ -58,10 +58,10 @@ type activityList = {
     [key: string]: {
         next: (message: Message, activityList: activityList) => void,
         guildId: string,
-        initDate: Date,
+        initDate: moment.Moment,
         name: string,
-        startDate: Date,
-        endDate: Date,
+        startDate: moment.Moment,
+        endDate: moment.Moment,
     } | undefined
 }
                               // 5 is number of min
@@ -69,28 +69,15 @@ const entryPersistenceDuration = 5 * 60 * 1000;
 const activePromotionList: activityList = {};
 const activeAbsentList: activityList = {};
 
-function formatDate(d: Date) {
-    let month = '' + (d.getMonth() + 1);
-    let day = '' + d.getDate();
-    let year = d.getFullYear();
-
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-
-    return [year, month, day].join('-');
+function formatDate(d: moment.Moment) {
+    return d.format('YYYY-MM-DD')
 }
 // remove entry when it's more than 5 min old
 setInterval(() => {
+    const now = moment();
     Object.keys(activeAbsentList).forEach((key) => {
-        const value = activeAbsentList[key];
-        if (!value) {
-            activeAbsentList[key] = undefined;
-            delete activeAbsentList[key];
-            return
-        }
-        let fiveMinAfterStart: number = value.initDate.getTime() + entryPersistenceDuration;
-        if (fiveMinAfterStart < Date.now()) {
-            activeAbsentList[key] = undefined;
+        const initDate = activeAbsentList[key].initDate;
+        if (now.diff(initDate, 'minutes') > 5) {
             delete activeAbsentList[key]
         }
     });
@@ -106,8 +93,8 @@ setInterval(() => {
             activePromotionList[key] = undefined;
             delete activePromotionList[key]
         } else {
-            const fiveMinAfterStart = value.initDate.getTime() + entryPersistenceDuration;
-            if (fiveMinAfterStart < Date.now()) {
+            const initDate = value.initDate;
+            if (now.diff(initDate, 'minutes') > 5) {
                 activePromotionList[key] = undefined;
                 delete activePromotionList[key]
             }
@@ -116,19 +103,15 @@ setInterval(() => {
 }, entryPersistenceDuration);
 
 setInterval(() => {
-    const currentDate = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(currentDate.getDate()+1);
-    tomorrow.setHours(23, 59, 59, 59);
+    const yesterday =  moment().subtract({days: 1, hours: 12});
     ACTIVE_SERVERS.forEach((serverId) => {
         const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([
             serverId,
         ]);
 
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
-            const [year, month, day] = allAbsentRows[i].end_date.split("-").map(i => parseInt(i, 10));
-            const endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-            if (endDate < tomorrow) {
+            const endDate = moment(allAbsentRows[i].end_date, 'YYYY-MM-DD');
+            if (endDate.isBefore(yesterday)) {
                 deleteUserAbsentRow.run([
                     serverId,
                     allAbsentRows[i].user_id
@@ -182,9 +165,9 @@ const requestFFName = (message: Message, activityList: activityList) => {
     activityList[message.author.id] = {
         next: storeFFName,
         guildId: message.guild.id,
-        initDate: new Date(),
-        startDate: new Date(0),
-        endDate: new Date(0),
+        initDate: moment(),
+        startDate: moment.utc(0),
+        endDate: moment.utc(0),
         name: '',
     };
     sassybotReply(message, 'First, Tell Me Your Full Character Name')
@@ -210,9 +193,9 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
     activityList[message.author.id] = {
         next: storeFFNameAndStop,
         guildId: message.guild.id,
-        initDate: new Date(),
-        startDate: new Date(0),
-        endDate: new Date(0),
+        initDate: moment(),
+        startDate: moment.utc(0),
+        endDate: moment.utc(0),
         name: '',
     };
     sassybotReply(message, 'To request an officer verify your join date, and promote you: please tell me your full character name')
@@ -226,11 +209,9 @@ const storeFFNameAndStop = (message: Message, activityList: activityList) => {
 
 const storeStartDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
-
-    if (day && month && year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        activityList[message.author.id]!.startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const dateString = activityList[message.author.id]!.startDate.toDateString();
+    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+        activityList[message.author.id]!.startDate = moment(possibleDate, 'YYYY-MM-DD');
+        const dateString = formatDate(activityList[message.author.id]!.startDate);
         sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
         requestEndDate(message, activityList)
     } else {
@@ -243,15 +224,13 @@ const storeStartDate = (message: Message, activityList: activityList) => {
 
 const storeEndDate = (message: Message, activityList: activityList) => {
     const possibleDate = message.cleanContent;
-    const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
-    const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
-
-    if (!error) {
-        activityList[message.author.id]!.endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        sassybotReply(message, `ok i have your end date as: ${activityList[message.author.id]!.endDate.toDateString()}\n\n`);
+    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+        activityList[message.author.id].endDate = moment(possibleDate, 'YYYY-MM-DD');
+        const dateString = formatDate(activityList[message.author.id].startDate);
+        sassybotPrivateReply(message, `ok i have your end date as: ${dateString}\n\n`);
         completeAbsent(message, activityList)
     } else {
-        activityList[message.author.id]!.next = storeStartDate;
+        activityList[message.author.id]!.next = storeEndDate;
         sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
     }
     return
@@ -262,8 +241,8 @@ const completeAbsent = (message: Message, activityList: activityList) => {
         activityList[message.author.id]!.guildId,
         message.author.id,
         activityList[message.author.id]!.name,
-        formatDate(activityList[message.author.id]!.startDate),
-        formatDate(activityList[message.author.id]!.endDate),
+        formatDate(moment(activityList[message.author.id]!.startDate)),
+        formatDate(moment(activityList[message.author.id]!.endDate)),
     ]);
 
     const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id]!.guildId, message.author.id]);
@@ -322,8 +301,7 @@ const listAllPromotions = (message: Message) => {
             userId: string,
         }[] = [];
         for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
-            const requestDate = new Date();
-            requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10) * 1000);
+            const requestDate = moment(parseInt(allPromotionsRows[i].timestamp, 10));
             responses.push({
                 userId: allPromotionsRows[i].user_id,
                 message: `${i + 1}:\t${allPromotionsRows[i].name}\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
