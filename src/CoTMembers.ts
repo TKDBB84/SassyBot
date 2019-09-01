@@ -1,7 +1,13 @@
-import { User } from './Users'
-import SassyDb from './SassyDb'
+import { User } from "./Users";
+import SassyDb from "./SassyDb";
 
-type MemberRow = { user_id: string, name: string, rank: string, first_seen_discord: number, last_promotion: number };
+type MemberRow = {
+  user_id: string;
+  name: string;
+  rank: string;
+  first_seen_discord: number;
+  last_promotion: number;
+};
 
 // import * as fs from "fs";
 // type client_secrets = { token: string, xivApiToken: string }
@@ -16,16 +22,22 @@ type MemberRow = { user_id: string, name: string, rank: string, first_seen_disco
 
 const db = new SassyDb();
 db.connection.exec(
-    'CREATE TABLE IF NOT EXISTS cot_promotion_tracking (user_id TEXT PRIMARY KEY, name TEXT, rank TEXT, first_seen_discord TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_promotion TIMESTAMP);'
+  "CREATE TABLE IF NOT EXISTS cot_promotion_tracking (user_id TEXT PRIMARY KEY, name TEXT, rank TEXT, first_seen_discord TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_promotion TIMESTAMP);"
 );
 
-type AddMemberFunction = ({user_id, name}: {user_id: string, name: string}) => boolean;
-const addMember: AddMemberFunction = ({user_id, name}) => {
-    const addMember = db.connection.prepare(
-        "INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)"
-    );
-    const result = addMember.run([user_id, name, '']);
-    return !!result.lastInsertRowid
+type AddMemberFunction = ({
+  user_id,
+  name
+}: {
+  user_id: string;
+  name: string;
+}) => boolean;
+const addMember: AddMemberFunction = ({ user_id, name }) => {
+  const addMember = db.connection.prepare(
+    "INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)"
+  );
+  const result = addMember.run([user_id, name, ""]);
+  return !!result.lastInsertRowid;
 };
 
 // type UpdateMemberFunction = ({user_id, name, last_promotion}: {user_id: string, name: string, last_promotion: string}) => boolean;
@@ -48,20 +60,20 @@ const addMember: AddMemberFunction = ({user_id, name}) => {
 //     return 0;
 // };
 
-type getMemberByNameFunction = ({name}: {name: string}) => MemberRow[];
-const getMemberByName: getMemberByNameFunction = ({name}) => {
-    const getMemberByName = db.connection.prepare(
-        'SELECT * FROM cot_promotion_tracking WHERE name = ? COLLATE NOCASE'
-    );
-    return getMemberByName.all([name])
+type getMemberByNameFunction = ({ name }: { name: string }) => MemberRow[];
+const getMemberByName: getMemberByNameFunction = ({ name }) => {
+  const getMemberByName = db.connection.prepare(
+    "SELECT * FROM cot_promotion_tracking WHERE name = ? COLLATE NOCASE"
+  );
+  return getMemberByName.all([name]);
 };
 
-type getMemberByIdFunction = ({user_id}: {user_id: string}) => MemberRow;
-const getMemberByUserId: getMemberByIdFunction = ({user_id}) => {
-    const getMemberByUserId = db.connection.prepare(
-        'SELECT * FROM cot_promotion_tracking where user_id = ?'
-    );
-    return getMemberByUserId.get([user_id])
+type getMemberByIdFunction = ({ user_id }: { user_id: string }) => MemberRow;
+const getMemberByUserId: getMemberByIdFunction = ({ user_id }) => {
+  const getMemberByUserId = db.connection.prepare(
+    "SELECT * FROM cot_promotion_tracking where user_id = ?"
+  );
+  return getMemberByUserId.get([user_id]);
 };
 //
 // export type FreeCompanyMember =  {
@@ -75,49 +87,49 @@ const getMemberByUserId: getMemberByIdFunction = ({user_id}) => {
 // };
 
 export class CoTMember extends User {
-    public id: string = '';
-    public name: string = '';
-    public first_seen_discord: string = '';
-    public last_promotion: string = '';
+  public id: string = "";
+  public name: string = "";
+  public first_seen_discord: string = "";
+  public last_promotion: string = "";
 
-    public constructor(id: string, name: string = '') {
-        super(id);
-        this.id = id;
-        this.name = name;
-    }
+  public constructor(id: string, name: string = "") {
+    super(id);
+    this.id = id;
+    this.name = name;
+  }
 
-    public save(): boolean {
-        if (!this.id) {
-            return false;
-        }
-        const exists: MemberRow = getMemberByUserId({user_id: this.id});
-        if (exists && exists.user_id) {
-            return true;
-        }
-        addMember({
-            user_id: this.id,
-            name: this.name,
-        });
-        return true;
+  public save(): boolean {
+    if (!this.id) {
+      return false;
     }
+    const exists: MemberRow = getMemberByUserId({ user_id: this.id });
+    if (exists && exists.user_id) {
+      return true;
+    }
+    addMember({
+      user_id: this.id,
+      name: this.name
+    });
+    return true;
+  }
 
-    static fetchMember(user_id: string): CoTMember | false {
-        const row: MemberRow = getMemberByUserId({user_id});
-        if (!row) {
-            return false
-        }
-        return new CoTMember(row.user_id, row.name);
+  static fetchMember(user_id: string): CoTMember | false {
+    const row: MemberRow = getMemberByUserId({ user_id });
+    if (!row) {
+      return false;
     }
+    return new CoTMember(row.user_id, row.name);
+  }
 
-    static findByName(name: string): CoTMember[] | false {
-        const matchingRows: MemberRow[] = getMemberByName({name});
-        if (!matchingRows) {
-            return false
-        }
-        const results: CoTMember[] = [];
-        matchingRows.forEach(row => {
-            results.push(new CoTMember(row.user_id, row.name))
-        });
-        return results;
+  static findByName(name: string): CoTMember[] | false {
+    const matchingRows: MemberRow[] = getMemberByName({ name });
+    if (!matchingRows) {
+      return false;
     }
+    const results: CoTMember[] = [];
+    matchingRows.forEach(row => {
+      results.push(new CoTMember(row.user_id, row.name));
+    });
+    return results;
+  }
 }
