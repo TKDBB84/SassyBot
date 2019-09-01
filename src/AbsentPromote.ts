@@ -1,4 +1,4 @@
-import {CollectorFilter, Message, MessageOptions, User} from "discord.js";
+import {Channel, CollectorFilter, Message, MessageOptions, User} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 import SassyDb from './SassyDb'
 import {Statement} from "better-sqlite3";
@@ -62,8 +62,8 @@ type activityList = {
         name: string,
         startDate: Date,
         endDate: Date,
-    }
-};
+    } | undefined
+}
                               // 5 is number of min
 const entryPersistenceDuration = 5 * 60 * 1000;
 const activePromotionList: activityList = {};
@@ -82,18 +82,33 @@ function formatDate(d: Date) {
 // remove entry when it's more than 5 min old
 setInterval(() => {
     Object.keys(activeAbsentList).forEach((key) => {
-        const fiveMinAfterStart = activeAbsentList[key].initDate.getTime() + entryPersistenceDuration;
+        const value = activeAbsentList[key];
+        if (!value) {
+            activeAbsentList[key] = undefined;
+            delete activeAbsentList[key];
+            return
+        }
+        let fiveMinAfterStart: number = value.initDate.getTime() + entryPersistenceDuration;
         if (fiveMinAfterStart < Date.now()) {
+            activeAbsentList[key] = undefined;
             delete activeAbsentList[key]
         }
     });
 
     Object.keys(activePromotionList).forEach((key) => {
-        if (!activePromotionList[key].initDate) {
+        const value = activePromotionList[key];
+        if (!value) {
+            activePromotionList[key] = undefined;
+            delete activePromotionList[key];
+            return
+        }
+        if (!value.initDate) {
+            activePromotionList[key] = undefined;
             delete activePromotionList[key]
         } else {
-            const fiveMinAfterStart = activePromotionList[key].initDate.getTime() + entryPersistenceDuration;
+            const fiveMinAfterStart = value.initDate.getTime() + entryPersistenceDuration;
             if (fiveMinAfterStart < Date.now()) {
+                activePromotionList[key] = undefined;
                 delete activePromotionList[key]
             }
         }
@@ -125,12 +140,13 @@ setInterval(() => {
 }, ONE_HOUR * 12);
 
 
-const sassybotPrivateReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
+const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
     const options: MessageOptions = {
         disableEveryone: true,
         split: true,
+        reply: message.author,
     };
-    message.author.send(reply, options)
+    message.channel.send(reply, options)
 };
 
 const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
@@ -171,22 +187,22 @@ const requestFFName = (message: Message, activityList: activityList) => {
         endDate: new Date(0),
         name: '',
     };
-    sassybotPrivateReply(message, 'First, Tell Me Your Full Character Name')
+    sassybotReply(message, 'First, Tell Me Your Full Character Name')
 };
 
 const requestStartDate = (message: Message, activityList: activityList) => {
-    activityList[message.author.id].next = storeStartDate;
-    sassybotPrivateReply(message, "Whats the first day you'll be gone?\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
+    activityList[message.author.id]!.next = storeStartDate;
+    sassybotReply(message, "What's the first day you'll be gone?\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
 };
 
 const requestEndDate = (message: Message, activityList: activityList) => {
-    activityList[message.author.id].next = storeEndDate;
-    sassybotPrivateReply(message, "What day will you be back?\nIf you're not sure add a few days on the end\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
+    activityList[message.author.id]!.next = storeEndDate;
+    sassybotReply(message, "What day will you be back?\nIf you're not sure add a few days on the end\n(because i'm a dumb bot, please format it as YYYY-MM-DD)")
 };
 
 const storeFFName = (message: Message, activityList: activityList) => {
-    activityList[message.author.id].name = message.cleanContent;
-    sassybotPrivateReply(message, `ok i have your name as ${activityList[message.author.id].name}\n\n`);
+    activityList[message.author.id]!.name = message.cleanContent;
+    sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
     requestStartDate(message, activityList);
 };
 
@@ -199,12 +215,12 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
         endDate: new Date(0),
         name: '',
     };
-    sassybotPrivateReply(message, 'To Request an Office verify your join date, and promote you; please, tell me your Full Character Name')
+    sassybotReply(message, 'To request an officer verify your join date, and promote you: please tell me your full character name')
 };
 
 const storeFFNameAndStop = (message: Message, activityList: activityList) => {
-    activityList[message.author.id].name = message.cleanContent;
-    sassybotPrivateReply(message, `ok i have your name as ${activityList[message.author.id].name}\n\n`);
+    activityList[message.author.id]!.name = message.cleanContent;
+    sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
     completePromotion(message, activityList);
 };
 
@@ -213,13 +229,13 @@ const storeStartDate = (message: Message, activityList: activityList) => {
     const [year, month, day] = possibleDate.split("-").map((i: string) => parseInt(i, 10));
 
     if (day && month && year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        activityList[message.author.id].startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        const dateString = activityList[message.author.id].startDate.toDateString();
-        sassybotPrivateReply(message, `ok i have your start date as: ${dateString}\n\n`);
+        activityList[message.author.id]!.startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        const dateString = activityList[message.author.id]!.startDate.toDateString();
+        sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
         requestEndDate(message, activityList)
     } else {
-        activityList[message.author.id].next = storeStartDate;
-        sassybotPrivateReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
+        activityList[message.author.id]!.next = storeStartDate;
+        sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
     }
 
     return
@@ -231,48 +247,50 @@ const storeEndDate = (message: Message, activityList: activityList) => {
     const error = !day || !month || !year || month < 1 || month > 12 || day < 1 || day > 31;
 
     if (!error) {
-        activityList[message.author.id].endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
-        sassybotPrivateReply(message, `ok i have your end date as: ${activityList[message.author.id].endDate.toDateString()}\n\n`);
+        activityList[message.author.id]!.endDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        sassybotReply(message, `ok i have your end date as: ${activityList[message.author.id]!.endDate.toDateString()}\n\n`);
         completeAbsent(message, activityList)
     } else {
-        activityList[message.author.id].next = storeStartDate;
-        sassybotPrivateReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
+        activityList[message.author.id]!.next = storeStartDate;
+        sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
     }
     return
 };
 
 const completeAbsent = (message: Message, activityList: activityList) => {
     addAbsent.run([
-        activityList[message.author.id].guildId,
+        activityList[message.author.id]!.guildId,
         message.author.id,
-        activityList[message.author.id].name,
-        formatDate(activityList[message.author.id].startDate),
-        formatDate(activityList[message.author.id].endDate),
+        activityList[message.author.id]!.name,
+        formatDate(activityList[message.author.id]!.startDate),
+        formatDate(activityList[message.author.id]!.endDate),
     ]);
 
-    const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id].guildId, message.author.id]);
+    const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id]!.guildId, message.author.id]);
     if (fetchedData.length) {
-        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}\n`);
+        sassybotReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}\n`);
     } else {
-        sassybotPrivateReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
+        sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
     }
+    activeAbsentList[message.author.id] = undefined;
     delete activeAbsentList[message.author.id];
 };
 
 const completePromotion = (message: Message, activityList: activityList) => {
     addPromotion.run([
-        activityList[message.author.id].guildId,
+        activityList[message.author.id]!.guildId,
         message.author.id,
-        activityList[message.author.id].name,
+        activityList[message.author.id]!.name,
     ]);
 
-    const fetchedData: userPromotionsRow[] = getUserPromotions.all([activityList[message.author.id].guildId, message.author.id]);
+    const fetchedData: userPromotionsRow[] = getUserPromotions.all([activityList[message.author.id]!.guildId, message.author.id]);
     if (fetchedData.length) {
-        sassybotPrivateReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\n\nI'll Make Sure The Officers See Your Request!`);
+        sassybotReply(message, `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\n\nI'll Make Sure The Officers See Your Request!`);
     } else {
-        sassybotPrivateReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
+        sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
     }
-    delete activeAbsentList[message.author.id];
+    activePromotionList[message.author.id] = undefined;
+    delete activePromotionList[message.author.id];
 };
 
 const listAllAbsent = (message: Message) => {
@@ -287,7 +305,7 @@ const listAllAbsent = (message: Message) => {
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
             response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
         }
-        sassybotPrivateReply(message, response)
+        sassybotRespond(message, response)
     }
 };
 
@@ -349,7 +367,7 @@ const absentFunction: SassyBotCommand = (message: Message) => {
         return listAllAbsent(message);
     } else {
         if (activeAbsentList[message.author.id]) {
-            activeAbsentList[message.author.id].next(message, activeAbsentList);
+            activeAbsentList[message.author.id]!.next(message, activeAbsentList);
         } else {
             return requestFFName(message, activeAbsentList);
         }
@@ -361,20 +379,22 @@ const promotionFunction: SassyBotCommand = (message: Message) => {
         return listAllPromotions(message);
     } else {
         if (activePromotionList[message.author.id]) {
-            activePromotionList[message.author.id].next(message, activePromotionList);
+            activePromotionList[message.author.id]!.next(message, activePromotionList);
         } else {
             return requestFFNameAndStop(message, activePromotionList);
         }
     }
 };
 
-const resumeCommand: SassyBotCommand = (message: Message) => {
-    if (activeAbsentList.hasOwnProperty(message.author.id)) {
+const resumeCommand: (message: Message) => boolean = (message: Message) => {
+    if (activeAbsentList.hasOwnProperty(message.author.id) && activeAbsentList[message.author.id]) {
         absentFunction(message);
-    } else if (activePromotionList.hasOwnProperty(message.author.id)) {
+        return true
+    } else if (activePromotionList.hasOwnProperty(message.author.id) && activePromotionList[message.author.id]) {
         promotionFunction(message);
+        return true
     } else {
-        sassybotPrivateReply(message, 'Hi, sorry I\'m not sure what you\'re looking for from me.\n\nIf you were using a `!sb absent` or `!sb promote` you probably didn\'t finish quick enough, please start again');
+        return false
     }
 };
 
@@ -391,4 +411,4 @@ export let AbsentOrPromoteFunctions: SassyBotImport = {
     }
 };
 
-export function resumeAbsentOrPromote(message: Message) { resumeCommand(message); }
+export function resumeAbsentOrPromote(message: Message): boolean { return resumeCommand(message); }
