@@ -451,9 +451,13 @@ const listAllPromotions = (message: Message) => {
       message.channel
         .send(response.message, options)
         .then(sentMessages => {
-          if (Array.isArray(sentMessages)) {
-            sentMessages.forEach(msg => {
-              msg.react("344861453146259466").then(reaction => {
+          if (!Array.isArray(sentMessages)) {
+            sentMessages = [sentMessages];
+          }
+          sentMessages.forEach(msg => {
+            msg
+              .react("344861453146259466")
+              .then(reaction => {
                 msg
                   .awaitReactions(reactionFilter, {
                     max: 1,
@@ -469,31 +473,11 @@ const listAllPromotions = (message: Message) => {
                     msg.delete(100);
                   })
                   .catch(() => {
-                    reaction.remove();
+                    reaction.remove().catch(console.error);
                   });
-              });
-            });
-          } else {
-            sentMessages.react("344861453146259466").then(reaction => {
-              sentMessages
-                .awaitReactions(reactionFilter, {
-                  max: 1,
-                  maxEmojis: 1,
-                  maxUsers: 1,
-                  time: ONE_HOUR * 2
-                })
-                .then(() => {
-                  deleteUserPromotionRow.run([
-                    message.guild.id,
-                    response.userId
-                  ]);
-                  sentMessages.delete(100);
-                })
-                .catch(() => {
-                  reaction.remove();
-                });
-            });
-          }
+              })
+              .catch(console.error);
+          });
         })
         .catch(console.error);
     });
