@@ -1,18 +1,13 @@
 import {
-    Channel,
-    CollectorFilter,
-    Message,
-    MessageOptions,
-    User
+  Channel,
+  CollectorFilter,
+  Message,
+  MessageOptions,
+  User
 } from "discord.js";
-import {
-    SassyBotCommand,
-    SassyBotImport
-} from "./sassybot";
+import { SassyBotCommand, SassyBotImport } from "./sassybot";
 import SassyDb from "./SassyDb";
-import {
-    Statement
-} from "better-sqlite3";
+import { Statement } from "better-sqlite3";
 
 import Users from "./Users";
 
@@ -32,40 +27,38 @@ const addPromotion: Statement = db.connection.prepare(
 );
 
 type allAbsentsRow = {
-    user_id: string;
-    name: string;
-    start_date: string;
-    end_date: string;
-    timestamp: string
-;
+  user_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  timestamp: string;
 };
 const getAllAbsents: Statement = db.connection.prepare(
   "SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE"
 );
 
 type allPromotionsRow = {
-    user_id: string;
-    name: string;
-    timestamp: string
+  user_id: string;
+  name: string;
+  timestamp: string;
 };
 const getAllPromotions: Statement = db.connection.prepare(
   "SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE"
 );
 
 type userAbsentsRow = {
-    name: string;
-    start_date: string;
-    end_date: string;
-    timestamp: string
-;
+  name: string;
+  start_date: string;
+  end_date: string;
+  timestamp: string;
 };
 const getUserAbsent: Statement = db.connection.prepare(
   "SELECT name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? AND user_id = ?"
 );
 
 type userPromotionsRow = {
-    name: string;
-    timestamp: string
+  name: string;
+  timestamp: string;
 };
 const getUserPromotions: Statement = db.connection.prepare(
   "SELECT name, timestamp FROM user_promote WHERE guild_id = ? AND user_id = ?"
@@ -451,47 +444,60 @@ const listAllPromotions = (message: Message) => {
       split: true
     };
 
-        const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-            return reaction.emoji.name === 'no' && user.id === message.author.id;
-        };
-        responses.forEach(response => {
-            message.channel.send(response.message, options)
-                .then((sentMessages) => {
-                    if (Array.isArray(sentMessages)) {
-                        sentMessages.forEach(msg => {
-                            msg.react('344861453146259466').then(reaction => {
-                                msg.awaitReactions(reactionFilter, {
-                                    max: 1,
-                                    maxEmojis: 1,
-                                    maxUsers: 1,
-                                    time: (ONE_HOUR * 2)
-                                }).then(() => {
-                                    deleteUserPromotionRow.run([message.guild.id, response.userId]);
-                                    msg.delete(100);
-                                }).catch(() => {
-                                    reaction.remove();
-                                })
-                            })
-                        })
-                    } else {
-                        sentMessages.react('344861453146259466').then(reaction => {
-                            sentMessages.awaitReactions(reactionFilter, {
-                                max: 1,
-                                maxEmojis: 1,
-                                maxUsers: 1,
-                                time: (ONE_HOUR * 2)
-                            }).then(() => {
-                                deleteUserPromotionRow.run([message.guild.id, response.userId]);
-                                sentMessages.delete(100);
-                            }).catch(() => {
-                                reaction.remove();
-                            })
-                        })
-                    }
+    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+      return reaction.emoji.name === "no" && user.id === message.author.id;
+    };
+    responses.forEach(response => {
+      message.channel
+        .send(response.message, options)
+        .then(sentMessages => {
+          if (Array.isArray(sentMessages)) {
+            sentMessages.forEach(msg => {
+              msg.react("344861453146259466").then(reaction => {
+                msg
+                  .awaitReactions(reactionFilter, {
+                    max: 1,
+                    maxEmojis: 1,
+                    maxUsers: 1,
+                    time: ONE_HOUR * 2
+                  })
+                  .then(() => {
+                    deleteUserPromotionRow.run([
+                      message.guild.id,
+                      response.userId
+                    ]);
+                    msg.delete(100);
+                  })
+                  .catch(() => {
+                    reaction.remove();
+                  });
+              });
+            });
+          } else {
+            sentMessages.react("344861453146259466").then(reaction => {
+              sentMessages
+                .awaitReactions(reactionFilter, {
+                  max: 1,
+                  maxEmojis: 1,
+                  maxUsers: 1,
+                  time: ONE_HOUR * 2
                 })
-                .catch(console.error);
+                .then(() => {
+                  deleteUserPromotionRow.run([
+                    message.guild.id,
+                    response.userId
+                  ]);
+                  sentMessages.delete(100);
+                })
+                .catch(() => {
+                  reaction.remove();
+                });
+            });
+          }
         })
-    }
+        .catch(console.error);
+    });
+  }
 };
 
 const absentFunction: SassyBotCommand = (message: Message) => {
@@ -540,16 +546,17 @@ const resumeCommand: (message: Message) => boolean = (message: Message) => {
 };
 
 export let AbsentOrPromoteFunctions: SassyBotImport = {
-    functions: {
-        absent: absentFunction,
-        promote: promotionFunction
-    },
-    help: {
-        absent: "usage: `!{sassybot|sb} absent` -- something something something",
-        promote: "usage: `!{sassybot|sb} promotion` -- something something something"
-    }
+  functions: {
+    absent: absentFunction,
+    promote: promotionFunction
+  },
+  help: {
+    absent: "usage: `!{sassybot|sb} absent` -- something something something",
+    promote:
+      "usage: `!{sassybot|sb} promotion` -- something something something"
+  }
 };
 
 export function resumeAbsentOrPromote(message: Message): boolean {
-    return resumeCommand(message);
+  return resumeCommand(message);
 }
