@@ -232,8 +232,8 @@ const completeAbsent = (message: Message, activityList: activityList) => {
         activityList[message.author.id]!.guildId,
         message.author.id,
         activityList[message.author.id]!.name,
-        formatDate(moment(activityList[message.author.id]!.startDate)),
-        formatDate(moment(activityList[message.author.id]!.endDate)),
+        formatDate(activityList[message.author.id]!.startDate),
+        formatDate(activityList[message.author.id]!.endDate),
     ]);
 
     const fetchedData: userAbsentsRow[] = getUserAbsent.all([activityList[message.author.id]!.guildId, message.author.id]);
@@ -275,7 +275,7 @@ const listAllAbsent = (message: Message) => {
         for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
             response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
         }
-        sassybotReply(message, response)
+        sassybotRespond(message, response)
     }
 };
 
