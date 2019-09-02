@@ -403,7 +403,7 @@ const listAllPromotions = (message: Message) => {
         userId: allPromotionsRows[i].user_id,
         message: `${i + 1}:\t${
           allPromotionsRows[i].name
-        }\t\tRequested promotion to:\t${isMember ? 'Veteran' : 'Member'} (determined by discord rank) on\t${requestDate.toDateString()}\t\t\n`
+        }\t\tRequested promotion to:\t${isMember ? 'Veteran' : 'Member'} (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`
       });
     }
 
