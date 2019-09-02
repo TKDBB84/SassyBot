@@ -10,7 +10,7 @@ import {
 import { SassyBotCommand, SassyBotImport } from "./sassybot";
 import SassyDb from "./SassyDb";
 import { Statement } from "better-sqlite3";
-import * as moment from 'moment'
+import * as moment from "moment";
 import Users from "./Users";
 
 const db = new SassyDb();
@@ -131,37 +131,37 @@ const activePromotionList: activityList = {};
 const activeAbsentList: activityList = {};
 
 function formatDate(d: moment.Moment) {
-    return d.format('MMM Do YYYY')
+  return d.format("MMM Do YYYY");
 }
 
 // remove entry when it's more than 5 min old
 setInterval(() => {
-    const now = moment();
-    [activeAbsentList, activePromotionList].forEach((activityList) => {
-        Object.keys(activityList).forEach((key) => {
-            const value = activityList[key];
-            if (value) {
-                const initDate = value.initDate;
-                if (now.diff(initDate, 'minutes') > 5) {
-                    activityList[key] = undefined;
-                    delete activityList[key]
-                }
-            } else {
-                activityList[key] = undefined;
-                delete activityList[key];
-            }
-        });
+  const now = moment();
+  [activeAbsentList, activePromotionList].forEach(activityList => {
+    Object.keys(activityList).forEach(key => {
+      const value = activityList[key];
+      if (value) {
+        const initDate = value.initDate;
+        if (now.diff(initDate, "minutes") > 5) {
+          activityList[key] = undefined;
+          delete activityList[key];
+        }
+      } else {
+        activityList[key] = undefined;
+        delete activityList[key];
+      }
     });
+  });
 }, entryPersistenceDuration);
 
 setInterval(() => {
-  const yesterday =  moment().subtract({days: 1, hours: 12});
+  const yesterday = moment().subtract({ days: 1, hours: 12 });
   ACTIVE_SERVERS.forEach(serverId => {
     const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([serverId]);
 
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
-      const endDate = moment(allAbsentRows[i].end_date, 'YYYY-MM-DD');
-            if (endDate.isBefore(yesterday)) {
+      const endDate = moment(allAbsentRows[i].end_date, "YYYY-MM-DD");
+      if (endDate.isBefore(yesterday)) {
         deleteUserAbsentRow.run([serverId, allAbsentRows[i].user_id]);
       }
     }
@@ -186,7 +186,7 @@ const sassybotReply: (
 
 const sassybotRespond: (
   message: Message,
-  reply: string
+  text: string
 ) => Promise<void> = async (message: Message, text: string): Promise<void> => {
   const options: MessageOptions = {
     disableEveryone: true,
@@ -291,32 +291,50 @@ const storeFFNameAndStop = async (
 };
 
 const storeStartDate = async (message: Message, activityList: activityList) => {
-    const possibleDate = message.cleanContent;
-    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-        activityList[message.author.id]!.startDate = moment(possibleDate, 'YYYY-MM-DD');
-        const dateString = formatDate(activityList[message.author.id]!.startDate);
-        await sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
-        await requestEndDate(message, activityList)
-    } else {
-        activityList[message.author.id]!.next = storeStartDate;
-        await sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
-    }
+  const possibleDate = message.cleanContent;
+  if (moment(possibleDate, "YYYY-MM-DD").isValid()) {
+    activityList[message.author.id]!.startDate = moment(
+      possibleDate,
+      "YYYY-MM-DD"
+    );
+    const dateString = formatDate(activityList[message.author.id]!.startDate);
+    await sassybotReply(
+      message,
+      `ok i have your start date as: ${dateString}\n\n`
+    );
+    await requestEndDate(message, activityList);
+  } else {
+    activityList[message.author.id]!.next = storeStartDate;
+    await sassybotReply(
+      message,
+      "Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format"
+    );
+  }
 
   return;
 };
 
 const storeEndDate = async (message: Message, activityList: activityList) => {
-    const possibleDate = message.cleanContent;
-    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-        activityList[message.author.id]!.endDate = moment(possibleDate, 'YYYY-MM-DD');
-        const dateString = formatDate(activityList[message.author.id]!.endDate);
-        await sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
-        await completeAbsent(message, activityList)
-    } else {
-        activityList[message.author.id]!.next = storeEndDate;
-        await sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
-    }
-    return
+  const possibleDate = message.cleanContent;
+  if (moment(possibleDate, "YYYY-MM-DD").isValid()) {
+    activityList[message.author.id]!.endDate = moment(
+      possibleDate,
+      "YYYY-MM-DD"
+    );
+    const dateString = formatDate(activityList[message.author.id]!.endDate);
+    await sassybotReply(
+      message,
+      `ok i have your end date as: ${dateString}\n\n`
+    );
+    await completeAbsent(message, activityList);
+  } else {
+    activityList[message.author.id]!.next = storeEndDate;
+    await sassybotReply(
+      message,
+      "Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format"
+    );
+  }
+  return;
 };
 
 const completeAbsent = async (message: Message, activityList: activityList) => {
@@ -454,8 +472,8 @@ const listAllPromotions = async (message: Message) => {
         msg = sentMessages;
       }
 
-      await msg.react("✅");
-      const reaction = await msg.react("344861453146259466");
+      const reactionYes = await msg.react("✅");
+      const reactionNo = await msg.react("344861453146259466");
       let collection;
       try {
         collection = await msg.awaitReactions(reactionFilter, {
@@ -465,46 +483,45 @@ const listAllPromotions = async (message: Message) => {
           time: ONE_HOUR * 2
         });
         if (collection.size === 0) {
-          reaction.remove().catch(console.error);
+          await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(
+            console.error
+          );
+          return;
         }
-        if (collection.size > 0) {
-          if (collection.first().emoji.name === "✅") {
-            const promoChannel = message.client.channels.find(
-              channel => channel.id === PROMOTION_ABSENT_CHANNEL_ID
-            );
-            let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
-            if (Member) {
-              if (response.isMember && Veteran) {
-                await response.member.addRole(Veteran);
-                await response.member.removeRole(Member);
-                responseMessage += " to Veteran";
-              } else {
-                await response.member.addRole(Member);
-                if (Recruit) {
-                  await response.member.removeRole(Recruit);
-                }
-                responseMessage += " to Member";
+        if (collection.first() && collection.first().emoji.name === "✅") {
+          const promoChannel = message.client.channels.find(
+            channel => channel.id === PROMOTION_ABSENT_CHANNEL_ID
+          );
+          let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
+          if (Member) {
+            if (response.isMember && Veteran) {
+              await response.member.addRole(Veteran);
+              await response.member.removeRole(Member);
+              responseMessage += " to Veteran";
+            } else {
+              await response.member.addRole(Member);
+              if (Recruit) {
+                await response.member.removeRole(Recruit);
               }
+              responseMessage += " to Member";
             }
-            if (promoChannel instanceof TextChannel) {
-              await promoChannel.send(responseMessage);
-            }
-          } else if (collection.first().emoji.name === "no") {
-            await sassybotRespond(
-              msg,
-              `Please Remember To Flow Up With ${response.name} On Why They Were Denied`
-            );
-          } else {
-            await sassybotRespond(
-              msg,
-              "I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked"
-            );
           }
-          deleteUserPromotionRow.run([message.guild.id, response.userId]);
-          await msg.delete(100);
+          if (promoChannel instanceof TextChannel) {
+            await promoChannel.send(responseMessage);
+          }
+        } else if (collection.first().emoji.name === "no") {
+          await sassybotRespond(
+            msg,
+            `Please Remember To Flow Up With ${response.name} On Why They Were Denied`
+          );
         }
+        deleteUserPromotionRow.run([message.guild.id, response.userId]);
+        await msg.delete(100);
       } catch (e) {
-        await reaction.remove().catch(console.error);
+        console.error({ e });
+        await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(
+          console.error
+        );
       }
     })
   );
