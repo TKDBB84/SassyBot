@@ -6,19 +6,19 @@ import {
   Role,
   TextChannel,
   User
-} from "discord.js";
-import { SassyBotCommand, SassyBotImport } from "./sassybot";
-import SassyDb from "./SassyDb";
-import { Statement } from "better-sqlite3";
-import * as moment from 'moment'
-import Users from "./Users";
+} from 'discord.js';
+import { SassyBotCommand, SassyBotImport } from './sassybot';
+import SassyDb from './SassyDb';
+import { Statement } from 'better-sqlite3';
+import * as moment from 'moment';
+import Users from './Users';
 
 const db = new SassyDb();
 db.connection.exec(
-  "CREATE TABLE IF NOT EXISTS user_absent (guild_id TEXT, user_id TEXT, name TEXT, start_date TEXT, end_date TEXT, timestamp INTEGER);"
+  'CREATE TABLE IF NOT EXISTS user_absent (guild_id TEXT, user_id TEXT, name TEXT, start_date TEXT, end_date TEXT, timestamp INTEGER);'
 );
 db.connection.exec(
-  "CREATE TABLE IF NOT EXISTS user_promote (guild_id TEXT, user_id TEXT, name TEXT, timestamp INTEGER);"
+  'CREATE TABLE IF NOT EXISTS user_promote (guild_id TEXT, user_id TEXT, name TEXT, timestamp INTEGER);'
 );
 
 const addAbsent: Statement = db.connection.prepare(
@@ -36,7 +36,7 @@ type allAbsentsRow = {
   timestamp: string;
 };
 const getAllAbsents: Statement = db.connection.prepare(
-  "SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE"
+  'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE'
 );
 
 type allPromotionsRow = {
@@ -45,7 +45,7 @@ type allPromotionsRow = {
   timestamp: string;
 };
 const getAllPromotions: Statement = db.connection.prepare(
-  "SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE"
+  'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE'
 );
 
 type userAbsentsRow = {
@@ -55,7 +55,7 @@ type userAbsentsRow = {
   timestamp: string;
 };
 const getUserAbsent: Statement = db.connection.prepare(
-  "SELECT name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? AND user_id = ?"
+  'SELECT name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? AND user_id = ?'
 );
 
 type userPromotionsRow = {
@@ -63,24 +63,24 @@ type userPromotionsRow = {
   timestamp: string;
 };
 const getUserPromotions: Statement = db.connection.prepare(
-  "SELECT name, timestamp FROM user_promote WHERE guild_id = ? AND user_id = ?"
+  'SELECT name, timestamp FROM user_promote WHERE guild_id = ? AND user_id = ?'
 );
 
 const deleteUserAbsentRow: Statement = db.connection.prepare(
-  "DELETE FROM user_absent WHERE guild_id = ? and user_id = ?"
+  'DELETE FROM user_absent WHERE guild_id = ? and user_id = ?'
 );
 const deleteUserPromotionRow: Statement = db.connection.prepare(
-  "DELETE FROM user_promote WHERE guild_id = ? and user_id = ?"
+  'DELETE FROM user_promote WHERE guild_id = ? and user_id = ?'
 );
 
-let OFFICER_ROLE_ID: string = "";
+let OFFICER_ROLE_ID: string = '';
 const ONE_HOUR = 3600000;
 const ACTIVE_SERVERS = [
-  "324682549206974473", // Crown Of Thrones,
-  "367724585019506688" // Sasner's Test Server,
+  '324682549206974473', // Crown Of Thrones,
+  '367724585019506688' // Sasner's Test Server,
 ];
 
-const PROMOTION_ABSENT_CHANNEL_ID = "362037806178238464";
+const PROMOTION_ABSENT_CHANNEL_ID = '362037806178238464';
 
 type roleList = {
   New: Role | null;
@@ -100,12 +100,12 @@ const cotRoles: roleList = {
   Officer: null
 };
 
-const fetchCoTRoles: (member: GuildMember) => void = member => {
+const fetchCoTRoles: (member: GuildMember) => void = (member) => {
   const cot = member.guild;
   if (cot) {
-    Object.keys(cotRoles).forEach(rank => {
+    Object.keys(cotRoles).forEach((rank) => {
       if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
-        const cotRole = cot.roles.find(role => role.name === rank);
+        const cotRole = cot.roles.find((role) => role.name === rank);
         if (cotRole) {
           cotRoles[rank] = cotRole;
         }
@@ -131,37 +131,37 @@ const activePromotionList: activityList = {};
 const activeAbsentList: activityList = {};
 
 function formatDate(d: moment.Moment) {
-    return d.format('MMM Do YYYY')
+  return d.format('MMM Do YYYY');
 }
 
 // remove entry when it's more than 5 min old
 setInterval(() => {
-    const now = moment();
-    [activeAbsentList, activePromotionList].forEach((activityList) => {
-        Object.keys(activityList).forEach((key) => {
-            const value = activityList[key];
-            if (value) {
-                const initDate = value.initDate;
-                if (now.diff(initDate, 'minutes') > 5) {
-                    activityList[key] = undefined;
-                    delete activityList[key]
-                }
-            } else {
-                activityList[key] = undefined;
-                delete activityList[key];
-            }
-        });
+  const now = moment();
+  [activeAbsentList, activePromotionList].forEach((activityList) => {
+    Object.keys(activityList).forEach((key) => {
+      const value = activityList[key];
+      if (value) {
+        const initDate = value.initDate;
+        if (now.diff(initDate, 'minutes') > 5) {
+          activityList[key] = undefined;
+          delete activityList[key];
+        }
+      } else {
+        activityList[key] = undefined;
+        delete activityList[key];
+      }
     });
+  });
 }, entryPersistenceDuration);
 
 setInterval(() => {
-  const yesterday =  moment().subtract({days: 1, hours: 12});
-  ACTIVE_SERVERS.forEach(serverId => {
+  const yesterday = moment().subtract({ days: 1, hours: 12 });
+  ACTIVE_SERVERS.forEach((serverId) => {
     const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([serverId]);
 
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
       const endDate = moment(allAbsentRows[i].end_date, 'YYYY-MM-DD');
-            if (endDate.isBefore(yesterday)) {
+      if (endDate.isBefore(yesterday)) {
         deleteUserAbsentRow.run([serverId, allAbsentRows[i].user_id]);
       }
     }
@@ -193,7 +193,7 @@ const sassybotRespond: (message: Message, reply: string) => void = (
 
 const getOfficerRoleId = (message: Message): string => {
   if (!OFFICER_ROLE_ID && message.guild && message.guild.roles) {
-    const role = message.guild.roles.find(role => role.name === "Officer");
+    const role = message.guild.roles.find((role) => role.name === 'Officer');
     if (role && role.id) {
       OFFICER_ROLE_ID = role.id;
     }
@@ -219,9 +219,9 @@ const requestFFName = (message: Message, activityList: activityList) => {
     initDate: moment(),
     startDate: moment.utc(0),
     endDate: moment.utc(0),
-    name: ""
+    name: ''
   };
-  sassybotReply(message, "First, Tell Me Your Full Character Name");
+  sassybotReply(message, 'First, Tell Me Your Full Character Name');
 };
 
 const requestStartDate = (message: Message, activityList: activityList) => {
@@ -256,11 +256,11 @@ const requestFFNameAndStop = (message: Message, activityList: activityList) => {
     initDate: moment(),
     startDate: moment.utc(0),
     endDate: moment.utc(0),
-    name: ""
+    name: ''
   };
   sassybotReply(
     message,
-    "To request an officer verify your join date, and promote you: please tell me your full character name"
+    'To request an officer verify your join date, and promote you: please tell me your full character name'
   );
 };
 
@@ -274,32 +274,44 @@ const storeFFNameAndStop = (message: Message, activityList: activityList) => {
 };
 
 const storeStartDate = (message: Message, activityList: activityList) => {
-    const possibleDate = message.cleanContent;
-    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-        activityList[message.author.id]!.startDate = moment(possibleDate, 'YYYY-MM-DD');
-        const dateString = formatDate(activityList[message.author.id]!.startDate);
-        sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
-        requestEndDate(message, activityList)
-    } else {
-        activityList[message.author.id]!.next = storeStartDate;
-        sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
-    }
+  const possibleDate = message.cleanContent;
+  if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+    activityList[message.author.id]!.startDate = moment(
+      possibleDate,
+      'YYYY-MM-DD'
+    );
+    const dateString = formatDate(activityList[message.author.id]!.startDate);
+    sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
+    requestEndDate(message, activityList);
+  } else {
+    activityList[message.author.id]!.next = storeStartDate;
+    sassybotReply(
+      message,
+      'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format'
+    );
+  }
 
   return;
 };
 
 const storeEndDate = (message: Message, activityList: activityList) => {
-    const possibleDate = message.cleanContent;
-    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-        activityList[message.author.id]!.endDate = moment(possibleDate, 'YYYY-MM-DD');
-        const dateString = formatDate(activityList[message.author.id]!.endDate);
-        sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
-        completeAbsent(message, activityList)
-    } else {
-        activityList[message.author.id]!.next = storeEndDate;
-        sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format')
-    }
-    return
+  const possibleDate = message.cleanContent;
+  if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+    activityList[message.author.id]!.endDate = moment(
+      possibleDate,
+      'YYYY-MM-DD'
+    );
+    const dateString = formatDate(activityList[message.author.id]!.endDate);
+    sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
+    completeAbsent(message, activityList);
+  } else {
+    activityList[message.author.id]!.next = storeEndDate;
+    sassybotReply(
+      message,
+      'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format'
+    );
+  }
+  return;
 };
 
 const completeAbsent = (message: Message, activityList: activityList) => {
@@ -360,9 +372,9 @@ const listAllAbsent = (message: Message) => {
   const allAbsentRows: allAbsentsRow[] = getAllAbsents.all([message.guild.id]);
 
   if (allAbsentRows.length === 0) {
-    sassybotRespond(message, "No Current Absentees");
+    sassybotRespond(message, 'No Current Absentees');
   } else {
-    let response: string = "";
+    let response: string = '';
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
       response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
     }
@@ -378,7 +390,7 @@ const listAllPromotions = (message: Message) => {
   ]);
 
   if (allPromotionsRows.length === 0) {
-    sassybotRespond(message, "No Current Promotion Requests");
+    sassybotRespond(message, 'No Current Promotion Requests');
   } else {
     let responses: Array<{
       isMember: boolean;
@@ -392,9 +404,7 @@ const listAllPromotions = (message: Message) => {
       const member = message.guild.member(allPromotionsRows[i].user_id);
       let isMember = true;
       if (Member) {
-        isMember = !!member.roles.find(
-            r => r.id === Member.id
-        );
+        isMember = !!member.roles.find((r) => r.id === Member.id);
       }
       responses.push({
         isMember: isMember,
@@ -403,7 +413,9 @@ const listAllPromotions = (message: Message) => {
         userId: allPromotionsRows[i].user_id,
         message: `${i + 1}:\t${
           allPromotionsRows[i].name
-        }\t\tRequested promotion to:\t${isMember ? 'Veteran' : 'Member'} (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`
+        }\t\tRequested promotion to:\t${
+          isMember ? 'Veteran' : 'Member'
+        } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`
       });
     }
 
@@ -414,25 +426,26 @@ const listAllPromotions = (message: Message) => {
 
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
       return (
-        (reaction.emoji.name === "no" ||
-          reaction.emoji.name === "✅") &&
+        (reaction.emoji.name === 'no' || reaction.emoji.name === '✅') &&
         user.id === message.author.id
       );
     };
 
-    message.channel.send('click the ✅ for yes, promote.\t\t <:no:344861453146259466> to deny promotion');
-    responses.forEach(response => {
+    message.channel.send(
+      'click the ✅ for yes, promote.\t\t <:no:344861453146259466> to deny promotion'
+    );
+    responses.forEach((response) => {
       message.channel
         .send(response.message, options)
-        .then(sentMessages => {
+        .then((sentMessages) => {
           if (!Array.isArray(sentMessages)) {
             sentMessages = [sentMessages];
           }
-          sentMessages.forEach(msg => {
-            msg.react("✅").then(() => {
+          sentMessages.forEach((msg) => {
+            msg.react('✅').then(() => {
               msg
-                .react("344861453146259466")
-                .then(reaction => {
+                .react('344861453146259466')
+                .then((reaction) => {
                   msg
                     .awaitReactions(reactionFilter, {
                       max: 1,
@@ -440,18 +453,16 @@ const listAllPromotions = (message: Message) => {
                       maxUsers: 1,
                       time: ONE_HOUR * 2
                     })
-                    .then(collection => {
+                    .then((collection) => {
                       if (collection.size === 0) {
                         reaction.remove().catch(console.error);
-                        return
+                        return;
                       }
                       if (collection.size > 0) {
-                        console.log({collection});
-                        if (
-                          collection.first().emoji.name === "✅"
-                        ) {
+                        console.log({ collection });
+                        if (collection.first().emoji.name === '✅') {
                           const promoChannel = message.client.channels.find(
-                            channel =>
+                            (channel) =>
                               channel.id === PROMOTION_ABSENT_CHANNEL_ID
                           );
                           let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
@@ -459,19 +470,19 @@ const listAllPromotions = (message: Message) => {
                             if (response.isMember && Veteran) {
                               response.member.addRole(Veteran);
                               response.member.removeRole(Member);
-                              responseMessage += " to Veteran";
+                              responseMessage += ' to Veteran';
                             } else {
                               response.member.addRole(Member);
                               if (Recruit) {
                                 response.member.removeRole(Recruit);
                               }
-                              responseMessage += " to Member";
+                              responseMessage += ' to Member';
                             }
                           }
                           if (promoChannel instanceof TextChannel) {
                             promoChannel.send(responseMessage);
                           }
-                        } else if (collection.first().emoji.name === "no") {
+                        } else if (collection.first().emoji.name === 'no') {
                           sassybotRespond(
                             msg,
                             `Please Remember To Flow Up With ${response.name} On Why They Were Denied`
@@ -479,7 +490,7 @@ const listAllPromotions = (message: Message) => {
                         } else {
                           sassybotRespond(
                             msg,
-                            "I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked"
+                            'I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked'
                           );
                         }
                         deleteUserPromotionRow.run([
@@ -553,9 +564,9 @@ export let AbsentOrPromoteFunctions: SassyBotImport = {
     promote: promotionFunction
   },
   help: {
-    absent: "usage: `!{sassybot|sb} absent` -- something something something",
+    absent: 'usage: `!{sassybot|sb} absent` -- something something something',
     promote:
-      "usage: `!{sassybot|sb} promotion` -- something something something"
+      'usage: `!{sassybot|sb} promotion` -- something something something'
   }
 };
 
