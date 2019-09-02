@@ -465,12 +465,14 @@ const listAllPromotions = (message: Message) => {
                     maxUsers: 1,
                     time: ONE_HOUR * 2
                   })
-                  .then(() => {
-                    deleteUserPromotionRow.run([
-                      message.guild.id,
-                      response.userId
-                    ]);
-                    msg.delete(100);
+                  .then(collection => {
+                    if (collection.size > 0) {
+                      deleteUserPromotionRow.run([
+                        message.guild.id,
+                        response.userId
+                      ]);
+                      msg.delete(100);
+                    }
                   })
                   .catch(() => {
                     reaction.remove().catch(console.error);
