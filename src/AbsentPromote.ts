@@ -201,12 +201,12 @@ const isOfficer = (message: Message): boolean => {
 
 const requestFFName = (message: Message, activityList: IActivityList) => {
   activityList[message.author.id] = {
-    endDate: new Date(0),
+    endDate: moment.utc(0),
     guildId: message.guild.id,
     initDate: moment(),
+    name: '',
+    next: storeFFName,
     startDate: moment.utc(0),
-    endDate: moment.utc(0),
-    name: ''
   };
   sassybotReply(message, 'First, Tell Me Your Full Character Name');
 };
@@ -235,12 +235,12 @@ const storeFFName = (message: Message, activityList: IActivityList) => {
 
 const requestFFNameAndStop = (message: Message, activityList: IActivityList) => {
   activityList[message.author.id] = {
-    endDate: new Date(0),
+    endDate: moment.utc(0),
     guildId: message.guild.id,
     initDate: moment(),
+    name: '',
+    next: storeFFNameAndStop,
     startDate: moment.utc(0),
-    endDate: moment.utc(0),
-    name: ''
   };
   sassybotReply(
     message,
@@ -257,10 +257,7 @@ const storeFFNameAndStop = (message: Message, activityList: IActivityList) => {
 const storeStartDate = (message: Message, activityList: IActivityList) => {
   const possibleDate = message.cleanContent;
   if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
-    activityList[message.author.id]!.startDate = moment(
-      possibleDate,
-      'YYYY-MM-DD'
-    );
+    activityList[message.author.id]!.startDate = moment(possibleDate, 'YYYY-MM-DD');
     const dateString = formatDate(activityList[message.author.id]!.startDate);
     sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
     requestEndDate(message, activityList);
@@ -274,16 +271,10 @@ const storeStartDate = (message: Message, activityList: IActivityList) => {
 
 const storeEndDate = (message: Message, activityList: IActivityList) => {
   const possibleDate = message.cleanContent;
-  if (moment( possibleDate, 'YYYY-MM-DD').isValid()) {
-    activityList[message.author.id]!.endDate = moment(
-      possibleDate,
-      'YYYY-MM-DD'
-    );
+  if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+    activityList[message.author.id]!.endDate = moment(possibleDate, 'YYYY-MM-DD');
     const dateString = formatDate(activityList[message.author.id]!.endDate);
-    sassybotReply(
-      message,
-      `ok i have your end date as: ${dateString}\n\n`,
-    );
+    sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
     completeAbsent(message, activityList);
   } else {
     activityList[message.author.id]!.next = storeEndDate;
@@ -381,14 +372,9 @@ const listAllPromotions = (message: Message) => {
         member,
         message: `${i + 1}:\t${allPromotionsRows[i].name}\t\tRequested promotion to:\t${
           isMember ? 'Veteran' : 'Member'
-        } (determined by discord rank) on\t${requestDate.toDateString()}\t\t\n`,
+        } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`,
         name: allPromotionsRows[i].name,
         userId: allPromotionsRows[i].user_id,
-        message: `${i + 1}:\t${
-          allPromotionsRows[i].name
-        }\t\tRequested promotion to:\t${
-          isMember ? 'Veteran' : 'Member'
-        } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`
       });
     }
 
