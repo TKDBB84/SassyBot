@@ -426,6 +426,7 @@ const listAllPromotions = async (message: Message) => {
     if (Member) {
       isMember = !!member.roles.find(r => r.id === Member.id);
     }
+
     responses.push({
       isMember: isMember,
       member: member,
