@@ -383,9 +383,9 @@ const listAllPromotions = async (message: Message) => {
     message: string;
     userId: string;
   }> = [];
-  for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
-    const requestDate = moment(parseInt(allPromotionsRows[i].timestamp, 10));
-    const member = message.guild.member(allPromotionsRows[i].user_id);
+  for (const promotionRow of allPromotionsRows) {
+    const requestDate = moment(parseInt(promotionRow.timestamp, 10));
+    const member = message.guild.member(promotionRow.user_id);
     let isMember = true;
     if (Member) {
       isMember = !!member.roles.find((r) => r.id === Member.id);
@@ -394,11 +394,11 @@ const listAllPromotions = async (message: Message) => {
     responses.push({
       isMember,
       member,
-      message: `${allPromotionsRows[i].name}\t\tRequested promotion to:\t${
+      message: `${promotionRow.name}\t\tRequested promotion to:\t${
         isMember ? 'Veteran' : 'Member'
       } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`,
-      name: allPromotionsRows[i].name,
-      userId: allPromotionsRows[i].user_id,
+      name: promotionRow.name,
+      userId: promotionRow.user_id,
     });
   }
 
