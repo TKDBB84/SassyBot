@@ -13,7 +13,19 @@
     "discord.js": "^11.5.1",
     "moment": "^2.24.0",
     "node-gyp": "^3.8.0",
-    "prettier": "^1.18.2",
     "xivapi-js": "^0.2.4"
+  },
+  "devDependencies": {
+    "prettier": "^1.18.2"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "useTabs": false,
+    "tabWidth": 2,
+    "quoteProps": "as-needed",
+    "trailingComma": "none",
+    "arrowParens": "always",
+    "parser": "typescript",
+    "endOfLine": "lf"
   }
 }

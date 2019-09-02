@@ -4,11 +4,11 @@ import {
   MessageOptions,
   Role,
   TextChannel
-} from "discord.js";
-import { CoTMember } from "./CoTMembers";
+} from 'discord.js';
+import { CoTMember } from './CoTMembers';
 
-const COT_ID = "324682549206974473";
-const COT_NEW_USER_CHANNEL = "601971412000833556";
+const COT_ID = '324682549206974473';
+const COT_NEW_USER_CHANNEL = '601971412000833556';
 let cotNewUserChannel: TextChannel;
 type roleList = {
   [key: string]: Role | null;
@@ -20,7 +20,7 @@ const cotRoles: roleList = {
   Member: null,
   Veteran: null,
   Officer: null,
-  "new role": null
+  'new role': null
 };
 
 type newMemberList = {
@@ -32,12 +32,12 @@ type newMemberList = {
 };
 const newMemberList: newMemberList = {};
 
-const fetchCoTRoles: (member: GuildMember) => void = member => {
+const fetchCoTRoles: (member: GuildMember) => void = (member) => {
   const cot = member.guild;
   if (cot) {
     Object.keys(cotRoles).forEach((rank: string) => {
       if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
-        const cotRole = cot.roles.find(role => role.name === rank);
+        const cotRole = cot.roles.find((role) => role.name === rank);
         if (cotRole) {
           cotRoles[rank] = cotRole;
         }
@@ -68,28 +68,28 @@ const newMemberJoined = (member: GuildMember) => {
     let roleToAdd: Role | null = cotRoles.New;
     if (roleToAdd) {
       member
-        .addRole(roleToAdd.id, "new member")
+        .addRole(roleToAdd.id, 'new member')
         .then(() => {
           newMemberList[member.user.id] = {
-            name: "",
+            name: '',
             joined: new Date(),
             step: 1
           };
           sendMessageToNewChannel(
             member,
-            "Hey, welcome to the Crowne of Thorne server! \n\n" +
-              "First Can you please type your FULL FFXIV character name?"
+            'Hey, welcome to the Crowne of Thorne server! \n\n' +
+              'First Can you please type your FULL FFXIV character name?'
           );
         })
-        .catch(e => {
+        .catch((e) => {
           console.error(
-            "unable to add new member rank:  member has no rank, and thus should have access to everything: ",
+            'unable to add new member rank:  member has no rank, and thus should have access to everything: ',
             { e }
           );
         });
     } else {
       console.error(
-        "Unable to find the necessary Ranks to add to new members: member has no rank, and thus should have access to everything: ",
+        'Unable to find the necessary Ranks to add to new members: member has no rank, and thus should have access to everything: ',
         { cotRoles }
       );
     }
@@ -104,16 +104,16 @@ const onboardingStep1 = (message: Message) => {
     try {
       newMember.save();
     } catch (e) {
-      console.error("unable to add to DB", { newMember });
+      console.error('unable to add to DB', { newMember });
     }
   }
 
   const nextStepMessage =
-    "This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n" +
-    "\n" +
-    "Once you've done that, please type \"I Agree\" and you'll be granted full access to the server! We hope you enjoy your stay 😃";
+    'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
+    '\n' +
+    'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
   message.member
-    .setNickname(declaredName, "Declared Character Name")
+    .setNickname(declaredName, 'Declared Character Name')
     .then(() => {
       sendMessageToNewChannel(
         message.member,
@@ -121,8 +121,8 @@ const onboardingStep1 = (message: Message) => {
       );
       newMemberList[message.member.id].step = 2;
     })
-    .catch(e => {
-      console.error("unable to update nickname: ", { e });
+    .catch((e) => {
+      console.error('unable to update nickname: ', { e });
       sendMessageToNewChannel(
         message.member,
         `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.\n\n${nextStepMessage}`
@@ -131,11 +131,11 @@ const onboardingStep1 = (message: Message) => {
     });
 };
 
-const onboardingStep2: (message: Message) => Promise<boolean> = message => {
-  if (message.cleanContent.trim().toLowerCase() === "i agree") {
+const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
+  if (message.cleanContent.trim().toLowerCase() === 'i agree') {
     let roleToRemove: Role | null = cotRoles.New;
     if (roleToRemove) {
-      message.member.removeRole(roleToRemove.id).catch(e => {
+      message.member.removeRole(roleToRemove.id).catch((e) => {
         console.error({
           error: e,
           member: message.member,
@@ -153,11 +153,11 @@ const onboardingStep2: (message: Message) => Promise<boolean> = message => {
           .then(() => {
             sendMessageToNewChannel(
               message.member,
-              "Thank You & Welcome to Crowne Of Thorne"
+              'Thank You & Welcome to Crowne Of Thorne'
             );
             return true;
           })
-          .catch(e => {
+          .catch((e) => {
             console.error({
               error: e,
               member: message.member,
@@ -171,23 +171,23 @@ const onboardingStep2: (message: Message) => Promise<boolean> = message => {
           });
       } else {
         console.error(
-          "Unable to find the necessary Ranks to add to new members",
+          'Unable to find the necessary Ranks to add to new members',
           { cotRoles }
         );
         sendMessageToNewChannel(
           message.member,
-          "Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help"
+          'Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help'
         );
         return Promise.resolve(false);
       }
     } else {
       console.error(
-        "Unable to find the necessary Ranks to add to new members",
+        'Unable to find the necessary Ranks to add to new members',
         { cotRoles }
       );
       sendMessageToNewChannel(
         message.member,
-        "Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help"
+        'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help'
       );
       return Promise.resolve(false);
     }
@@ -205,18 +205,18 @@ const newMemberListen = (message: Message) => {
   fetchCoTRoles(message.member);
   let roleToCheck = cotRoles.New;
   if (!roleToCheck) {
-    console.error("Unable to find the necessary Ranks to add to new members", {
+    console.error('Unable to find the necessary Ranks to add to new members', {
       cotRoles
     });
     sendMessageToNewChannel(
       message.member,
-      "Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help"
+      'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help'
     );
     return false;
   }
   if (!message.member.roles.has(roleToCheck.id)) {
     console.error(
-      "user without lower rank && on new member list is still in channel... ?"
+      'user without lower rank && on new member list is still in channel... ?'
     );
     return false;
   }
@@ -224,18 +224,18 @@ const newMemberListen = (message: Message) => {
   if (newMemberList[message.member.id].step === 1) {
     onboardingStep1(message);
   } else if (newMemberList[message.member.id].step === 2) {
-    onboardingStep2(message).then(result => {
+    onboardingStep2(message).then((result) => {
       if (result) {
         delete newMemberList[message.member.id];
       }
     });
   } else {
-    console.error("onboarding step out of bounds", {
+    console.error('onboarding step out of bounds', {
       newMember: newMemberList[message.member.id]
     });
     sendMessageToNewChannel(
       message.member,
-      "Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help"
+      'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help'
     );
   }
   return true;

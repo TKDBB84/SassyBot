@@ -1,4 +1,4 @@
-import { Client, GuildMember, TextChannel, VoiceChannel } from "discord.js";
+import { Client, GuildMember, TextChannel, VoiceChannel } from 'discord.js';
 
 export default function VoiceLogHandler(
   client: Client,
@@ -8,8 +8,8 @@ export default function VoiceLogHandler(
 ): void {
   const now = `(${new Date()
     .toISOString()
-    .replace(/T/, " ")
-    .replace(/\..+/, "")} GMT)`;
+    .replace(/T/, ' ')
+    .replace(/\..+/, '')} GMT)`;
   let leftChannel, joinedChannel;
   if (previousMemberState.voiceChannelID) {
     leftChannel = client.channels.get(previousMemberState.voiceChannelID);
@@ -19,8 +19,8 @@ export default function VoiceLogHandler(
   }
 
   if (
-    (leftChannel && leftChannel.id === "333750400861863936") ||
-    (joinedChannel && joinedChannel.id === "333750400861863936")
+    (leftChannel && leftChannel.id === '333750400861863936') ||
+    (joinedChannel && joinedChannel.id === '333750400861863936')
   ) {
     return;
   }
