@@ -498,12 +498,12 @@ const listAllPromotions = (message: Message) => {
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
       return (
         (reaction.emoji.name === "no" ||
-          reaction.emoji.name === "white_check_mark") &&
+          reaction.emoji.name === "✅") &&
         user.id === message.author.id
       );
     };
 
-    message.channel.send('click the :white_check_mark: for yes, promote.\t\t:no: to deny promotion');
+    message.channel.send('click the ✅ for yes, promote.\t\t <:no:344861453146259466> to deny promotion');
     responses.forEach(response => {
       message.channel
         .send(response.message, options)
@@ -529,8 +529,9 @@ const listAllPromotions = (message: Message) => {
                         return
                       }
                       if (collection.size > 0) {
+                        console.log({collection});
                         if (
-                          collection.first().emoji.name === "white_check_mark"
+                          collection.first().emoji.name === "✅"
                         ) {
                           const promoChannel = message.client.channels.find(
                             channel =>
