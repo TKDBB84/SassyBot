@@ -93,7 +93,7 @@ const onboardingStep1 = (message: Message) => {
   const declaredName = message.cleanContent;
   const foundMember = CoTMember.fetchMember(message.member.id);
   if (!foundMember) {
-    const newMember = new CoTMember(message.member.id, declaredName);
+    const newMember = new CoTMember(message.member.id, declaredName, 'New');
     try {
       newMember.save();
     } catch (e) {
@@ -126,7 +126,15 @@ const onboardingStep1 = (message: Message) => {
 
 const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
   if (message.cleanContent.trim().toLowerCase() === 'i agree') {
-    const roleToRemove: Role | null = cotRoles.New;
+    try {
+      const foundMember = CoTMember.fetchMember(message.member.id);
+      if (foundMember) {
+        foundMember.promote();
+      }
+    } catch (err) {
+      console.error({context: 'could not do DB work for new user', err});
+    }
+    const roleToRemove = cotRoles.New;
     if (roleToRemove) {
       message.member.removeRole(roleToRemove.id).catch((e) => {
         console.error({

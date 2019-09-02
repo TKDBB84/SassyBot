@@ -40,9 +40,11 @@ db.connection.exec(
 
 type upsertMemberFunction = ({ ID, Name, Rank }: IFreeCompanyMember) => boolean;
 const upsertMember: upsertMemberFunction = ({ ID, Name, Rank }) => {
-  const stmtUpsertMember = db.connection.prepare("INSERT INTO cot_members (api_id, user_id, name, rank) VALUES (?, '', ?, ?) ON CONFLICT(api_id) DO UPDATE SET rank = ?, last_seen_api = CURRENT_TIMESTAMP");
+  const stmtUpsertMember = db.connection.prepare(
+    "INSERT INTO cot_members (api_id, user_id, name, rank) VALUES (?, '', ?, ?) ON CONFLICT(api_id) DO UPDATE SET rank = ?, last_seen_api = CURRENT_TIMESTAMP",
+  );
   const result = stmtUpsertMember.run([ID, Name, Rank, Rank]);
-  return !!result.lastInsertRowid || !!result.changes
+  return !!result.lastInsertRowid || !!result.changes;
 };
 
 const getSecrets: () => IClientSecrets = (): IClientSecrets => {
@@ -87,10 +89,10 @@ const updateAllMemberRecords = async () => {
 };
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
-type AddMemberFunction = ({ userId, name }: { userId: string; name: string }) => boolean;
-const addMember: AddMemberFunction = ({ userId, name }) => {
+type AddMemberFunction = ({ id, name, rank }: { id: string; name: string; rank: string }) => boolean;
+const addMember: AddMemberFunction = ({ id, name, rank }) => {
   const member = db.connection.prepare('INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)');
-  const result = member.run([userId, name, '']);
+  const result = member.run([id, name, rank]);
   return !!result.lastInsertRowid;
 };
 
@@ -100,28 +102,28 @@ const getMemberByName: getMemberByNameFunction = ({ name }) => {
   return memberByName.all([name]);
 };
 
-type getMemberByIdFunction = ({ user_id }: { user_id: string }) => IMemberRow;
-const getMemberByUserId: getMemberByIdFunction = ({ user_id }) => {
+type getMemberByIdFunction = ({ id }: { id: string }) => IMemberRow;
+const getMemberByUserId: getMemberByIdFunction = ({ id }) => {
   const memberByUserId = db.connection.prepare('SELECT * FROM cot_promotion_tracking where user_id = ?');
-  return memberByUserId.get([user_id]);
+  return memberByUserId.get([id]);
 };
 
-type promoteMember = ({ id }: { id: string }) => boolean;
-const promoteByMember: promoteMember = ({ id }) => {
+type promoteMember = ({ id, rank }: { id: string; rank: string }) => boolean;
+const promoteByMember: promoteMember = ({ id, rank }) => {
   const memberByUserId = db.connection.prepare(
-    'UPDATE cot_promotion_tracking SET last_promotion = CURRENT_TIMESTAMP WHERE user_id = ? COLLATE NOCASE',
+    'UPDATE cot_promotion_tracking SET last_promotion = CURRENT_TIMESTAMP, rank = ? WHERE user_id = ? COLLATE NOCASE',
   );
-  const result = memberByUserId.run([id]);
+  const result = memberByUserId.run([rank, id]);
   return !!result.changes;
 };
 
 export class CoTMember extends User {
   public static fetchMember(userId: string): CoTMember | false {
-    const row: IMemberRow = getMemberByUserId({ user_id: userId });
+    const row: IMemberRow = getMemberByUserId({ id: userId });
     if (!row) {
       return false;
     }
-    return new CoTMember(row.user_id, row.name);
+    return new CoTMember(row.user_id, row.name, row.rank);
   }
 
   public static findByName(name: string): CoTMember[] | false {
@@ -131,7 +133,7 @@ export class CoTMember extends User {
     }
     const results: CoTMember[] = [];
     matchingRows.forEach((row) => {
-      results.push(new CoTMember(row.user_id, row.name));
+      results.push(new CoTMember(row.user_id, row.name, row.rank));
     });
     return results;
   }
@@ -147,31 +149,40 @@ export class CoTMember extends User {
 
   public id: string = '';
   public name: string = '';
+  public rank: string = '';
   public firstSeenDiscord: string = '';
   public lastPromotion: string = '';
 
-  public constructor(id: string, name: string = '') {
+  public constructor(id: string, name: string = '', rank: string = 'Recruit') {
     super(id);
-    this.id = id;
     this.name = name;
+    this.rank = rank === '' ? 'Recruit' : rank;
   }
 
   public save(): boolean {
     if (!this.id) {
       return false;
     }
-    const exists: IMemberRow = getMemberByUserId({ user_id: this.id });
+    const exists: IMemberRow = getMemberByUserId(this);
     if (exists && exists.user_id) {
       return true;
     }
-    addMember({
-      name: this.name,
-      userId: this.id,
-    });
+    addMember(this);
     return true;
   }
 
   public promote(): boolean {
+    switch (this.rank.toLowerCase()) {
+      case 'new':
+        this.rank = 'Recruit';
+        break;
+      case 'member':
+        this.rank = 'Veteran';
+        break;
+      case 'recruit':
+      default:
+        this.rank = 'Member';
+    }
     return promoteByMember(this);
   }
 }
