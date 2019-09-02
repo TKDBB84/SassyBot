@@ -4,6 +4,7 @@ import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';
+import { CoTMember } from './CoTMembers';
 import Users from './Users';
 
 const db = new SassyDb();
@@ -430,6 +431,11 @@ const listAllPromotions = async (message: Message) => {
         if (collection.first() && collection.first().emoji.name === '✅') {
           const promoChannel = message.client.channels.find((channel) => channel.id === PROMOTION_ABSENT_CHANNEL_ID);
           let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
+          try {
+            CoTMember.promoteByName(response.name);
+          } catch (err) {
+            console.log({ context: 'error promoting member in local db', err });
+          }
           if (Member) {
             if (response.isMember && Veteran) {
               await response.member.addRole(Veteran);
