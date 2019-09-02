@@ -1,5 +1,5 @@
-import { User } from "./Users";
-import SassyDb from "./SassyDb";
+import { User } from './Users';
+import SassyDb from './SassyDb';
 
 type MemberRow = {
   user_id: string;
@@ -22,7 +22,7 @@ type MemberRow = {
 
 const db = new SassyDb();
 db.connection.exec(
-  "CREATE TABLE IF NOT EXISTS cot_promotion_tracking (user_id TEXT PRIMARY KEY, name TEXT, rank TEXT, first_seen_discord TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_promotion TIMESTAMP);"
+  'CREATE TABLE IF NOT EXISTS cot_promotion_tracking (user_id TEXT PRIMARY KEY, name TEXT, rank TEXT, first_seen_discord TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_promotion TIMESTAMP);'
 );
 
 type AddMemberFunction = ({
@@ -34,9 +34,9 @@ type AddMemberFunction = ({
 }) => boolean;
 const addMember: AddMemberFunction = ({ user_id, name }) => {
   const addMember = db.connection.prepare(
-    "INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)"
+    'INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)'
   );
-  const result = addMember.run([user_id, name, ""]);
+  const result = addMember.run([user_id, name, '']);
   return !!result.lastInsertRowid;
 };
 
@@ -63,7 +63,7 @@ const addMember: AddMemberFunction = ({ user_id, name }) => {
 type getMemberByNameFunction = ({ name }: { name: string }) => MemberRow[];
 const getMemberByName: getMemberByNameFunction = ({ name }) => {
   const getMemberByName = db.connection.prepare(
-    "SELECT * FROM cot_promotion_tracking WHERE name = ? COLLATE NOCASE"
+    'SELECT * FROM cot_promotion_tracking WHERE name = ? COLLATE NOCASE'
   );
   return getMemberByName.all([name]);
 };
@@ -71,7 +71,7 @@ const getMemberByName: getMemberByNameFunction = ({ name }) => {
 type getMemberByIdFunction = ({ user_id }: { user_id: string }) => MemberRow;
 const getMemberByUserId: getMemberByIdFunction = ({ user_id }) => {
   const getMemberByUserId = db.connection.prepare(
-    "SELECT * FROM cot_promotion_tracking where user_id = ?"
+    'SELECT * FROM cot_promotion_tracking where user_id = ?'
   );
   return getMemberByUserId.get([user_id]);
 };
@@ -87,12 +87,12 @@ const getMemberByUserId: getMemberByIdFunction = ({ user_id }) => {
 // };
 
 export class CoTMember extends User {
-  public id: string = "";
-  public name: string = "";
-  public first_seen_discord: string = "";
-  public last_promotion: string = "";
+  public id: string = '';
+  public name: string = '';
+  public first_seen_discord: string = '';
+  public last_promotion: string = '';
 
-  public constructor(id: string, name: string = "") {
+  public constructor(id: string, name: string = '') {
     super(id);
     this.id = id;
     this.name = name;
@@ -127,7 +127,7 @@ export class CoTMember extends User {
       return false;
     }
     const results: CoTMember[] = [];
-    matchingRows.forEach(row => {
+    matchingRows.forEach((row) => {
       results.push(new CoTMember(row.user_id, row.name));
     });
     return results;
