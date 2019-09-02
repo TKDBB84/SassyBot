@@ -1,13 +1,16 @@
 import {Message, MessageOptions} from "discord.js";
 import {SassyBotCommand, SassyBotImport} from "./sassybot";
 
-const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
-    const options: MessageOptions = {
-        disableEveryone: true,
-        split: true,
-        reply: message.author,
-    };
-    message.channel.send(reply, options).catch(console.error);
+const sassybotReply: (message: Message, reply: string) => void = (
+  message: Message,
+  reply: string
+): void => {
+  const options: MessageOptions = {
+    disableEveryone: true,
+    split: true,
+    reply: message.author
+  };
+  message.channel.send(reply, options).catch(console.error);
 };
 
 /**
