@@ -524,6 +524,10 @@ const listAllPromotions = (message: Message) => {
                       time: ONE_HOUR * 2
                     })
                     .then(collection => {
+                      if (collection.size === 0) {
+                        reaction.remove().catch(console.error);
+                        return
+                      }
                       if (collection.size > 0) {
                         if (
                           collection.first().emoji.name === "white_check_mark"
