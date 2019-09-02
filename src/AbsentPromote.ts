@@ -1,8 +1,10 @@
 import {
-  Channel,
-  CollectorFilter, GuildMember,
+  CollectorFilter,
+  GuildMember,
   Message,
-  MessageOptions, Role, TextChannel,
+  MessageOptions,
+  Role,
+  TextChannel,
   User
 } from "discord.js";
 import { SassyBotCommand, SassyBotImport } from "./sassybot";
@@ -78,7 +80,7 @@ const ACTIVE_SERVERS = [
   "367724585019506688" // Sasner's Test Server,
 ];
 
-const PROMOTION_ABSENT_CHANNEL_ID = '362037806178238464';
+const PROMOTION_ABSENT_CHANNEL_ID = "362037806178238464";
 
 type roleList = {
   New: Role | null;
@@ -87,7 +89,7 @@ type roleList = {
   Member: Role | null;
   Veteran: Role | null;
   Officer: Role | null;
-  [key: string]: Role | null
+  [key: string]: Role | null;
 };
 const cotRoles: roleList = {
   New: null,
@@ -95,7 +97,7 @@ const cotRoles: roleList = {
   Recruit: null,
   Member: null,
   Veteran: null,
-  Officer: null,
+  Officer: null
 };
 
 const fetchCoTRoles: (member: GuildMember) => void = member => {
@@ -108,7 +110,7 @@ const fetchCoTRoles: (member: GuildMember) => void = member => {
           cotRoles[rank] = cotRole;
         }
       }
-    })
+    });
   }
 };
 
@@ -452,6 +454,7 @@ const listAllAbsent = (message: Message) => {
 
 const listAllPromotions = (message: Message) => {
   fetchCoTRoles(message.member);
+  const { Recruit, Member, Veteran } = cotRoles;
   const allPromotionsRows: allPromotionsRow[] = getAllPromotions.all([
     message.guild.id
   ]);
@@ -460,19 +463,30 @@ const listAllPromotions = (message: Message) => {
     sassybotRespond(message, "No Current Promotion Requests");
   } else {
     let responses: Array<{
-      name: string,
-      message: string,
-      userId: string,
+      isMember: boolean;
+      member: GuildMember;
+      name: string;
+      message: string;
+      userId: string;
     }> = [];
     for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
       const requestDate = new Date();
       requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10) * 1000);
+      const member = message.guild.member(allPromotionsRows[i].user_id);
+      let isMember = true;
+      if (Member) {
+        isMember = !!member.roles.find(
+            r => r.id === Member.id
+        );
+      }
       responses.push({
+        isMember: isMember,
+        member: member,
         name: allPromotionsRows[i].name,
         userId: allPromotionsRows[i].user_id,
         message: `${i + 1}:\t${
           allPromotionsRows[i].name
-        }\tRequested promotion on\t${requestDate.toISOString()} UTC\n`
+        }\t\tRequested promotion to:\t${isMember ? 'Veteran' : 'Member'} (determined by discord rank) on\t${requestDate.toDateString()}\t\t\n`
       });
     }
 
@@ -482,8 +496,14 @@ const listAllPromotions = (message: Message) => {
     };
 
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return (reaction.emoji.name === "no" || reaction.emoji.name === 'white_check_mark') && user.id === message.author.id;
+      return (
+        (reaction.emoji.name === "no" ||
+          reaction.emoji.name === "white_check_mark") &&
+        user.id === message.author.id
+      );
     };
+
+    message.channel.send('click the :white_check_mark: for yes, promote.\t\t:no: to deny promotion');
     responses.forEach(response => {
       message.channel
         .send(response.message, options)
@@ -492,7 +512,7 @@ const listAllPromotions = (message: Message) => {
             sentMessages = [sentMessages];
           }
           sentMessages.forEach(msg => {
-            msg.react('✅').then(() => {
+            msg.react("✅").then(() => {
               msg
                 .react("344861453146259466")
                 .then(reaction => {
@@ -505,33 +525,40 @@ const listAllPromotions = (message: Message) => {
                     })
                     .then(collection => {
                       if (collection.size > 0) {
-                        if (collection.first().emoji.name === 'white_check_mark') {
-                          const promoChannel = message.client.channels.find(channel => channel.id === PROMOTION_ABSENT_CHANNEL_ID)
-                          const member = message.guild.member(response.userId);
-                          let responseMessage = `${response.name} (${member.nickname}) your promotion has been approved`;
-                          const {Recruit, Member, Veteran} = cotRoles;
+                        if (
+                          collection.first().emoji.name === "white_check_mark"
+                        ) {
+                          const promoChannel = message.client.channels.find(
+                            channel =>
+                              channel.id === PROMOTION_ABSENT_CHANNEL_ID
+                          );
+                          let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
                           if (Member) {
-                            const isMember = !!member.roles.find(r => r.id === Member.id);
-                            if (isMember && Veteran) {
-                              member.addRole(Veteran);
-                              member.removeRole(Member);
-                              responseMessage += ' to Veteran'
+                            if (response.isMember && Veteran) {
+                              response.member.addRole(Veteran);
+                              response.member.removeRole(Member);
+                              responseMessage += " to Veteran";
                             } else {
-                              member.addRole(Member);
+                              response.member.addRole(Member);
                               if (Recruit) {
-                                member.removeRole(Recruit)
+                                response.member.removeRole(Recruit);
                               }
-                              responseMessage += ' to Member'
+                              responseMessage += " to Member";
                             }
                           }
                           if (promoChannel instanceof TextChannel) {
                             promoChannel.send(responseMessage);
                           }
-                        } else if (collection.first().emoji.name === 'no') {
-                          sassybotRespond(msg, `Please Remember To Flow Up With ${response
-                              .name} On Why They Were Denied`);
+                        } else if (collection.first().emoji.name === "no") {
+                          sassybotRespond(
+                            msg,
+                            `Please Remember To Flow Up With ${response.name} On Why They Were Denied`
+                          );
                         } else {
-                          sassybotRespond(msg, 'I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked')
+                          sassybotRespond(
+                            msg,
+                            "I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked"
+                          );
                         }
                         deleteUserPromotionRow.run([
                           message.guild.id,
