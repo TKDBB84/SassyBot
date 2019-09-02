@@ -85,7 +85,6 @@ const updateAllMemberRecords = async () => {
   const currentMembers = await getLatestMemberList();
   currentMembers.map(upsertMember);
 };
-updateAllMemberRecords().catch(console.error);
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
 type AddMemberFunction = ({ userId, name }: { userId: string; name: string }) => boolean;
