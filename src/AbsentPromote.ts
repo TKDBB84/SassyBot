@@ -1,8 +1,8 @@
 import {
   Channel,
-  CollectorFilter,
+  CollectorFilter, GuildMember,
   Message,
-  MessageOptions,
+  MessageOptions, Role, TextChannel,
   User
 } from "discord.js";
 import { SassyBotCommand, SassyBotImport } from "./sassybot";
@@ -77,6 +77,40 @@ const ACTIVE_SERVERS = [
   "324682549206974473", // Crown Of Thrones,
   "367724585019506688" // Sasner's Test Server,
 ];
+
+const PROMOTION_ABSENT_CHANNEL_ID = '362037806178238464';
+
+type roleList = {
+  New: Role | null;
+  Verified: Role | null;
+  Recruit: Role | null;
+  Member: Role | null;
+  Veteran: Role | null;
+  Officer: Role | null;
+  [key: string]: Role | null
+};
+const cotRoles: roleList = {
+  New: null,
+  Verified: null,
+  Recruit: null,
+  Member: null,
+  Veteran: null,
+  Officer: null,
+};
+
+const fetchCoTRoles: (member: GuildMember) => void = member => {
+  const cot = member.guild;
+  if (cot) {
+    Object.keys(cotRoles).forEach(rank => {
+      if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
+        const cotRole = cot.roles.find(role => role.name === rank);
+        if (cotRole) {
+          cotRoles[rank] = cotRole;
+        }
+      }
+    })
+  }
+};
 
 type activityList = {
   [key: string]:
@@ -417,6 +451,7 @@ const listAllAbsent = (message: Message) => {
 };
 
 const listAllPromotions = (message: Message) => {
+  fetchCoTRoles(message.member);
   const allPromotionsRows: allPromotionsRow[] = getAllPromotions.all([
     message.guild.id
   ]);
@@ -425,13 +460,15 @@ const listAllPromotions = (message: Message) => {
     sassybotRespond(message, "No Current Promotion Requests");
   } else {
     let responses: Array<{
-      message: string;
-      userId: string;
+      name: string,
+      message: string,
+      userId: string,
     }> = [];
     for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
       const requestDate = new Date();
       requestDate.setTime(parseInt(allPromotionsRows[i].timestamp, 10) * 1000);
       responses.push({
+        name: allPromotionsRows[i].name,
         userId: allPromotionsRows[i].user_id,
         message: `${i + 1}:\t${
           allPromotionsRows[i].name
@@ -445,7 +482,7 @@ const listAllPromotions = (message: Message) => {
     };
 
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return reaction.emoji.name === "no" && user.id === message.author.id;
+      return (reaction.emoji.name === "no" || reaction.emoji.name === 'white_check_mark') && user.id === message.author.id;
     };
     responses.forEach(response => {
       message.channel
@@ -455,30 +492,60 @@ const listAllPromotions = (message: Message) => {
             sentMessages = [sentMessages];
           }
           sentMessages.forEach(msg => {
-            msg
-              .react("344861453146259466")
-              .then(reaction => {
-                msg
-                  .awaitReactions(reactionFilter, {
-                    max: 1,
-                    maxEmojis: 1,
-                    maxUsers: 1,
-                    time: ONE_HOUR * 2
-                  })
-                  .then(collection => {
-                    if (collection.size > 0) {
-                      deleteUserPromotionRow.run([
-                        message.guild.id,
-                        response.userId
-                      ]);
-                      msg.delete(100);
-                    }
-                  })
-                  .catch(() => {
-                    reaction.remove().catch(console.error);
-                  });
-              })
-              .catch(console.error);
+            msg.react('✅').then(() => {
+              msg
+                .react("344861453146259466")
+                .then(reaction => {
+                  msg
+                    .awaitReactions(reactionFilter, {
+                      max: 1,
+                      maxEmojis: 1,
+                      maxUsers: 1,
+                      time: ONE_HOUR * 2
+                    })
+                    .then(collection => {
+                      if (collection.size > 0) {
+                        if (collection.first().emoji.name === 'white_check_mark') {
+                          const promoChannel = message.client.channels.find(channel => channel.id === PROMOTION_ABSENT_CHANNEL_ID)
+                          const member = message.guild.member(response.userId);
+                          let responseMessage = `${response.name} (${member.nickname}) your promotion has been approved`;
+                          const {Recruit, Member, Veteran} = cotRoles;
+                          if (Member) {
+                            const isMember = !!member.roles.find(r => r.id === Member.id);
+                            if (isMember && Veteran) {
+                              member.addRole(Veteran);
+                              member.removeRole(Member);
+                              responseMessage += ' to Veteran'
+                            } else {
+                              member.addRole(Member);
+                              if (Recruit) {
+                                member.removeRole(Recruit)
+                              }
+                              responseMessage += ' to Member'
+                            }
+                          }
+                          if (promoChannel instanceof TextChannel) {
+                            promoChannel.send(responseMessage);
+                          }
+                        } else if (collection.first().emoji.name === 'no') {
+                          sassybotRespond(msg, `Please Remember To Flow Up With ${response
+                              .name} On Why They Were Denied`);
+                        } else {
+                          sassybotRespond(msg, 'I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked')
+                        }
+                        deleteUserPromotionRow.run([
+                          message.guild.id,
+                          response.userId
+                        ]);
+                        msg.delete(100);
+                      }
+                    })
+                    .catch(() => {
+                      reaction.remove().catch(console.error);
+                    });
+                })
+                .catch(console.error);
+            });
           });
         })
         .catch(console.error);
