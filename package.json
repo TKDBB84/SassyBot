@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@types/better-sqlite3": "^5.4.0",
-    "@types/node": "^11.13.20",
+    "@types/node": "^12.7.3",
     "better-sqlite3": "^5.4.2",
     "discord.js": "^11.5.1",
     "moment": "^2.24.0",
-    "node-gyp": "^3.8.0",
+    "node-gyp": "^5.0.3",
     "typescript": "^3.6.2",
     "xivapi-js": "^0.2.4"
   },
