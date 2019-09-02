@@ -12,17 +12,17 @@
   },
   "dependencies": {
     "@types/better-sqlite3": "^5.4.0",
-    "@types/node": "^11.13.19",
+    "@types/node": "^11.13.20",
     "better-sqlite3": "^5.4.2",
     "discord.js": "^11.5.1",
     "node-gyp": "^3.8.0",
+    "typescript": "^3.6.2",
     "xivapi-js": "^0.2.4"
   },
   "devDependencies": {
     "prettier": "^1.18.2",
     "tslint": "^5.19.0",
-    "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.6.2"
+    "tslint-config-prettier": "^1.18.0"
   },
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
