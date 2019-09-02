@@ -1,14 +1,11 @@
 import { Message, MessageOptions } from 'discord.js';
-import { SassyBotCommand, SassyBotImport } from './sassybot';
+import { ISassyBotImport, SassyBotCommand } from './sassybot';
 
-const sassybotReply: (message: Message, reply: string) => void = (
-  message: Message,
-  reply: string
-): void => {
+const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
   const options: MessageOptions = {
     disableEveryone: true,
+    reply: message.author,
     split: true,
-    reply: message.author
   };
   message.channel.send(reply, options).catch(console.error);
 };
@@ -19,20 +16,20 @@ const sassybotReply: (message: Message, reply: string) => void = (
  * @returns {{num: number, sides: number}}
  */
 const parseDice: (message: Message) => { num: number; sides: number } = (
-  message: Message
+  message: Message,
 ): { num: number; sides: number } => {
   const parsedMessage = message.content.split(' ')[2];
   const result = parsedMessage.match(/^\s*(\d+)d(\d+).*$/i);
 
   let ret = {
     num: 0,
-    sides: 0
+    sides: 0,
   };
 
   if (result && result.length === 3) {
     ret = {
       num: parseInt(result[1], 10),
-      sides: parseInt(result[2], 10)
+      sides: parseInt(result[2], 10),
     };
   }
 
@@ -51,10 +48,10 @@ const parseDice: (message: Message) => { num: number; sides: number } = (
  * @param parsedDice {{num: number, sides: number}}
  * @returns array
  */
-const rollDice: (parsedDice: {
+const rollDice: (parsedDice: { num: number; sides: number }) => number[] = (parsedDice: {
   num: number;
   sides: number;
-}) => number[] = (parsedDice: { num: number; sides: number }): number[] => {
+}): number[] => {
   const numberOfDice = parsedDice.num;
   const numberOfSides = parsedDice.sides;
 
@@ -65,7 +62,7 @@ const rollDice: (parsedDice: {
     return Array(numberOfDice).fill(0);
   }
 
-  let diceRolls = [];
+  const diceRolls = [];
   for (let i = 0; i < numberOfDice; i++) {
     diceRolls.push(Math.floor(Math.random() * numberOfSides) + 1);
   }
@@ -76,25 +73,23 @@ const rollDice: (parsedDice: {
  * @param message
  * @returns {{drop: boolean, keep: boolean, numDice: number}}
  */
-const parseKeepOrDrops: (
-  message: Message
-) => { drop: boolean; keep: boolean; numDice: number } = (
-  message: Message
+const parseKeepOrDrops: (message: Message) => { drop: boolean; keep: boolean; numDice: number } = (
+  message: Message,
 ): { drop: boolean; keep: boolean; numDice: number } => {
   const parsedMessage = message.content.split(' ')[2];
   const result = parsedMessage.match(/^\s*\d+d\d+([d|k])(\d+).*$/i);
 
   let ret = {
-    keep: false,
     drop: false,
-    numDice: 0
+    keep: false,
+    numDice: 0,
   };
 
   if (result && result.length === 3) {
     ret = {
-      keep: result[1].toLowerCase() === 'k',
       drop: result[1].toLowerCase() === 'd',
-      numDice: parseInt(result[2], 10)
+      keep: result[1].toLowerCase() === 'k',
+      numDice: parseInt(result[2], 10),
     };
   }
   return ret;
@@ -102,10 +97,10 @@ const parseKeepOrDrops: (
 
 const actionKeepOrDrops: (
   keepOrDrop: { drop: boolean; keep: boolean; numDice: number },
-  rolls: number[]
+  rolls: number[],
 ) => { dropped: number[]; kept: number[] } = (
   keepOrDrop: { drop: boolean; keep: boolean; numDice: number },
-  rolls: number[]
+  rolls: number[],
 ): { dropped: number[]; kept: number[] } => {
   const numDiceToAction = keepOrDrop.numDice;
   const sortedRolls = rolls.sort((a, b) => a - b);
@@ -130,8 +125,8 @@ const actionKeepOrDrops: (
   }
 
   return {
+    dropped: shuffle(dropped),
     kept: shuffle(kept),
-    dropped: shuffle(dropped)
   };
 };
 
@@ -149,25 +144,23 @@ const shuffle: (arr: number[]) => number[] = (arr: number[]): number[] =>
  * @param message
  * @returns {{minus: boolean, constant: number, plus: boolean}}
  */
-const parseStaticAdditions: (
-  message: Message
-) => { minus: boolean; constant: number; plus: boolean } = (
-  message: Message
+const parseStaticAdditions: (message: Message) => { minus: boolean; constant: number; plus: boolean } = (
+  message: Message,
 ): { minus: boolean; constant: number; plus: boolean } => {
   const parsedMessage = message.content.split(' ')[2];
   const result = parsedMessage.match(/^.*([+\-])\s*(\d+)$/i);
 
   let ret = {
-    plus: false,
+    constant: 0,
     minus: false,
-    constant: 0
+    plus: false,
   };
 
   if (result && result.length === 3) {
     ret = {
-      plus: result[1].trim() === '+',
+      constant: parseInt(result[2], 10),
       minus: result[1].trim() === '-',
-      constant: parseInt(result[2], 10)
+      plus: result[1].trim() === '+',
     };
   }
 
@@ -175,15 +168,12 @@ const parseStaticAdditions: (
 };
 
 const rollFunction: SassyBotCommand = (message: Message): void => {
-  let keptAndDropped = actionKeepOrDrops(
-    parseKeepOrDrops(message),
-    rollDice(parseDice(message))
-  );
-  let additions = parseStaticAdditions(message);
+  const keptAndDropped = actionKeepOrDrops(parseKeepOrDrops(message), rollDice(parseDice(message)));
+  const additions = parseStaticAdditions(message);
   let total = 0;
 
   if (keptAndDropped.kept.length > 0) {
-    total = keptAndDropped.kept.reduce((total, num) => total + num);
+    total = keptAndDropped.kept.reduce((carry, num) => carry + num);
   }
 
   let replyMessage = '[ ';
@@ -203,10 +193,7 @@ const rollFunction: SassyBotCommand = (message: Message): void => {
   replyMessage += ' ] ';
 
   if (additions.constant > 0 && (additions.plus || additions.minus)) {
-    replyMessage +=
-      (additions.plus ? ' + ' : '') +
-      (additions.minus ? ' - ' : '') +
-      additions.constant;
+    replyMessage += (additions.plus ? ' + ' : '') + (additions.minus ? ' - ' : '') + additions.constant;
     if (additions.minus) {
       additions.constant *= -1;
     }
@@ -216,14 +203,14 @@ const rollFunction: SassyBotCommand = (message: Message): void => {
   sassybotReply(message, replyMessage);
 };
 
-const diceExport: SassyBotImport = {
+const diceExport: ISassyBotImport = {
   functions: {
-    roll: rollFunction
+    roll: rollFunction,
   },
   help: {
     roll:
-      'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll'
-  }
+      'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll',
+  },
 };
 
 export default diceExport;

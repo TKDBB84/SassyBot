@@ -7,80 +7,67 @@ import {
   MessageReaction,
   Snowflake,
   TextChannel,
-  User
+  User,
 } from 'discord.js';
-import { SassyBotCommand, SassyBotImport } from './sassybot';
 import * as Discord from 'discord.js';
+import { ISassyBotImport, SassyBotCommand } from './sassybot';
 
-type QuoteRow = {
+interface IQuoteRow {
   guild_id: string;
   user_id: string;
   channel_id: string;
   message_id: string;
   timestamp: string;
   quote_text: string;
-};
-type QuoteCountRow = { cnt: string; user_id: string };
+}
+interface IQuoteCountRow {
+  cnt: string;
+  user_id: string;
+}
 
 import SassyDb from './SassyDb';
 const db = new SassyDb();
 const client = new Discord.Client();
 
-const sassybotRespond: (message: Message, reply: string) => void = (
-  message: Message,
-  text: string
-): void => {
+const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
   const options: MessageOptions = {
     disableEveryone: true,
-    split: true
+    split: true,
   };
   message.channel.send(text, options).catch(console.error);
 };
 
 db.connection.exec(
-  'CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, channel_id TEXT, message_id TEXT, timestamp INTEGER, quote_text TEXT);'
+  'CREATE TABLE IF NOT EXISTS user_quotes (guild_id TEXT, user_id TEXT, channel_id TEXT, message_id TEXT, timestamp INTEGER, quote_text TEXT);',
 );
 const addQuote: Statement = db.connection.prepare(
-  "INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp, quote_text) VALUES (?,?,?,?,strftime('%s','now'),?);"
+  "INSERT INTO user_quotes (guild_id, user_id, channel_id, message_id, timestamp, quote_text) VALUES (?,?,?,?,strftime('%s','now'),?);",
 );
 const getQuotesByUser: Statement = db.connection.prepare(
-  'SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ? ORDER BY message_id;'
+  'SELECT * FROM user_quotes WHERE guild_id = ? AND user_id = ? ORDER BY message_id;',
 );
 const updateMessageText: Statement = db.connection.prepare(
-  'UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;'
+  'UPDATE user_quotes SET quote_text = ? WHERE message_id = ?;',
 );
 
 const getQuoteCounts: Statement = db.connection.prepare(
-  'SELECT COUNT(1) as cnt, user_id FROM user_quotes WHERE guild_id = ? GROUP BY user_id'
+  'SELECT COUNT(1) as cnt, user_id FROM user_quotes WHERE guild_id = ? GROUP BY user_id',
 );
 
-const hasSingleMention: (message: Message) => boolean = (
-  message: Message
-): boolean => {
-  return (
-    message.mentions &&
-    message.mentions.members &&
-    message.mentions.members.array().length === 1
-  );
+const hasSingleMention: (message: Message) => boolean = (message: Message): boolean => {
+  return message.mentions && message.mentions.members && message.mentions.members.array().length === 1;
 };
 
-const hasReaction: (message: Message) => boolean = (
-  message: Message
-): boolean => {
+const hasReaction: (message: Message) => boolean = (message: Message): boolean => {
   return message.reactions && message.reactions.array().length > 0;
 };
 
-const hasQuoteReaction: (message: Message) => boolean = (
-  message: Message
-): boolean => {
+const hasQuoteReaction: (message: Message) => boolean = (message: Message): boolean => {
   const reactions: Collection<Snowflake, MessageReaction> = message.reactions;
-  return !!reactions.find((reaction: MessageReaction): boolean =>
-    reaction.emoji.name.includes('quote')
-  );
+  return !!reactions.find((reaction: MessageReaction): boolean => reaction.emoji.name.includes('quote'));
 };
 
-const isNormalInteger: (str: string) => boolean = (str: string): boolean =>
-  /^\+?(0|[1-9]\d*)$/.test(str);
+const isNormalInteger: (str: string) => boolean = (str: string): boolean => /^\+?(0|[1-9]\d*)$/.test(str);
 
 const quoteFunction: SassyBotCommand = (message: Message): void => {
   if (hasSingleMention(message)) {
@@ -90,51 +77,38 @@ const quoteFunction: SassyBotCommand = (message: Message): void => {
     const activeChannel = message.channel;
     activeChannel
       .fetchMessages({
+        before: message.id,
         limit: 50,
-        before: message.id
       })
       .then((messages: Collection<string, Message>) => {
         const messagesWithReactions: Message[] = messages
-          .filter(
-            (item) =>
-              item.author.id === quotedMember.id &&
-              hasReaction(item) &&
-              hasQuoteReaction(item)
-          )
+          .filter((item) => item.author.id === quotedMember.id && hasReaction(item) && hasQuoteReaction(item))
           .array();
 
         let foundOne = false;
         for (let i = 0, iMax = messagesWithReactions.length; i < iMax; i++) {
-          const reactions: MessageReaction[] = messagesWithReactions[
-            i
-          ].reactions.array();
+          const reactions: MessageReaction[] = messagesWithReactions[i].reactions.array();
           for (let k = 0, kMax = reactions.length; k < kMax; k++) {
             const reaction = reactions[k];
             if (!foundOne) {
-              reaction
-                .fetchUsers()
-                .then((users: Collection<Snowflake, User>) => {
-                  if (users.get(message.author.id) && !foundOne) {
-                    if (reaction.message.cleanContent !== '') {
-                      addQuote.run([
-                        message.guild.id,
-                        reaction.message.author.id,
-                        activeChannel.id,
-                        reaction.message.id,
-                        reaction.message.cleanContent
-                      ]);
-                      sassybotRespond(
-                        message,
-                        "I've noted that " +
-                          quotedMember.displayName +
-                          ' said: "' +
-                          reaction.message.cleanContent +
-                          '"'
-                      );
-                      foundOne = true;
-                    }
+              reaction.fetchUsers().then((users: Collection<Snowflake, User>) => {
+                if (users.get(message.author.id) && !foundOne) {
+                  if (reaction.message.cleanContent !== '') {
+                    addQuote.run([
+                      message.guild.id,
+                      reaction.message.author.id,
+                      activeChannel.id,
+                      reaction.message.id,
+                      reaction.message.cleanContent,
+                    ]);
+                    sassybotRespond(
+                      message,
+                      "I've noted that " + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"',
+                    );
+                    foundOne = true;
                   }
-                });
+                }
+              });
             }
           }
         }
@@ -143,24 +117,16 @@ const quoteFunction: SassyBotCommand = (message: Message): void => {
 };
 
 const rQuoteFunction: SassyBotCommand = (message: Message): void => {
-  let parts = message.content.match(
-    /!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i
-  );
-  let quotedMember = message.mentions.members.first();
+  const parts = message.content.match(/!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i);
+  const quotedMember = message.mentions.members.first();
   if (parts && parts[0] === '!sb rquote list all') {
-    const countRows: QuoteCountRow[] = getQuoteCounts.all([message.guild.id]);
+    const countRows: IQuoteCountRow[] = getQuoteCounts.all([message.guild.id]);
     let outputString = '';
     for (let j = 0, jMax = countRows.length; j < jMax; j++) {
       const member = message.guild.members.get(countRows[j].user_id);
       if (member) {
         outputString +=
-          member.displayName +
-          '(' +
-          member.user.username +
-          '): ' +
-          countRows[j].cnt +
-          ' saved quotes' +
-          '\n';
+          member.displayName + '(' + member.user.username + '): ' + countRows[j].cnt + ' saved quotes' + '\n';
       }
     }
     sassybotRespond(message, outputString);
@@ -168,41 +134,36 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
   }
   if (hasSingleMention(message)) {
     if (!parts) {
-      const rows: QuoteRow[] = getQuotesByUser.all(
-        message.guild.id,
-        quotedMember.id
-      );
+      const rows: IQuoteRow[] = getQuotesByUser.all(message.guild.id, quotedMember.id);
       if (rows.length > 0) {
-        let selectedQuoted = Math.floor(Math.random() * rows.length);
-        let row = rows[selectedQuoted];
-        let quote = {
+        const selectedQuoted = Math.floor(Math.random() * rows.length);
+        const row = rows[selectedQuoted];
+        const quote = {
           content: row.quote_text ? row.quote_text : '',
+          count: rows.length,
           number: selectedQuoted + 1,
-          count: rows.length
         };
         if (!row.quote_text || row.quote_text === '') {
           const channel = client.channels.get(row.channel_id);
           if (channel instanceof TextChannel) {
-            channel
-              .fetchMessage(row.message_id)
-              .then((recalledMessage: Message) => {
-                let content = recalledMessage.cleanContent;
-                updateMessageText.run([content, row.message_id]);
-                quote.content = content;
-                sassybotRespond(
-                  message,
-                  quotedMember.displayName +
-                    ' said: "' +
-                    quote.content +
-                    '" (quote #' +
-                    quote.number +
-                    ')' +
-                    '\n\n' +
-                    'and has ' +
-                    (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-                    ' other quotes saved'
-                );
-              });
+            channel.fetchMessage(row.message_id).then((recalledMessage: Message) => {
+              const content = recalledMessage.cleanContent;
+              updateMessageText.run([content, row.message_id]);
+              quote.content = content;
+              sassybotRespond(
+                message,
+                quotedMember.displayName +
+                  ' said: "' +
+                  quote.content +
+                  '" (quote #' +
+                  quote.number +
+                  ')' +
+                  '\n\n' +
+                  'and has ' +
+                  (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
+                  ' other quotes saved',
+              );
+            });
           }
         } else {
           sassybotRespond(
@@ -216,21 +177,17 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
               '\n\n' +
               'and has ' +
               (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-              ' other quotes saved'
+              ' other quotes saved',
           );
         }
       }
     } else if (parts.length >= 2 && parts[1].toLowerCase() === 'list') {
-      let target = message.author;
-      const rows: QuoteRow[] = getQuotesByUser.all([
-        message.guild.id,
-        quotedMember.id
-      ]);
+      const target = message.author;
+      const rows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
 
-      let builtMessages = [];
-      let fetches = [];
-      let finalMessage =
-        quotedMember.displayName + '\n----------------------------\n';
+      const builtMessages = [];
+      const fetches = [];
+      let finalMessage = quotedMember.displayName + '\n----------------------------\n';
       for (let i = 0, iMax = rows.length; i < iMax; i++) {
         const row = rows[i];
         if (!row.quote_text || row.quote_text === '') {
@@ -245,15 +202,12 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
       if (fetches.length > 0) {
         Promise.all(fetches).then((results: Message[]) => {
           for (let k = 0, kMax = results.length; k < kMax; k++) {
-            let content = results[k].cleanContent;
+            const content = results[k].cleanContent;
             updateMessageText.run([content, results[k].id]);
           }
-          const rows: QuoteRow[] = getQuotesByUser.all([
-            message.guild.id,
-            quotedMember.id
-          ]);
-          for (let i = 0, iMax = rows.length; i < iMax; i++) {
-            finalMessage += i + 1 + ': ' + rows[i].quote_text + '\n';
+          const quoteRows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
+          for (let i = 0, iMax = quoteRows.length; i < iMax; i++) {
+            finalMessage += i + 1 + ': ' + quoteRows[i].quote_text + '\n';
           }
           target.send(finalMessage + '----------------------------');
         });
@@ -264,41 +218,36 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
         target.send(finalMessage + '----------------------------');
       }
     } else if (parts.length >= 2 && isNormalInteger(parts[1])) {
-      const rows: QuoteRow[] = getQuotesByUser.all([
-        message.guild.id,
-        quotedMember.id
-      ]);
+      const rows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
       if (rows.length > 0) {
-        let selectedQuoted = Number(parts[1]);
-        let row = rows[selectedQuoted - 1];
-        let quote = {
+        const selectedQuoted = Number(parts[1]);
+        const row = rows[selectedQuoted - 1];
+        const quote = {
           content: row.quote_text ? row.quote_text : '',
+          count: rows.length,
           number: selectedQuoted,
-          count: rows.length
         };
         if (!row.quote_text || row.quote_text === '') {
           const channel = client.channels.get(row.channel_id);
           if (channel instanceof TextChannel) {
-            channel
-              .fetchMessage(row.message_id)
-              .then((recalledMessage: Message) => {
-                let content = recalledMessage.cleanContent;
-                updateMessageText.run([content, row.message_id]);
-                quote.content = content;
-                sassybotRespond(
-                  message,
-                  quotedMember.displayName +
-                    ' said: "' +
-                    quote.content +
-                    '" (quote #' +
-                    quote.number +
-                    ')' +
-                    '\n\n' +
-                    'and has ' +
-                    (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-                    ' other quotes saved'
-                );
-              });
+            channel.fetchMessage(row.message_id).then((recalledMessage: Message) => {
+              const content = recalledMessage.cleanContent;
+              updateMessageText.run([content, row.message_id]);
+              quote.content = content;
+              sassybotRespond(
+                message,
+                quotedMember.displayName +
+                  ' said: "' +
+                  quote.content +
+                  '" (quote #' +
+                  quote.number +
+                  ')' +
+                  '\n\n' +
+                  'and has ' +
+                  (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
+                  ' other quotes saved',
+              );
+            });
           }
         } else {
           sassybotRespond(
@@ -312,7 +261,7 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
               '\n\n' +
               'and has ' +
               (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-              ' other quotes saved'
+              ' other quotes saved',
           );
         }
       }
@@ -320,24 +269,21 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
       sassybotRespond(message, 'ugh waht ?');
     }
   } else {
-    sassybotRespond(
-      message,
-      'You must specify whose quote you want to retrieve'
-    );
+    sassybotRespond(message, 'You must specify whose quote you want to retrieve');
   }
 };
 
-const quoteExport: SassyBotImport = {
+const quoteExport: ISassyBotImport = {
   functions: {
     quote: quoteFunction,
-    rquote: rQuoteFunction
+    rquote: rQuoteFunction,
   },
   help: {
+    quote:
+      "usage: `!{sassybot|sb} quote {@User}` -- This command causes me to search through this room's chat history (last 50 messages) for a message sent by the specified @User, which as a :quote: reaction from you, and record that message.",
     rquote:
       'usage: `!{sassybot|sb} rquote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.',
-    quote:
-      "usage: `!{sassybot|sb} quote {@User}` -- This command causes me to search through this room's chat history (last 50 messages) for a message sent by the specified @User, which as a :quote: reaction from you, and record that message."
-  }
+  },
 };
 
 export default quoteExport;

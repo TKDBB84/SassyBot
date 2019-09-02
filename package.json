@@ -1,11 +1,15 @@
 {
-  "name": "untitled",
+  "name": "sassybot",
   "version": "1.0.0",
-  "description": "",
-  "main": "sassybot.js.js",
+  "description": "Sassybot, mostly useless",
+  "main": "dist/sassybot.js",
   "keywords": [],
-  "author": "",
+  "author": "TKDBB84 (Sasner)",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TKDBB84/SassyBot.git"
+  },
   "dependencies": {
     "@types/better-sqlite3": "^5.4.0",
     "@types/node": "^11.13.19",
@@ -15,14 +19,23 @@
     "xivapi-js": "^0.2.4"
   },
   "devDependencies": {
-    "prettier": "^1.18.2"
+    "prettier": "^1.18.2",
+    "tslint": "^5.19.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.6.2"
+  },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json --fix",
+    "build": "tsc"
   },
   "prettier": {
     "singleQuote": true,
     "useTabs": false,
+    "printWidth": 120,
     "tabWidth": 2,
     "quoteProps": "as-needed",
-    "trailingComma": "none",
+    "trailingComma": "all",
     "arrowParens": "always",
     "parser": "typescript",
     "endOfLine": "lf"
