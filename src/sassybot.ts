@@ -320,7 +320,6 @@ const messageEventHandler: (message: Message) => void = (message: Message): void
   const isFromSassyBot = authorId === Users.Sassybot.id;
   if (!isFromSassyBot) {
     if (resumeAbsentOrPromote(message)) {
-      // sassybot DM things
       return;
     }
     const isNewMemberMessage = newMemberListener(message);

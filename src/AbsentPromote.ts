@@ -110,7 +110,7 @@ const fetchCoTRoles: (member: GuildMember) => void = (member) => {
 interface IActivityList {
   [key: string]:
     | {
-        next: (message: Message, activityList: IActivityList) => void;
+        next: (message: Message, activityList: IActivityList) => Promise<void>;
         guildId: string;
         initDate: moment.Moment;
         name: string;
@@ -161,21 +161,35 @@ setInterval(() => {
   });
 }, ONE_HOUR * 12);
 
-const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
+const sassybotReply: (message: Message, reply: string) => Promise<void> = async (
+  message: Message,
+  reply: string,
+): Promise<void> => {
   const options: MessageOptions = {
     disableEveryone: true,
     reply: message.author,
     split: true,
   };
-  message.channel.send(reply, options);
+  try {
+    await message.channel.send(reply, options);
+  } catch (e) {
+    console.error(e);
+  }
 };
 
-const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
+const sassybotRespond: (message: Message, text: string) => Promise<void> = async (
+  message: Message,
+  text: string,
+): Promise<void> => {
   const options: MessageOptions = {
     disableEveryone: true,
     split: true,
   };
-  message.channel.send(text, options).catch(console.error);
+  try {
+    await message.channel.send(text, options);
+  } catch (e) {
+    console.error(e);
+  }
 };
 
 const getOfficerRoleId = (message: Message): string => {
@@ -199,7 +213,7 @@ const isOfficer = (message: Message): boolean => {
   return officer;
 };
 
-const requestFFName = (message: Message, activityList: IActivityList) => {
+const requestFFName = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id] = {
     endDate: moment.utc(0),
     guildId: message.guild.id,
@@ -208,32 +222,32 @@ const requestFFName = (message: Message, activityList: IActivityList) => {
     next: storeFFName,
     startDate: moment.utc(0),
   };
-  sassybotReply(message, 'First, Tell Me Your Full Character Name');
+  await sassybotReply(message, 'First, Tell Me Your Full Character Name');
 };
 
-const requestStartDate = (message: Message, activityList: IActivityList) => {
+const requestStartDate = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id]!.next = storeStartDate;
-  sassybotReply(
+  await sassybotReply(
     message,
     "What's the first day you'll be gone?\n(because i'm a dumb bot, please format it as YYYY-MM-DD)",
   );
 };
 
-const requestEndDate = (message: Message, activityList: IActivityList) => {
+const requestEndDate = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id]!.next = storeEndDate;
-  sassybotReply(
+  await sassybotReply(
     message,
     "What day will you be back?\nIf you're not sure add a few days on the end\n(because i'm a dumb bot, please format it as YYYY-MM-DD)",
   );
 };
 
-const storeFFName = (message: Message, activityList: IActivityList) => {
+const storeFFName = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id]!.name = message.cleanContent;
-  sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
-  requestStartDate(message, activityList);
+  await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
+  await requestStartDate(message, activityList);
 };
 
-const requestFFNameAndStop = (message: Message, activityList: IActivityList) => {
+const requestFFNameAndStop = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id] = {
     endDate: moment.utc(0),
     guildId: message.guild.id,
@@ -242,48 +256,48 @@ const requestFFNameAndStop = (message: Message, activityList: IActivityList) => 
     next: storeFFNameAndStop,
     startDate: moment.utc(0),
   };
-  sassybotReply(
+  await sassybotReply(
     message,
     'To request an officer verify your join date, and promote you: please tell me your full character name',
   );
 };
 
-const storeFFNameAndStop = (message: Message, activityList: IActivityList) => {
+const storeFFNameAndStop = async (message: Message, activityList: IActivityList) => {
   activityList[message.author.id]!.name = message.cleanContent;
-  sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
-  completePromotion(message, activityList);
+  await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
+  await completePromotion(message, activityList);
 };
 
-const storeStartDate = (message: Message, activityList: IActivityList) => {
+const storeStartDate = async (message: Message, activityList: IActivityList) => {
   const possibleDate = message.cleanContent;
   if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
     activityList[message.author.id]!.startDate = moment(possibleDate, 'YYYY-MM-DD');
     const dateString = formatDate(activityList[message.author.id]!.startDate);
-    sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
-    requestEndDate(message, activityList);
+    await sassybotReply(message, `ok i have your start date as: ${dateString}\n\n`);
+    await requestEndDate(message, activityList);
   } else {
     activityList[message.author.id]!.next = storeStartDate;
-    sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format');
+    await sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format');
   }
 
   return;
 };
 
-const storeEndDate = (message: Message, activityList: IActivityList) => {
+const storeEndDate = async (message: Message, activityList: IActivityList) => {
   const possibleDate = message.cleanContent;
   if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
     activityList[message.author.id]!.endDate = moment(possibleDate, 'YYYY-MM-DD');
     const dateString = formatDate(activityList[message.author.id]!.endDate);
-    sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
-    completeAbsent(message, activityList);
+    await sassybotReply(message, `ok i have your end date as: ${dateString}\n\n`);
+    await completeAbsent(message, activityList);
   } else {
     activityList[message.author.id]!.next = storeEndDate;
-    sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format');
+    await sassybotReply(message, 'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format');
   }
   return;
 };
 
-const completeAbsent = (message: Message, activityList: IActivityList) => {
+const completeAbsent = async (message: Message, activityList: IActivityList) => {
   addAbsent.run([
     activityList[message.author.id]!.guildId,
     message.author.id,
@@ -297,18 +311,18 @@ const completeAbsent = (message: Message, activityList: IActivityList) => {
     message.author.id,
   ]);
   if (fetchedData.length) {
-    sassybotReply(
+    await sassybotReply(
       message,
       `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\nStart Date:\t${fetchedData[0].start_date}\nEnd Date:\t${fetchedData[0].end_date}\n`,
     );
   } else {
-    sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
+    await sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
   }
   activeAbsentList[message.author.id] = undefined;
   delete activeAbsentList[message.author.id];
 };
 
-const completePromotion = (message: Message, activityList: IActivityList) => {
+const completePromotion = async (message: Message, activityList: IActivityList) => {
   addPromotion.run([
     activityList[message.author.id]!.guildId,
     message.author.id,
@@ -320,169 +334,151 @@ const completePromotion = (message: Message, activityList: IActivityList) => {
     message.author.id,
   ]);
   if (fetchedData.length) {
-    sassybotReply(
+    await sassybotReply(
       message,
       `Ok Here is the information I have Stored:\nName:\t${fetchedData[0].name}\n\nI'll Make Sure The Officers See Your Request!`,
     );
   } else {
-    sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
+    await sassybotReply(message, `Sorry something went terribly wrong, please try again, or message Sasner for help`);
   }
   activePromotionList[message.author.id] = undefined;
   delete activePromotionList[message.author.id];
 };
 
-const listAllAbsent = (message: Message) => {
+const listAllAbsent = async (message: Message) => {
   const allAbsentRows: IAllAbsentsRow[] = getAllAbsents.all([message.guild.id]);
 
   if (allAbsentRows.length === 0) {
-    sassybotRespond(message, 'No Current Absentees');
+    await sassybotRespond(message, 'No Current Absentees');
   } else {
     let response: string = '';
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
       response += `${allAbsentRows[i].name} is gone from ${allAbsentRows[i].start_date} until ${allAbsentRows[i].end_date}\n`;
     }
-    sassybotRespond(message, response);
+    await sassybotRespond(message, response);
   }
 };
 
-const listAllPromotions = (message: Message) => {
+const listAllPromotions = async (message: Message) => {
   fetchCoTRoles(message.member);
   const { Recruit, Member, Veteran } = cotRoles;
   const allPromotionsRows: IAllPromotionsRow[] = getAllPromotions.all([message.guild.id]);
-
   if (allPromotionsRows.length === 0) {
-    sassybotRespond(message, 'No Current Promotion Requests');
-  } else {
-    const responses: Array<{
-      isMember: boolean;
-      member: GuildMember;
-      name: string;
-      message: string;
-      userId: string;
-    }> = [];
-    for (let i = 0, iMax = allPromotionsRows.length; i < iMax; i++) {
-      const requestDate = moment(parseInt(allPromotionsRows[i].timestamp, 10));
-      const member = message.guild.member(allPromotionsRows[i].user_id);
-      let isMember = true;
-      if (Member) {
-        isMember = !!member.roles.find((r) => r.id === Member.id);
-      }
-      responses.push({
-        isMember,
-        member,
-        message: `${i + 1}:\t${allPromotionsRows[i].name}\t\tRequested promotion to:\t${
-          isMember ? 'Veteran' : 'Member'
-        } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`,
-        name: allPromotionsRows[i].name,
-        userId: allPromotionsRows[i].user_id,
-      });
+    await sassybotRespond(message, 'No Current Promotion Requests');
+    return;
+  }
+
+  const options: MessageOptions = {
+    disableEveryone: true,
+    split: true,
+  };
+  const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+    return (reaction.emoji.name === 'no' || reaction.emoji.name === '✅') && user.id === message.author.id;
+  };
+
+  const responses: Array<{
+    isMember: boolean;
+    member: GuildMember;
+    name: string;
+    message: string;
+    userId: string;
+  }> = [];
+  for (const promotionRow of allPromotionsRows) {
+    const requestDate = moment(parseInt(promotionRow.timestamp, 10));
+    const member = message.guild.member(promotionRow.user_id);
+    let isMember = true;
+    if (Member) {
+      isMember = !!member.roles.find((r) => r.id === Member.id);
     }
 
-    const options: MessageOptions = {
-      disableEveryone: true,
-      split: true,
-    };
-
-    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return (reaction.emoji.name === 'no' || reaction.emoji.name === '✅') && user.id === message.author.id;
-    };
-
-    message.channel.send('click the ✅ for yes, promote.\t\t <:no:344861453146259466> to deny promotion');
-    responses.forEach((response) => {
-      message.channel
-        .send(response.message, options)
-        .then((sentMessages) => {
-          if (!Array.isArray(sentMessages)) {
-            sentMessages = [sentMessages];
-          }
-          sentMessages.forEach((msg) => {
-            msg.react('✅').then(() => {
-              msg
-                .react('344861453146259466')
-                .then((reaction) => {
-                  msg
-                    .awaitReactions(reactionFilter, {
-                      max: 1,
-                      maxEmojis: 1,
-                      maxUsers: 1,
-                      time: ONE_HOUR * 2,
-                    })
-                    .then((collection) => {
-                      if (collection.size === 0) {
-                        reaction.remove().catch(console.error);
-                        return;
-                      }
-                      if (collection.size > 0) {
-                        console.log({ collection });
-                        if (collection.first().emoji.name === '✅') {
-                          const promoChannel = message.client.channels.find(
-                            (channel) => channel.id === PROMOTION_ABSENT_CHANNEL_ID,
-                          );
-                          let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
-                          if (Member) {
-                            if (response.isMember && Veteran) {
-                              response.member.addRole(Veteran);
-                              response.member.removeRole(Member);
-                              responseMessage += ' to Veteran';
-                            } else {
-                              response.member.addRole(Member);
-                              if (Recruit) {
-                                response.member.removeRole(Recruit);
-                              }
-                              responseMessage += ' to Member';
-                            }
-                          }
-                          if (promoChannel instanceof TextChannel) {
-                            promoChannel.send(responseMessage);
-                          }
-                        } else if (collection.first().emoji.name === 'no') {
-                          sassybotRespond(
-                            msg,
-                            `Please Remember To Flow Up With ${response.name} On Why They Were Denied`,
-                          );
-                        } else {
-                          sassybotRespond(
-                            msg,
-                            'I have no idea how you got to this chunk of code, please ping Sasner to get Sassybot unfucked',
-                          );
-                        }
-                        deleteUserPromotionRow.run([message.guild.id, response.userId]);
-                        msg.delete(100);
-                      }
-                    })
-                    .catch(() => {
-                      reaction.remove().catch(console.error);
-                    });
-                })
-                .catch(console.error);
-            });
-          });
-        })
-        .catch(console.error);
+    responses.push({
+      isMember,
+      member,
+      message: `${promotionRow.name}\t\tRequested promotion to:\t${
+        isMember ? 'Veteran' : 'Member'
+      } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`,
+      name: promotionRow.name,
+      userId: promotionRow.user_id,
     });
   }
+
+  await message.channel.send('click the ✅ for yes, promote.\t\t <:no:344861453146259466> to deny promotion');
+  await Promise.all(
+    responses.map(async (response) => {
+      const sentMessages = await message.channel.send(response.message, options);
+      let msg: Message;
+      if (Array.isArray(sentMessages)) {
+        msg = sentMessages[sentMessages.length - 1];
+      } else {
+        msg = sentMessages;
+      }
+
+      const reactionYes = await msg.react('✅');
+      const reactionNo = await msg.react('344861453146259466');
+      let collection;
+      try {
+        collection = await msg.awaitReactions(reactionFilter, {
+          max: 1,
+          maxEmojis: 1,
+          maxUsers: 1,
+          time: ONE_HOUR * 2,
+        });
+        if (collection.size === 0) {
+          await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
+          return;
+        }
+        if (collection.first() && collection.first().emoji.name === '✅') {
+          const promoChannel = message.client.channels.find((channel) => channel.id === PROMOTION_ABSENT_CHANNEL_ID);
+          let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
+          if (Member) {
+            if (response.isMember && Veteran) {
+              await response.member.addRole(Veteran);
+              await response.member.removeRole(Member);
+              responseMessage += ' to Veteran';
+            } else {
+              await response.member.addRole(Member);
+              if (Recruit) {
+                await response.member.removeRole(Recruit);
+              }
+              responseMessage += ' to Member';
+            }
+          }
+          if (promoChannel instanceof TextChannel) {
+            await promoChannel.send(responseMessage);
+          }
+        } else if (collection.first().emoji.name === 'no') {
+          await sassybotRespond(msg, `Please Remember To Flow Up With ${response.name} On Why They Were Denied`);
+        }
+        deleteUserPromotionRow.run([message.guild.id, response.userId]);
+        await msg.delete(100);
+      } catch (e) {
+        console.error({ e });
+        await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
+      }
+    }),
+  );
 };
 
-const absentFunction: SassyBotCommand = (message: Message) => {
+const absentFunction: SassyBotCommand = async (message: Message) => {
   if (isOfficer(message) || message.author.id === Users.Sasner.id) {
-    return listAllAbsent(message);
+    await listAllAbsent(message);
   } else {
     if (activeAbsentList[message.author.id]) {
-      activeAbsentList[message.author.id]!.next(message, activeAbsentList);
+      await activeAbsentList[message.author.id]!.next(message, activeAbsentList);
     } else {
-      return requestFFName(message, activeAbsentList);
+      await requestFFName(message, activeAbsentList);
     }
   }
 };
 
-const promotionFunction: SassyBotCommand = (message: Message) => {
+const promotionFunction: SassyBotCommand = async (message: Message) => {
   if (isOfficer(message) || message.author.id === Users.Sasner.id) {
-    return listAllPromotions(message);
+    await listAllPromotions(message);
   } else {
     if (activePromotionList[message.author.id]) {
-      activePromotionList[message.author.id]!.next(message, activePromotionList);
+      await activePromotionList[message.author.id]!.next(message, activePromotionList);
     } else {
-      return requestFFNameAndStop(message, activePromotionList);
+      await requestFFNameAndStop(message, activePromotionList);
     }
   }
 };
