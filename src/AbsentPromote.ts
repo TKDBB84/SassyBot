@@ -385,7 +385,7 @@ const listAllPromotions = async (message: Message) => {
     userId: string;
   }> = [];
   for (const promotionRow of allPromotionsRows) {
-    const requestDate = moment(parseInt(promotionRow.timestamp, 10));
+    const requestDate = moment(parseInt(promotionRow.timestamp, 10) * 1000);
     const member = message.guild.member(promotionRow.user_id);
     let isMember = true;
     if (Member) {
