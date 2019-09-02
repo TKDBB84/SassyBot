@@ -4,13 +4,14 @@ export default function VoiceLogHandler(
   client: Client,
   channelList: Map<string, string>,
   previousMemberState: GuildMember,
-  currentMemberState: GuildMember
+  currentMemberState: GuildMember,
 ): void {
   const now = `(${new Date()
     .toISOString()
     .replace(/T/, ' ')
     .replace(/\..+/, '')} GMT)`;
-  let leftChannel, joinedChannel;
+  let leftChannel;
+  let joinedChannel;
   if (previousMemberState.voiceChannelID) {
     leftChannel = client.channels.get(previousMemberState.voiceChannelID);
   }
@@ -27,14 +28,9 @@ export default function VoiceLogHandler(
 
   let msg = `${now} ${previousMemberState.displayName} (${previousMemberState.user.username}) `;
 
-  if (
-    previousMemberState.voiceChannelID !== currentMemberState.voiceChannelID
-  ) {
+  if (previousMemberState.voiceChannelID !== currentMemberState.voiceChannelID) {
     // if the voice channel changed:
-    if (
-      previousMemberState.voiceChannelID &&
-      !currentMemberState.voiceChannelID
-    ) {
+    if (previousMemberState.voiceChannelID && !currentMemberState.voiceChannelID) {
       // and the user moved is no longer in any voice channel:
       // they've left voice
       if (leftChannel instanceof VoiceChannel) {
@@ -47,10 +43,7 @@ export default function VoiceLogHandler(
           }
         }
       }
-    } else if (
-      !previousMemberState.voiceChannelID &&
-      currentMemberState.voiceChannelID
-    ) {
+    } else if (!previousMemberState.voiceChannelID && currentMemberState.voiceChannelID) {
       // and the user was not previously in a voice
       // the user has joined a new voice chat for the first time
       if (joinedChannel instanceof VoiceChannel) {
@@ -65,10 +58,7 @@ export default function VoiceLogHandler(
       }
     } else {
       // only case left is the user moved from channel to channel
-      if (
-        joinedChannel instanceof VoiceChannel &&
-        leftChannel instanceof VoiceChannel
-      ) {
+      if (joinedChannel instanceof VoiceChannel && leftChannel instanceof VoiceChannel) {
         const joinedGuildId = joinedChannel.guild.id;
         const leftGuildId = leftChannel.guild.id;
         if (joinedGuildId === leftGuildId) {
@@ -83,9 +73,7 @@ export default function VoiceLogHandler(
           }
         } else {
           // joined message for inbound
-          const inboundSpamChannelId = channelList.get(
-            currentMemberState.guild.id
-          );
+          const inboundSpamChannelId = channelList.get(currentMemberState.guild.id);
           if (inboundSpamChannelId) {
             const spamChannel = client.channels.get(inboundSpamChannelId);
             if (spamChannel instanceof TextChannel) {
@@ -94,9 +82,7 @@ export default function VoiceLogHandler(
           }
 
           // left message for outbound
-          const outboundSpamChannelId = channelList.get(
-            previousMemberState.guild.id
-          );
+          const outboundSpamChannelId = channelList.get(previousMemberState.guild.id);
           if (outboundSpamChannelId) {
             const spamChannel = client.channels.get(outboundSpamChannelId);
             if (spamChannel instanceof TextChannel) {
