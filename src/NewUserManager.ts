@@ -90,15 +90,30 @@ const newMemberJoined = (member: GuildMember) => {
 };
 
 const onboardingStep1 = (message: Message) => {
-  const declaredName = message.cleanContent;
-  const foundMember = CoTMember.fetchMember(message.member.id);
-  if (!foundMember) {
-    const newMember = new CoTMember(message.member.id, declaredName, 'New');
-    try {
-      newMember.save();
-    } catch (e) {
-      console.error('unable to add to DB', { newMember });
+  const declaredName = message.cleanContent.trim();
+  try {
+    const apiUser = CoTMember.getMemberFromAPIByName({ name: declaredName, userId: message.member.id });
+    const guildMembersByName = CoTMember.findByName(declaredName);
+    let guildMemberByName: CoTMember | false = false;
+    if (guildMembersByName && guildMembersByName.length === 1) {
+      guildMemberByName = guildMembersByName[0];
     }
+    if (guildMemberByName) {
+      if (apiUser) {
+        CoTMember.updateAPIUserId({ name: declaredName, userId: message.member.id });
+        guildMemberByName.rank = apiUser.rank;
+        guildMemberByName.setRank();
+      }
+    } else {
+      let rank = 'New';
+      if (apiUser) {
+        rank = apiUser.rank;
+      }
+      const guildMember = new CoTMember(message.member.id, declaredName, rank);
+      guildMember.addMember();
+    }
+  } catch (e) {
+    console.error('unable to add to DB', { declaredName });
   }
 
   const nextStepMessage =
@@ -132,7 +147,7 @@ const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
         foundMember.promote();
       }
     } catch (err) {
-      console.error({context: 'could not do DB work for new user', err});
+      console.error({ context: 'could not do DB work for new user', err });
     }
     const roleToRemove = cotRoles.New;
     if (roleToRemove) {

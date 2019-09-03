@@ -32,11 +32,23 @@ db.connection.exec(
   'CREATE TABLE IF NOT EXISTS cot_promotion_tracking (user_id TEXT PRIMARY KEY, name TEXT, rank TEXT, first_seen_discord TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_promotion TIMESTAMP);',
 );
 
-db.connection.exec('DROP TABLE IF EXISTS cot_member');
-
 db.connection.exec(
   'CREATE TABLE IF NOT EXISTS cot_members (api_id TEXT PRIMARY KEY, user_id TEXT, name TEXT, rank TEXT, first_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
 );
+
+interface ICotMemberRoW {
+  api_id: string;
+  user_id: string;
+  name: string;
+  rank: string;
+  first_seen_api: number;
+  last_seen_api: number;
+}
+type getAPIUserByNameFunction = ({ name }: { name: string }) => ICotMemberRoW[];
+const getAPIUserByName: getAPIUserByNameFunction = ({ name }) => {
+  const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE name = ? COLLATE NOCASE');
+  return stmtGetUserByName.all([name]);
+};
 
 type upsertMemberFunction = ({ ID, Name, Rank }: IFreeCompanyMember) => boolean;
 const upsertMember: upsertMemberFunction = ({ ID, Name, Rank }) => {
@@ -48,7 +60,7 @@ const upsertMember: upsertMemberFunction = ({ ID, Name, Rank }) => {
 };
 
 type updateUserIdByNameFunction = ({ name, id }: { name: string; id: string }) => boolean;
-const updateUserIdByName: updateUserIdByNameFunction = ({ name, id }) => {
+const updateAPIUserId: updateUserIdByNameFunction = ({ name, id }) => {
   const stmtUpdateUserIdByName = db.connection.prepare(
     'UPDATE cot_members SET user_id = ? WHERE name = ? COLLATE NOCASE',
   );
@@ -126,6 +138,12 @@ const promoteByMember: promoteMember = ({ id, rank }) => {
   return !!result.changes;
 };
 
+const setRankInTRackingById: promoteMember = ({ id, rank }) => {
+  const memberByUserId = db.connection.prepare('UPDATE cot_promotion_tracking SET rank = ? WHERE user_id = ?');
+  const result = memberByUserId.run([rank, id]);
+  return !!result.changes;
+};
+
 export class CoTMember extends User {
   public static fetchMember(userId: string): CoTMember | false {
     const row: IMemberRow = getMemberByUserId({ id: userId });
@@ -156,6 +174,18 @@ export class CoTMember extends User {
     return false;
   }
 
+  public static getMemberFromAPIByName({ name, userId }: { name: string; userId: string }): CoTMember | false {
+    const row = getAPIUserByName({ name });
+    if (row.length === 1) {
+      return new CoTMember(userId, row[0].name, row[0].rank);
+    }
+    return false;
+  }
+
+  public static updateAPIUserId({ name, userId }: { name: string; userId: string }): boolean {
+    return updateAPIUserId({ name, id: userId });
+  }
+
   public id: string = '';
   public name: string = '';
   public rank: string = '';
@@ -168,7 +198,7 @@ export class CoTMember extends User {
     this.rank = rank === '' ? 'Recruit' : rank;
   }
 
-  public save(): boolean {
+  public addMember(): boolean {
     if (!this.id) {
       return false;
     }
@@ -180,8 +210,8 @@ export class CoTMember extends User {
     return true;
   }
 
-  public updateUserId(): boolean {
-    return updateUserIdByName(this);
+  public setRank(): boolean {
+    return setRankInTRackingById(this);
   }
 
   public promote(): boolean {
