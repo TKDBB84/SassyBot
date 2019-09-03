@@ -254,7 +254,7 @@ const claimUser = async (message: Message) => {
     const name = parsed[1].trim();
     const apiUsers = getAPIUserByName({ name });
     let apiUser: false | ICotMemberRoW = false;
-    if (apiUsers.length === 1 && apiUsers[0].user_id !== id) {
+    if (apiUsers.length === 1) {
       apiUser = apiUsers[0];
       if (apiUser.user_id !== id) {
         updateAPIUserId({ name, id });
