@@ -188,7 +188,6 @@ export class CoTMember extends User {
     return updateAPIUserId({ name, id: userId });
   }
 
-  public id: string = '';
   public name: string = '';
   public rank: string = '';
   public firstSeenDiscord: string = '';
