@@ -442,8 +442,11 @@ const listAllPromotions = async (message: Message) => {
           maxEmojis: 1,
           maxUsers: 1,
           time: ONE_HOUR * 2,
+        }).catch(async () => {
+          await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
+          return;
         });
-        if (collection.size === 0) {
+        if (!collection || collection.size === 0) {
           await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
           return;
         }
@@ -471,11 +474,13 @@ const listAllPromotions = async (message: Message) => {
           if (promoChannel instanceof TextChannel) {
             await promoChannel.send(responseMessage);
           }
+          deleteUserPromotionRow.run([message.guild.id, response.userId]);
+          await msg.delete(100);
         } else if (collection.first().emoji.name === 'no') {
           await sassybotRespond(msg, `Please Remember To Flow Up With ${response.name} On Why They Were Denied`);
+          deleteUserPromotionRow.run([message.guild.id, response.userId]);
+          await msg.delete(100);
         }
-        deleteUserPromotionRow.run([message.guild.id, response.userId]);
-        await msg.delete(100);
       } catch (e) {
         console.error({ e });
         await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
