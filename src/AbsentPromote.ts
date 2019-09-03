@@ -488,6 +488,32 @@ const listAllPromotions = async (message: Message) => {
   );
 };
 
+const useMemberName = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
+  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+  activityList[message.author.id] = {
+    endDate: moment.utc(0),
+    guildId: message.guild.id,
+    initDate: moment(),
+    name: cotmember.name,
+    next: storeFFName,
+    startDate: moment.utc(0),
+  };
+  await requestStartDate(message, activityList);
+};
+
+const useMemberNameAndStop = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
+  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+  activityList[message.author.id] = {
+    endDate: moment.utc(0),
+    guildId: message.guild.id,
+    initDate: moment(),
+    name: cotmember.name,
+    next: storeFFName,
+    startDate: moment.utc(0),
+  };
+  await completePromotion(message, activityList);
+};
+
 const absentFunction: SassyBotCommand = async (message: Message) => {
   if (isOfficer(message) || message.author.id === Users.Sasner.id) {
     await listAllAbsent(message);
@@ -495,7 +521,17 @@ const absentFunction: SassyBotCommand = async (message: Message) => {
     if (activeAbsentList[message.author.id]) {
       await activeAbsentList[message.author.id]!.next(message, activeAbsentList);
     } else {
-      await requestFFName(message, activeAbsentList);
+      let member: false | CoTMember = false;
+      try {
+        member = CoTMember.fetchMember(message.member.id);
+      } catch (err) {
+        console.error({err})
+      }
+      if (member) {
+        await useMemberName(message, activeAbsentList, member);
+      } else {
+        await requestFFName(message, activeAbsentList);
+      }
     }
   }
 };
@@ -507,7 +543,17 @@ const promotionFunction: SassyBotCommand = async (message: Message) => {
     if (activePromotionList[message.author.id]) {
       await activePromotionList[message.author.id]!.next(message, activePromotionList);
     } else {
-      await requestFFNameAndStop(message, activePromotionList);
+      let member: false | CoTMember = false;
+      try {
+        member = CoTMember.fetchMember(message.member.id);
+      } catch (err) {
+        console.error({err})
+      }
+      if (member) {
+        await useMemberNameAndStop(message, activeAbsentList, member);
+      } else {
+        await requestFFNameAndStop(message, activePromotionList);
+      }
     }
   }
 };
