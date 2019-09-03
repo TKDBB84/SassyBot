@@ -444,7 +444,6 @@ const listAllPromotions = async (message: Message) => {
           time: ONE_HOUR * 2,
         }).catch(async () => {
           await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
-          return;
         });
         if (!collection || collection.size === 0) {
           await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
