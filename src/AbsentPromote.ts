@@ -136,7 +136,7 @@ const maybeUpdateUserId = ({ name, userId }: { name: string; userId: string }) =
   } catch (err) {
     console.error({ context: 'Error Fetching Character', err });
   }
-  return false
+  return false;
 };
 
 function formatDate(d: moment.Moment) {
@@ -259,7 +259,7 @@ const requestEndDate = async (message: Message, activityList: IActivityList) => 
 
 const storeFFName = async (message: Message, activityList: IActivityList) => {
   const name = message.cleanContent.trim();
-  maybeUpdateUserId({name, userId: message.member.id});
+  maybeUpdateUserId({ name, userId: message.member.id });
   activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await requestStartDate(message, activityList);
@@ -282,7 +282,7 @@ const requestFFNameAndStop = async (message: Message, activityList: IActivityLis
 
 const storeFFNameAndStop = async (message: Message, activityList: IActivityList) => {
   const name = message.cleanContent.trim();
-  maybeUpdateUserId({name, userId: message.member.id});
+  maybeUpdateUserId({ name, userId: message.member.id });
   activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await completePromotion(message, activityList);
