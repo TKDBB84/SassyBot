@@ -38,6 +38,12 @@ db.connection.exec(
   'CREATE TABLE IF NOT EXISTS cot_members (api_id TEXT PRIMARY KEY, user_id TEXT, name TEXT, rank TEXT, first_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
 );
 
+const getMostRecentPull = () => {
+  const stmt = db.connection.prepare('SELECT MAX(last_seen_api) as max_last from cot_members;');
+  const data = stmt.get();
+  return data.max_last
+};
+
 interface ICotMemberRoW {
   api_id: string;
   user_id: string;
@@ -249,23 +255,26 @@ const sassybotRespond: (message: Message, text: string) => Promise<void> = async
 const claimUser = async (message: Message) => {
   const parsed = message.content.split('!sb claim ');
   const id = message.member.id;
+  const memberByUserId = CoTMember.fetchMember(id);
+  if (memberByUserId) {
+    await sassybotRespond(
+      message,
+      `I already have you as: ${memberByUserId.name}, if this isn't correct, please contact Sasner`,
+    );
+    return;
+  }
   if (parsed.length === 2) {
     const name = parsed[1].trim();
     const apiUsers = getAPIUserByName({ name });
+    if (apiUsers.length === 0) {
+      await sassybotRespond(message, `I'm sorry ${name}, I don't see you as a current FC member, when I last checked at: ${getMostRecentPull()}. Sasner can add you to the database if needed.`)
+    }
     let apiUser: false | ICotMemberRoW = false;
     if (apiUsers.length === 1) {
       apiUser = apiUsers[0];
       if (apiUser.user_id !== id) {
         updateAPIUserId({ name, id });
       }
-    }
-    const memberByUserId = CoTMember.fetchMember(id);
-    if (memberByUserId) {
-      await sassybotRespond(
-        message,
-        `I already have you as: ${memberByUserId.name}, if this isn't correct, please contact Sasner`,
-      );
-      return;
     }
     const membersByName = CoTMember.findByName(name);
     if (!membersByName || membersByName.length === 0) {
