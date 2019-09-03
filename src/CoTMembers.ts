@@ -1,5 +1,7 @@
+import { Message, MessageOptions } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
+import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
 
@@ -229,3 +231,64 @@ export class CoTMember extends User {
     return promoteByMember(this);
   }
 }
+
+const sassybotRespond: (message: Message, text: string) => Promise<void> = async (
+  message: Message,
+  text: string,
+): Promise<void> => {
+  const options: MessageOptions = {
+    disableEveryone: true,
+    split: true,
+  };
+  try {
+    await message.channel.send(text, options);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const claimUser = async (message: Message) => {
+  const parsed = message.content.split('!sb claim ');
+  const id = message.member.id;
+  if (parsed.length === 2) {
+    const name = parsed[1].trim();
+    const apiUsers = getAPIUserByName({ name });
+    let apiUser: false | ICotMemberRoW = false;
+    if (apiUsers.length === 1 && apiUsers[0].user_id !== id) {
+      updateAPIUserId({ name, id });
+      apiUser = apiUsers[0];
+    }
+    const memberByUserId = CoTMember.fetchMember(id);
+    if (memberByUserId) {
+      await sassybotRespond(message, `I already have you as: ${memberByUserId.name}, if this isn't correct, please contact Sasner`);
+      return;
+    }
+    const membersByName = CoTMember.findByName(name);
+    if (!membersByName || membersByName.length === 0) {
+      let rank = 'Recruit';
+      if (apiUser) {
+        rank = apiUser.rank;
+      }
+      const newMember = new CoTMember(id, name, rank);
+      newMember.addMember();
+      await sassybotRespond(message, `Thank you, I now have you as: ${name}`);
+      return;
+    }
+    if (membersByName.length > 1) {
+      await sassybotRespond(message, `There seem to be more than 1 ${name} in my database, please contact Sasner to have the duplicates removed, then you can try again.`);
+      return;
+    }
+    await sassybotRespond(message, `'I'm Sorry, but it seems ${name} is in an invalid state, please contact Sasner to have it correct, then you can try again.`)
+  }
+};
+
+export let ClaimUser: ISassyBotImport = {
+  functions: {
+    claim: (message: Message) => {
+      claimUser(message).catch(console.error);
+    },
+  },
+  help: {
+    claim: 'usage: `!{sassybot|sb} claim ${YOUR+CHAR+NAME}` ---- ex: `!sb claim Sasner Rensas`',
+  },
+};
