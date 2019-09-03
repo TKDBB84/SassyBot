@@ -1,4 +1,4 @@
-import { Message, MessageOptions } from 'discord.js';
+import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import { ISassyBotImport, SassyBotCommand } from './sassybot';
@@ -12,6 +12,19 @@ interface IMemberRow {
   first_seen_discord: number;
   last_promotion: number;
 }
+
+interface IRoleList {
+  [key: string]: Role | null;
+}
+const cotRoles: IRoleList = {
+  Member: null,
+  New: null,
+  Officer: null,
+  Recruit: null,
+  Verified: null,
+  Veteran: null,
+};
+
 const ONE_HOUR = 3600000;
 
 export interface IFreeCompanyMember {
@@ -42,6 +55,20 @@ const getMostRecentPull = () => {
   const stmt = db.connection.prepare('SELECT MAX(last_seen_api) as max_last from cot_members;');
   const data = stmt.get();
   return data.max_last
+};
+
+const fetchCoTRoles: (member: GuildMember) => void = (member) => {
+  const cot = member.guild;
+  if (cot) {
+    Object.keys(cotRoles).forEach((rank) => {
+      if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
+        const cotRole = cot.roles.find((role) => role.name === rank);
+        if (cotRole) {
+          cotRoles[rank] = cotRole;
+        }
+      }
+    });
+  }
 };
 
 interface ICotMemberRoW {
@@ -253,6 +280,7 @@ const sassybotRespond: (message: Message, text: string) => Promise<void> = async
 };
 
 const claimUser = async (message: Message) => {
+  fetchCoTRoles(message.member);
   const parsed = message.content.split('!sb claim ');
   const id = message.member.id;
   const memberByUserId = CoTMember.fetchMember(id);
@@ -284,6 +312,30 @@ const claimUser = async (message: Message) => {
       }
       const newMember = new CoTMember(id, name, rank);
       newMember.addMember();
+
+      switch (rank.toLowerCase()) {
+        case 'recruit':
+          if (cotRoles.Recruit) {
+            await message.member.addRole(cotRoles.Recruit).catch(console.error)
+          }
+          break;
+        case 'member':
+          if (cotRoles.Member) {
+            await message.member.addRole(cotRoles.Member).catch(console.error)
+          }
+          break;
+        case 'veteran':
+          if (cotRoles.Veteran) {
+            await message.member.addRole(cotRoles.Veteran).catch(console.error)
+          }
+          break;
+        case 'officer':
+          if (cotRoles.Officer) {
+            await message.member.addRole(cotRoles.Officer).catch(console.error)
+          }
+          break;
+      }
+
       await sassybotRespond(message, `Thank you, I now have you as: ${name}`);
       return;
     }
