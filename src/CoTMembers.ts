@@ -47,6 +47,15 @@ const upsertMember: upsertMemberFunction = ({ ID, Name, Rank }) => {
   return !!result.lastInsertRowid || !!result.changes;
 };
 
+type updateUserIdByNameFunction = ({ name, id }: { name: string; id: string }) => boolean;
+const updateUserIdByName: updateUserIdByNameFunction = ({ name, id }) => {
+  const stmtUpdateUserIdByName = db.connection.prepare(
+    'UPDATE cot_members SET user_id = ? WHERE name = ? COLLATE NOCASE',
+  );
+  const result = stmtUpdateUserIdByName.run([id, name]);
+  return !!result.changes;
+};
+
 const getSecrets: () => IClientSecrets = (): IClientSecrets => {
   const fileData = fs.readFileSync('/home/nodebot/src/client_secrets.json');
   return JSON.parse(fileData.toString());
@@ -111,7 +120,7 @@ const getMemberByUserId: getMemberByIdFunction = ({ id }) => {
 type promoteMember = ({ id, rank }: { id: string; rank: string }) => boolean;
 const promoteByMember: promoteMember = ({ id, rank }) => {
   const memberByUserId = db.connection.prepare(
-    'UPDATE cot_promotion_tracking SET last_promotion = CURRENT_TIMESTAMP, rank = ? WHERE user_id = ? COLLATE NOCASE',
+    'UPDATE cot_promotion_tracking SET last_promotion = CURRENT_TIMESTAMP, rank = ? WHERE user_id = ?',
   );
   const result = memberByUserId.run([rank, id]);
   return !!result.changes;
@@ -169,6 +178,10 @@ export class CoTMember extends User {
     }
     addMember(this);
     return true;
+  }
+
+  public updateUserId(): boolean {
+    return updateUserIdByName(this);
   }
 
   public promote(): boolean {

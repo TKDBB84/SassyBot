@@ -243,7 +243,18 @@ const requestEndDate = async (message: Message, activityList: IActivityList) => 
 };
 
 const storeFFName = async (message: Message, activityList: IActivityList) => {
-  activityList[message.author.id]!.name = message.cleanContent;
+  const name = message.cleanContent.trim();
+  try {
+    const members = CoTMember.findByName(name);
+    if (members && members.length === 1) {
+      const member = members[0];
+      member.id = message.author.id;
+      member.updateUserId();
+    }
+  } catch (err) {
+    console.error({ context: 'Error Fetching Character', err });
+  }
+  activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await requestStartDate(message, activityList);
 };
@@ -264,7 +275,19 @@ const requestFFNameAndStop = async (message: Message, activityList: IActivityLis
 };
 
 const storeFFNameAndStop = async (message: Message, activityList: IActivityList) => {
-  activityList[message.author.id]!.name = message.cleanContent;
+  const name = message.cleanContent.trim();
+  try {
+    const members = CoTMember.findByName(name);
+    if (members && members.length === 1) {
+      const member = members[0];
+      member.id = message.author.id;
+      member.updateUserId();
+    }
+  } catch (err) {
+    console.error({ context: 'Error Fetching Character', err });
+  }
+
+  activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await completePromotion(message, activityList);
 };
