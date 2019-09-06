@@ -4,7 +4,7 @@ import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';
-import { CoTMember } from './CoTMembers';
+import { CoTMember, fetchCoTRoles } from './CoTMembers';
 import Users from './Users';
 
 const db = new SassyDb();
@@ -67,7 +67,6 @@ const deleteUserPromotionRow: Statement = db.connection.prepare(
   'DELETE FROM user_promote WHERE guild_id = ? and user_id = ?',
 );
 
-let OFFICER_ROLE_ID: string = '';
 const ONE_HOUR = 3600000;
 const ACTIVE_SERVERS = [
   '324682549206974473', // Crown Of Thrones,
@@ -77,36 +76,8 @@ const ACTIVE_SERVERS = [
 const PROMOTION_ABSENT_CHANNEL_ID = '362037806178238464';
 
 interface IRoleList {
-  Member: Role | null;
-  New: Role | null;
-  Officer: Role | null;
-  Recruit: Role | null;
-  Verified: Role | null;
-  Veteran: Role | null;
   [key: string]: Role | null;
 }
-const cotRoles: IRoleList = {
-  Member: null,
-  New: null,
-  Officer: null,
-  Recruit: null,
-  Verified: null,
-  Veteran: null,
-};
-
-const fetchCoTRoles: (member: GuildMember) => void = (member) => {
-  const cot = member.guild;
-  if (cot) {
-    Object.keys(cotRoles).forEach((rank) => {
-      if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
-        const cotRole = cot.roles.find((role) => role.name === rank);
-        if (cotRole) {
-          cotRoles[rank] = cotRole;
-        }
-      }
-    });
-  }
-};
 
 interface IActivityList {
   [key: string]:
@@ -208,25 +179,13 @@ const sassybotRespond: (message: Message, text: string) => Promise<void> = async
   }
 };
 
-const getOfficerRoleId = (message: Message): string => {
-  if (!OFFICER_ROLE_ID && message.guild && message.guild.roles) {
-    const role = message.guild.roles.find((eachRole) => eachRole.name === 'Officer');
-    if (role && role.id) {
-      OFFICER_ROLE_ID = role.id;
-    }
-  }
-  return OFFICER_ROLE_ID;
-};
-
 const isOfficer = (message: Message): boolean => {
-  let officer = false;
-
-  const officerId = getOfficerRoleId(message);
-  if (officerId && message.member && message.member.roles) {
-    officer = message.member.roles.has(officerId);
+  let isOfficer = false;
+  const cotRoles = fetchCoTRoles(message.member);
+  if (cotRoles.Officer && message.member && message.member.roles) {
+    isOfficer = message.member.roles.has(cotRoles.Officer.id);
   }
-
-  return officer;
+  return isOfficer;
 };
 
 const requestFFName = async (message: Message, activityList: IActivityList) => {
@@ -381,7 +340,7 @@ const listAllAbsent = async (message: Message) => {
 
 const listAllPromotions = async (message: Message) => {
   fetchCoTRoles(message.member);
-  const { Recruit, Member, Veteran } = cotRoles;
+  const { Recruit, Member, Veteran } = fetchCoTRoles(message.member);
   const allPromotionsRows: IAllPromotionsRow[] = getAllPromotions.all([message.guild.id]);
   if (allPromotionsRows.length === 0) {
     await sassybotRespond(message, 'No Current Promotion Requests');
@@ -437,14 +396,16 @@ const listAllPromotions = async (message: Message) => {
       const reactionNo = await msg.react('344861453146259466');
       let collection;
       try {
-        collection = await msg.awaitReactions(reactionFilter, {
-          max: 1,
-          maxEmojis: 1,
-          maxUsers: 1,
-          time: ONE_HOUR * 2,
-        }).catch(async () => {
-          await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
-        });
+        collection = await msg
+          .awaitReactions(reactionFilter, {
+            max: 1,
+            maxEmojis: 1,
+            maxUsers: 1,
+            time: ONE_HOUR * 2,
+          })
+          .catch(async () => {
+            await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
+          });
         if (!collection || collection.size === 0) {
           await Promise.all([reactionYes.remove(), reactionNo.remove()]).catch(console.error);
           return;
@@ -489,7 +450,10 @@ const listAllPromotions = async (message: Message) => {
 };
 
 const useMemberName = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
-  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+  await sassybotReply(
+    message,
+    `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`,
+  );
   activityList[message.author.id] = {
     endDate: moment.utc(0),
     guildId: message.guild.id,
@@ -501,8 +465,15 @@ const useMemberName = async (message: Message, activityList: IActivityList, cotm
   await requestStartDate(message, activityList);
 };
 
-const useMemberNameAndStop = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
-  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+const useMemberNameAndStop = async (
+  message: Message,
+  activityList: IActivityList,
+  cotmember: CoTMember,
+): Promise<void> => {
+  await sassybotReply(
+    message,
+    `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`,
+  );
   activityList[message.author.id] = {
     endDate: moment.utc(0),
     guildId: message.guild.id,
@@ -525,7 +496,7 @@ const absentFunction: SassyBotCommand = async (message: Message) => {
       try {
         member = CoTMember.fetchMember(message.member.id);
       } catch (err) {
-        console.error({err})
+        console.error({ err });
       }
       if (member) {
         await useMemberName(message, activeAbsentList, member);
@@ -547,7 +518,7 @@ const promotionFunction: SassyBotCommand = async (message: Message) => {
       try {
         member = CoTMember.fetchMember(message.member.id);
       } catch (err) {
-        console.error({err})
+        console.error({ err });
       }
       if (member) {
         await useMemberNameAndStop(message, activeAbsentList, member);
