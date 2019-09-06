@@ -365,19 +365,19 @@ const listAllPromotions = async (message: Message) => {
     const cotMember = CoTMember.fetchMember(promotionRow.user_id);
     let daysMemberKnown = -1;
     const currentDate = moment();
-    const maxDaysKnown = currentDate.diff(firstApiPull);
+    const maxDaysKnown = currentDate.diff(firstApiPull, 'days');
     if (cotMember) {
-      daysMemberKnown = firstApiPull.diff(cotMember.firstSeenAPI);
+      daysMemberKnown = currentDate.diff(cotMember.firstSeenAPI, 'days');
     }
     let isMember = true;
     if (Member) {
       isMember = !!member.roles.find((r) => r.id === Member.id);
     }
-    let responseMessage: string = `${promotionRow.name}\t\t\tTo:\t${
+    let responseMessage: string = `${promotionRow.name}\tTo:\t${
         isMember ? 'Veteran' : 'Member'
     } (by discord rank) on\t${formatDate(requestDate)}`;
 
-    if (maxDaysKnown > daysMemberKnown) {
+    if (daysMemberKnown > -1 && maxDaysKnown > daysMemberKnown) {
       responseMessage += `\tthey've been in the fc for ${daysMemberKnown} days`
     }
     responseMessage += '\n';
