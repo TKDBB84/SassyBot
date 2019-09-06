@@ -4,7 +4,7 @@ import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';
-import { CoTMember, fetchCoTRoles } from './CoTMembers';
+import { CoTMember, fetchCoTRoles, firstApiPull } from './CoTMembers';
 import Users from './Users';
 
 const db = new SassyDb();
@@ -361,17 +361,30 @@ const listAllPromotions = async (message: Message) => {
   for (const promotionRow of allPromotionsRows) {
     const requestDate = moment(parseInt(promotionRow.timestamp, 10) * 1000);
     const member = message.guild.member(promotionRow.user_id);
+    const cotMember = CoTMember.fetchMember(promotionRow.user_id);
+    let daysMemberKnown = -1;
+    const currentDate = moment();
+    const maxDaysKnown = currentDate.diff(firstApiPull);
+    if (cotMember) {
+      daysMemberKnown = firstApiPull.diff(cotMember.firstSeenAPI);
+    }
     let isMember = true;
     if (Member) {
       isMember = !!member.roles.find((r) => r.id === Member.id);
     }
+    let responseMessage: string = `${promotionRow.name}\t\t\tTo:\t${
+        isMember ? 'Veteran' : 'Member'
+    } (by discord rank) on\t${formatDate(requestDate)}`;
+
+    if (maxDaysKnown > daysMemberKnown) {
+      responseMessage += `\tthey've been in the fc for ${daysMemberKnown} days`
+    }
+    responseMessage += '\n';
 
     responses.push({
       isMember,
       member,
-      message: `${promotionRow.name}\t\tRequested promotion to:\t${
-        isMember ? 'Veteran' : 'Member'
-      } (determined by discord rank) on\t${formatDate(requestDate)}\t\t\n`,
+      message: responseMessage,
       name: promotionRow.name,
       userId: promotionRow.user_id,
     });

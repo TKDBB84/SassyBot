@@ -4,6 +4,7 @@ import * as http2 from 'http2';
 import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
+import * as moment from "moment";
 
 interface IMemberRow {
   user_id: string;
@@ -49,6 +50,8 @@ const getMostRecentPull = () => {
   return data.max_last;
 };
 
+export let firstApiPull = moment('2019-09-02 22:30:00');
+
 export function fetchCoTRoles(member: GuildMember): IRoleList {
   const cotRoles: IRoleList = {
     Member: null,
@@ -84,6 +87,12 @@ type getAPIUserByNameFunction = ({ name }: { name: string }) => ICotMemberRoW[];
 const getAPIUserByName: getAPIUserByNameFunction = ({ name }) => {
   const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE name = ? COLLATE NOCASE');
   return stmtGetUserByName.all([name]);
+};
+
+type getAPIUserByUserId = ({ id }: { id: string }) => ICotMemberRoW[];
+const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
+  const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE user_id = ?');
+  return stmtGetUserByName.all([id]);
 };
 
 type upsertMemberFunction = ({ ID, Name, Rank }: IFreeCompanyMember) => boolean;
@@ -186,7 +195,13 @@ export class CoTMember extends User {
     if (!row) {
       return false;
     }
-    return new CoTMember(row.user_id, row.name, row.rank);
+    const member = new CoTMember(row.user_id, row.name, row.rank);
+    const apiUserRow = getAPIUserByUserId({ id: row.user_id});
+    let apiUser: ICotMemberRoW;
+    if (apiUserRow && apiUserRow.length === 1) {
+      member.firstSeenAPI = moment(apiUserRow[0].first_seen_api)
+    }
+    return member;
   }
 
   public static findByName(name: string): CoTMember[] | false {
@@ -226,6 +241,7 @@ export class CoTMember extends User {
   public rank: string = '';
   public firstSeenDiscord: string = '';
   public lastPromotion: string = '';
+  public firstSeenAPI: moment.Moment = moment.utc(0);
 
   public constructor(id: string, name: string = '', rank: string = 'Recruit') {
     super(id);
