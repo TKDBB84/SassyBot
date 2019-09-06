@@ -360,7 +360,8 @@ const listAllPromotions = async (message: Message) => {
   }> = [];
   for (const promotionRow of allPromotionsRows) {
     const requestDate = moment(parseInt(promotionRow.timestamp, 10) * 1000);
-    const member = message.guild.member(promotionRow.user_id);
+      const user = await message.client.fetchUser(promotionRow.user_id);
+      const member = await message.guild.fetchMember(user);
     const cotMember = CoTMember.fetchMember(promotionRow.user_id);
     let daysMemberKnown = -1;
     const currentDate = moment();
@@ -369,7 +370,7 @@ const listAllPromotions = async (message: Message) => {
       daysMemberKnown = firstApiPull.diff(cotMember.firstSeenAPI);
     }
     let isMember = true;
-    if (Member) {
+    if (member && Member) {
       isMember = !!member.roles.find((r) => r.id === Member.id);
     }
     let responseMessage: string = `${promotionRow.name}\t\t\tTo:\t${
