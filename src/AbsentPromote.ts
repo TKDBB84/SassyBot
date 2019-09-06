@@ -75,10 +75,6 @@ const ACTIVE_SERVERS = [
 
 const PROMOTION_ABSENT_CHANNEL_ID = '362037806178238464';
 
-interface IRoleList {
-  [key: string]: Role | null;
-}
-
 interface IActivityList {
   [key: string]:
     | {
