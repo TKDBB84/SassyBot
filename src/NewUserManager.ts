@@ -39,6 +39,20 @@ const fetchCoTRoles: (member: GuildMember) => void = (member) => {
   }
 };
 
+const quietSendMessageToNewChannel = (user: GuildMember, text: string) => {
+  const options: MessageOptions = {
+    disableEveryone: true,
+    split: true,
+  };
+  if (!cotNewUserChannel) {
+    const cotChannel = user.client.channels.get(COT_NEW_USER_CHANNEL);
+    if (cotChannel && cotChannel instanceof TextChannel) {
+      cotNewUserChannel = cotChannel;
+    }
+  }
+  cotNewUserChannel.send(text, options);
+};
+
 const sendMessageToNewChannel = (user: GuildMember, text: string) => {
   const options: MessageOptions = {
     disableEveryone: true,
@@ -91,8 +105,9 @@ const newMemberJoined = (member: GuildMember) => {
 
 const onboardingStep1 = (message: Message) => {
   const declaredName = message.cleanContent.trim();
+  let apiUser: CoTMember | false = false;
   try {
-    const apiUser = CoTMember.getMemberFromAPIByName({ name: declaredName, userId: message.member.id });
+    apiUser = CoTMember.getMemberFromAPIByName({ name: declaredName, userId: message.member.id });
     const guildMembersByName = CoTMember.findByName(declaredName);
     let guildMemberByName: CoTMember | false = false;
     if (guildMembersByName && guildMembersByName.length === 1) {
@@ -123,18 +138,29 @@ const onboardingStep1 = (message: Message) => {
   message.member
     .setNickname(declaredName, 'Declared Character Name')
     .then(() => {
-      sendMessageToNewChannel(
-        message.member,
-        `Thank you! I have updated your discord nickname to match.\n\n${nextStepMessage}`,
-      );
+      sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n`);
+      if (apiUser) {
+        quietSendMessageToNewChannel(
+          message.member,
+          `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
+        );
+      }
+      quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
       newMemberList[message.member.id].step = 2;
     })
     .catch((e) => {
       console.error('unable to update nickname: ', { e });
       sendMessageToNewChannel(
         message.member,
-        `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.\n\n${nextStepMessage}`,
+        `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.`,
       );
+      if (apiUser) {
+        quietSendMessageToNewChannel(
+          message.member,
+          `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
+        );
+      }
+      quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
       newMemberList[message.member.id].step = 2;
     });
 };
