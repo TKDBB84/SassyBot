@@ -4,6 +4,7 @@ import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';
+import { CoTMember } from './CoTMembers';
 import Users from './Users';
 
 const db = new SassyDb();
@@ -122,6 +123,21 @@ interface IActivityList {
 const entryPersistenceDuration = 5 * 60 * 1000;
 const activePromotionList: IActivityList = {};
 const activeAbsentList: IActivityList = {};
+
+const maybeUpdateUserId = ({ name, userId }: { name: string; userId: string }) => {
+  try {
+    const members = CoTMember.findByName(name);
+    if (members && members.length === 1) {
+      const member = members[0];
+      if (member.id !== userId) {
+        return CoTMember.updateAPIUserId({ name, userId });
+      }
+    }
+  } catch (err) {
+    console.error({ context: 'Error Fetching Character', err });
+  }
+  return false;
+};
 
 function formatDate(d: moment.Moment) {
   return d.format('MMM Do YYYY');
@@ -242,7 +258,9 @@ const requestEndDate = async (message: Message, activityList: IActivityList) => 
 };
 
 const storeFFName = async (message: Message, activityList: IActivityList) => {
-  activityList[message.author.id]!.name = message.cleanContent;
+  const name = message.cleanContent.trim();
+  maybeUpdateUserId({ name, userId: message.member.id });
+  activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await requestStartDate(message, activityList);
 };
@@ -263,7 +281,9 @@ const requestFFNameAndStop = async (message: Message, activityList: IActivityLis
 };
 
 const storeFFNameAndStop = async (message: Message, activityList: IActivityList) => {
-  activityList[message.author.id]!.name = message.cleanContent;
+  const name = message.cleanContent.trim();
+  maybeUpdateUserId({ name, userId: message.member.id });
+  activityList[message.author.id]!.name = name;
   await sassybotReply(message, `ok i have your name as ${activityList[message.author.id]!.name}\n\n`);
   await completePromotion(message, activityList);
 };
@@ -432,6 +452,11 @@ const listAllPromotions = async (message: Message) => {
         if (collection.first() && collection.first().emoji.name === '✅') {
           const promoChannel = message.client.channels.find((channel) => channel.id === PROMOTION_ABSENT_CHANNEL_ID);
           let responseMessage = `${response.name} (${response.member.nickname}) your promotion has been approved`;
+          try {
+            CoTMember.promoteByName(response.name);
+          } catch (err) {
+            console.log({ context: 'error promoting member in local db', err });
+          }
           if (Member) {
             if (response.isMember && Veteran) {
               await response.member.addRole(Veteran);
@@ -463,6 +488,32 @@ const listAllPromotions = async (message: Message) => {
   );
 };
 
+const useMemberName = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
+  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+  activityList[message.author.id] = {
+    endDate: moment.utc(0),
+    guildId: message.guild.id,
+    initDate: moment(),
+    name: cotmember.name,
+    next: storeFFName,
+    startDate: moment.utc(0),
+  };
+  await requestStartDate(message, activityList);
+};
+
+const useMemberNameAndStop = async (message: Message, activityList: IActivityList, cotmember: CoTMember): Promise<void> => {
+  await sassybotReply(message, `I have your name as: ${cotmember.name}, if that's not right please contact Sasner to have it changed (functionality pending)`);
+  activityList[message.author.id] = {
+    endDate: moment.utc(0),
+    guildId: message.guild.id,
+    initDate: moment(),
+    name: cotmember.name,
+    next: storeFFName,
+    startDate: moment.utc(0),
+  };
+  await completePromotion(message, activityList);
+};
+
 const absentFunction: SassyBotCommand = async (message: Message) => {
   if (isOfficer(message) || message.author.id === Users.Sasner.id) {
     await listAllAbsent(message);
@@ -470,7 +521,17 @@ const absentFunction: SassyBotCommand = async (message: Message) => {
     if (activeAbsentList[message.author.id]) {
       await activeAbsentList[message.author.id]!.next(message, activeAbsentList);
     } else {
-      await requestFFName(message, activeAbsentList);
+      let member: false | CoTMember = false;
+      try {
+        member = CoTMember.fetchMember(message.member.id);
+      } catch (err) {
+        console.error({err})
+      }
+      if (member) {
+        await useMemberName(message, activeAbsentList, member);
+      } else {
+        await requestFFName(message, activeAbsentList);
+      }
     }
   }
 };
@@ -482,7 +543,17 @@ const promotionFunction: SassyBotCommand = async (message: Message) => {
     if (activePromotionList[message.author.id]) {
       await activePromotionList[message.author.id]!.next(message, activePromotionList);
     } else {
-      await requestFFNameAndStop(message, activePromotionList);
+      let member: false | CoTMember = false;
+      try {
+        member = CoTMember.fetchMember(message.member.id);
+      } catch (err) {
+        console.error({err})
+      }
+      if (member) {
+        await useMemberNameAndStop(message, activeAbsentList, member);
+      } else {
+        await requestFFNameAndStop(message, activePromotionList);
+      }
     }
   }
 };

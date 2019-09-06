@@ -21,6 +21,7 @@ import Users from './Users';
 import VoiceLogHandler from './VoiceLog';
 
 import { AbsentOrPromoteFunctions, resumeAbsentOrPromote } from './AbsentPromote';
+import { ClaimUser } from './CoTMembers';
 import DiceFunctions from './Dice';
 import { newMemberJoinedCallback, newMemberListener } from './NewUserManager';
 import QuoteFunctions from './Quotes';
@@ -29,7 +30,7 @@ const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: IPleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions];
+const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser];
 
 interface IClientSecrets {
   token: string;
