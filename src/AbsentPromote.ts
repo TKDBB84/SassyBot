@@ -405,9 +405,10 @@ const listAllPromotions = async (message: Message) => {
   }> = [];
   for (const promotionRow of allPromotionsRows) {
     const requestDate = moment(parseInt(promotionRow.timestamp, 10) * 1000);
-    const member = message.guild.member(promotionRow.user_id);
+    const user = await message.client.fetchUser(promotionRow.user_id);
+    const member = await message.guild.fetchMember(user);
     let isMember = true;
-    if (Member) {
+    if (member && Member) {
       isMember = !!member.roles.find((r) => r.id === Member.id);
     }
 
