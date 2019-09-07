@@ -190,7 +190,7 @@ const preProcessTrollFunctions: SassybotTrollList = [
 ];
 
 const isSassyBotCall = (message: Message): boolean => {
-  return message.content.toLowerCase().startsWith('!sassybot' ) || message.content.toLowerCase().startsWith('!sb ');
+  return message.content.toLowerCase().startsWith('!sassybot ') || message.content.toLowerCase().startsWith('!sb ');
 };
 
 const spamFunction: SassyBotCommand = async (message) => {
