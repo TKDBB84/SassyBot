@@ -4,7 +4,14 @@ import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';
-import { CoTMember, fetchCoTRoles, firstApiPull } from './CoTMembers';
+import {
+  CoTMember,
+  fetchCoTRoles,
+  firstApiPull,
+  getAPIUserByUserId,
+  getLastPromotionByUserId,
+  ICotMemberRoW,
+} from './CoTMembers';
 import Users from './Users';
 
 const db = new SassyDb();
@@ -176,12 +183,12 @@ const sassybotRespond: (message: Message, text: string) => Promise<void> = async
 };
 
 const isOfficer = (message: Message): boolean => {
-  let isOfficer = false;
+  let userIsOfficer = false;
   const cotRoles = fetchCoTRoles(message.member);
   if (cotRoles.Officer && message.member && message.member.roles) {
-    isOfficer = message.member.roles.has(cotRoles.Officer.id);
+    userIsOfficer = message.member.roles.has(cotRoles.Officer.id);
   }
-  return isOfficer;
+  return userIsOfficer;
 };
 
 const requestFFName = async (message: Message, activityList: IActivityList) => {
@@ -335,7 +342,6 @@ const listAllAbsent = async (message: Message) => {
 };
 
 const listAllPromotions = async (message: Message) => {
-  fetchCoTRoles(message.member);
   const { Recruit, Member, Veteran } = fetchCoTRoles(message.member);
   const allPromotionsRows: IAllPromotionsRow[] = getAllPromotions.all([message.guild.id]);
   if (allPromotionsRows.length === 0) {
@@ -352,10 +358,10 @@ const listAllPromotions = async (message: Message) => {
   };
 
   const responses: Array<{
-    isMember: boolean;
     member: GuildMember;
     name: string;
     message: string;
+    toRank: string;
     userId: string;
   }> = [];
   for (const promotionRow of allPromotionsRows) {
@@ -363,30 +369,60 @@ const listAllPromotions = async (message: Message) => {
     const user = await message.client.fetchUser(promotionRow.user_id);
     const member = await message.guild.fetchMember(user);
     const cotMember = CoTMember.fetchMember(promotionRow.user_id);
+    const apiMembers = getAPIUserByUserId({ id: promotionRow.user_id });
+    let apiMember: boolean | ICotMemberRoW = false;
+    if (apiMembers && apiMembers.length === 1) {
+      apiMember = apiMembers[0];
+    }
     let daysMemberKnown = -1;
     const currentDate = moment();
     const maxDaysKnown = currentDate.diff(firstApiPull, 'days');
     if (cotMember) {
       daysMemberKnown = currentDate.diff(cotMember.firstSeenAPI, 'days');
     }
-    let isMember = true;
-    if (Member) {
-      isMember = !!member.roles.find((r) => r.id === Member.id);
+    let toRank = 'Member';
+    let rankSource = 'Lodestone';
+    if (apiMember) {
+      switch (apiMember.rank.toLowerCase()) {
+        case 'member':
+          toRank = 'Veteran';
+          break;
+        case 'veteran':
+          toRank = 'Officer';
+          break;
+        case 'recruit':
+        default:
+          toRank = 'Member';
+          break;
+      }
+    } else {
+      rankSource = 'discord';
+      if (Member) {
+        if (!!member.roles.find((r) => r.id === Member.id)) {
+          toRank = 'Veteran';
+        }
+      }
     }
-    let responseMessage: string = `${promotionRow.name}\tTo:\t${
-        isMember ? 'Veteran' : 'Member'
-    } (by discord rank) on\t${formatDate(requestDate)}`;
+    let responseMessage: string = `${promotionRow.name}\tTo:\t${toRank} (by ${rankSource} rank)\ton ${formatDate(
+      requestDate,
+    )}`;
+    const lastPromotion = getLastPromotionByUserId({ id: promotionRow.user_id });
+    if (lastPromotion !== '') {
+      const lastPromotionDate = moment(lastPromotion);
+      const daysAgo = currentDate.diff(lastPromotionDate, 'days');
+      responseMessage += ` last promotion through Sassybot: ${daysAgo} ago`;
+    }
 
     if (daysMemberKnown > -1 && maxDaysKnown > daysMemberKnown) {
-      responseMessage += `\tthey've been in the fc for ${daysMemberKnown} days`
+      responseMessage += `\t& they've been in the fc for: ${daysMemberKnown} days`;
     }
     responseMessage += '\n';
 
     responses.push({
-      isMember,
       member,
       message: responseMessage,
       name: promotionRow.name,
+      toRank,
       userId: promotionRow.user_id,
     });
   }
@@ -428,19 +464,44 @@ const listAllPromotions = async (message: Message) => {
           } catch (err) {
             console.log({ context: 'error promoting member in local db', err });
           }
-          if (Member) {
-            if (response.isMember && Veteran) {
-              await response.member.addRole(Veteran);
-              await response.member.removeRole(Member);
-              responseMessage += ' to Veteran';
-            } else {
-              await response.member.addRole(Member);
-              if (Recruit) {
-                await response.member.removeRole(Recruit);
-              }
-              responseMessage += ' to Member';
-            }
+          const toRank = response.toRank;
+          let rankToAdd: Role | null = null;
+          let rankToRemove: Role | null = null;
+          switch (toRank.toLowerCase()) {
+            case 'officer':
+              responseMessage +=
+                '\nI am unable to set the Officer Discord Rank, please adjust them accordingly (I do not remove Veteran Rank)';
+              break;
+            case 'veteran':
+              rankToAdd = Veteran;
+              rankToRemove = Member;
+              break;
+            case 'member':
+            default:
+              rankToAdd = Member;
+              rankToRemove = Recruit;
+              break;
           }
+          if (rankToRemove) {
+            try {
+              await response.member.removeRole(rankToRemove);
+            } catch (e) {
+              responseMessage += '\nI was unable to remove their Current Role, please remove it manually';
+            }
+          } else {
+            responseMessage += '\nI was unable to remove their Current Role, please remove it manually';
+          }
+
+          if (rankToAdd) {
+            try {
+              await response.member.addRole(rankToAdd);
+            } catch (e) {
+              responseMessage += '\nI was unable to add their ${toRank} Role, please remove it manually';
+            }
+          } else {
+            responseMessage += `\n I was unable to add their ${toRank} Role, please add it manually`;
+          }
+
           if (promoChannel instanceof TextChannel) {
             await promoChannel.send(responseMessage);
           }
@@ -539,12 +600,12 @@ const promotionFunction: SassyBotCommand = async (message: Message) => {
   }
 };
 
-const resumeCommand: (message: Message) => boolean = (message: Message) => {
+const resumeCommand = async (message: Message): Promise<boolean> => {
   if (activeAbsentList.hasOwnProperty(message.author.id) && activeAbsentList[message.author.id]) {
-    absentFunction(message);
+    await absentFunction(message);
     return true;
   } else if (activePromotionList.hasOwnProperty(message.author.id) && activePromotionList[message.author.id]) {
-    promotionFunction(message);
+    await promotionFunction(message);
     return true;
   } else {
     return false;
@@ -562,6 +623,6 @@ export let AbsentOrPromoteFunctions: ISassyBotImport = {
   },
 };
 
-export function resumeAbsentOrPromote(message: Message): boolean {
-  return resumeCommand(message);
+export async function resumeAbsentOrPromote(message: Message): Promise<boolean> {
+  return await resumeCommand(message);
 }

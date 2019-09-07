@@ -2,7 +2,7 @@ import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as moment from 'moment';
-import { ISassyBotImport, SassyBotCommand } from './sassybot';
+import { ISassyBotImport } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
 
@@ -11,7 +11,7 @@ interface IMemberRow {
   name: string;
   rank: string;
   first_seen_discord: number;
-  last_promotion: number;
+  last_promotion: number | string;
 }
 
 interface IRoleList {
@@ -75,7 +75,7 @@ export function fetchCoTRoles(member: GuildMember): IRoleList {
   return cotRoles;
 }
 
-interface ICotMemberRoW {
+export interface ICotMemberRoW {
   api_id: string;
   user_id: string;
   name: string;
@@ -90,7 +90,7 @@ const getAPIUserByName: getAPIUserByNameFunction = ({ name }) => {
 };
 
 type getAPIUserByUserId = ({ id }: { id: string }) => ICotMemberRoW[];
-const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
+export const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
   const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE user_id = ?');
   return stmtGetUserByName.all([id]);
 };
@@ -188,6 +188,15 @@ const addMember: AddMemberFunction = ({ id, name, rank }) => {
   const member = db.connection.prepare('INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)');
   const result = member.run([id, name, rank]);
   return !!result.lastInsertRowid;
+};
+
+export const getLastPromotionByUserId = ({id}: {id: string}): string => {
+  const getLastPromotionStmt = db.connection.prepare("SELECT coalesce(last_promotion, '') as last_promotion FROM cot_promotion_tracking WHERE user_id = ?");
+  const result = getLastPromotionStmt.all([id]);
+  if (result && result.length === 1) {
+    return result[0].last_promotion;
+  }
+  return '';
 };
 
 type getMemberByNameFunction = ({ name }: { name: string }) => IMemberRow[];
@@ -362,11 +371,6 @@ const claimUser = async (message: Message) => {
       newMember.addMember();
 
       switch (rank.toLowerCase()) {
-        case 'recruit':
-          if (cotRoles.Recruit) {
-            await message.member.addRole(cotRoles.Recruit).catch(console.error);
-          }
-          break;
         case 'member':
           if (cotRoles.Member) {
             await message.member.addRole(cotRoles.Member).catch(console.error);
@@ -380,6 +384,12 @@ const claimUser = async (message: Message) => {
         case 'veteran':
           if (cotRoles.Veteran) {
             await message.member.addRole(cotRoles.Veteran).catch(console.error);
+          }
+          break;
+        case 'recruit':
+        default:
+          if (cotRoles.Recruit) {
+            await message.member.addRole(cotRoles.Recruit).catch(console.error);
           }
           break;
       }
