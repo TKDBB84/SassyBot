@@ -181,7 +181,7 @@ const updateAllMemberRecords = async () => {
     matchMemberByName(member);
   });
 };
-updateAllMemberRecords();
+
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
 type AddMemberFunction = ({ id, name, rank }: { id: string; name: string; rank: string }) => boolean;
