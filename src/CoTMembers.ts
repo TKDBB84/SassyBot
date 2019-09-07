@@ -55,9 +55,7 @@ const getAllAbsents = (guildId: string): IAllAbsentsRow[] => {
   const stmtGetAllAbsents = db.connection.prepare(
     'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
   );
-  const result = stmtGetAllAbsents.all([guildId]);
-  console.log({ AbResult: result });
-  return result;
+  return stmtGetAllAbsents.all([guildId]);
 };
 
 interface IAllPromotionsRow {
@@ -69,9 +67,7 @@ const getAllPromotions = (guildId: string): IAllPromotionsRow[] => {
   const stmtGetAllPromotions = db.connection.prepare(
     'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
   );
-  const result = stmtGetAllPromotions.all([guildId]);
-  console.log({ ProResult: result });
-  return result;
+  return stmtGetAllPromotions.all([guildId]);
 };
 
 const getMostRecentPull = () => {
@@ -214,8 +210,9 @@ const updateAllMemberRecords = async () => {
 
 function mapPromotionAndAbsentRows() {
   const COT_GUILD_ID = '324682549206974473';
-  console.log({ allPromos: getAllPromotions(COT_GUILD_ID) });
-  console.log({ allAbsents: getAllAbsents(COT_GUILD_ID) });
+  [ ...getAllPromotions(COT_GUILD_ID), ...getAllAbsents(COT_GUILD_ID)].map((row) => {
+    updateAPIUserIdIfNotSet({ name: row.name, id: row.user_id });
+  });
 }
 mapPromotionAndAbsentRows();
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
