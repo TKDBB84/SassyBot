@@ -185,7 +185,7 @@ const updateAllMemberRecords = async () => {
 
 function mapPromotionAndAbsentRows() {
   const COT_GUILD_ID = '324682549206974473';
-  [...getAllPromotions.all([COT_GUILD_ID]), ...getAllAbsents.all([COT_GUILD_ID])].map((row) => {
+  [...getAllPromotions(COT_GUILD_ID), ...getAllAbsents(COT_GUILD_ID)].map((row) => {
     updateAPIUserIdIfNotSet({ name: row.name, id: row.user_id });
   });
 }
