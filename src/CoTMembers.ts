@@ -4,6 +4,7 @@ import * as http2 from 'http2';
 import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
+import * as moment from "moment";
 
 interface IMemberRow {
   user_id: string;
@@ -16,14 +17,6 @@ interface IMemberRow {
 interface IRoleList {
   [key: string]: Role | null;
 }
-const cotRoles: IRoleList = {
-  Member: null,
-  New: null,
-  Officer: null,
-  Recruit: null,
-  Verified: null,
-  Veteran: null,
-};
 
 const ONE_HOUR = 3600000;
 
@@ -54,10 +47,20 @@ db.connection.exec(
 const getMostRecentPull = () => {
   const stmt = db.connection.prepare('SELECT MAX(last_seen_api) as max_last from cot_members;');
   const data = stmt.get();
-  return data.max_last
+  return data.max_last;
 };
 
-const fetchCoTRoles: (member: GuildMember) => void = (member) => {
+export let firstApiPull = moment('2019-09-02 22:30:00');
+
+export function fetchCoTRoles(member: GuildMember): IRoleList {
+  const cotRoles: IRoleList = {
+    Member: null,
+    New: null,
+    Officer: null,
+    Recruit: null,
+    Verified: null,
+    Veteran: null,
+  };
   const cot = member.guild;
   if (cot) {
     Object.keys(cotRoles).forEach((rank) => {
@@ -69,7 +72,8 @@ const fetchCoTRoles: (member: GuildMember) => void = (member) => {
       }
     });
   }
-};
+  return cotRoles;
+}
 
 interface ICotMemberRoW {
   api_id: string;
@@ -83,6 +87,12 @@ type getAPIUserByNameFunction = ({ name }: { name: string }) => ICotMemberRoW[];
 const getAPIUserByName: getAPIUserByNameFunction = ({ name }) => {
   const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE name = ? COLLATE NOCASE');
   return stmtGetUserByName.all([name]);
+};
+
+type getAPIUserByUserId = ({ id }: { id: string }) => ICotMemberRoW[];
+const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
+  const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE user_id = ?');
+  return stmtGetUserByName.all([id]);
 };
 
 type upsertMemberFunction = ({ ID, Name, Rank }: IFreeCompanyMember) => boolean;
@@ -185,7 +195,13 @@ export class CoTMember extends User {
     if (!row) {
       return false;
     }
-    return new CoTMember(row.user_id, row.name, row.rank);
+    const member = new CoTMember(row.user_id, row.name, row.rank);
+    const apiUserRow = getAPIUserByUserId({ id: row.user_id});
+    let apiUser: ICotMemberRoW;
+    if (apiUserRow && apiUserRow.length === 1) {
+      member.firstSeenAPI = moment(apiUserRow[0].first_seen_api)
+    }
+    return member;
   }
 
   public static findByName(name: string): CoTMember[] | false {
@@ -225,6 +241,7 @@ export class CoTMember extends User {
   public rank: string = '';
   public firstSeenDiscord: string = '';
   public lastPromotion: string = '';
+  public firstSeenAPI: moment.Moment = moment.utc(0);
 
   public constructor(id: string, name: string = '', rank: string = 'Recruit') {
     super(id);
@@ -280,7 +297,7 @@ const sassybotRespond: (message: Message, text: string) => Promise<void> = async
 };
 
 const claimUser = async (message: Message) => {
-  fetchCoTRoles(message.member);
+  const cotRoles = fetchCoTRoles(message.member);
   const parsed = message.content.split('!sb claim ');
   const id = message.member.id;
   const memberByUserId = CoTMember.fetchMember(id);
@@ -295,7 +312,10 @@ const claimUser = async (message: Message) => {
     const name = parsed[1].trim();
     const apiUsers = getAPIUserByName({ name });
     if (apiUsers.length === 0) {
-      await sassybotRespond(message, `I'm sorry ${name}, I don't see you as a current FC member, when I last checked at: ${getMostRecentPull()}. Sasner can add you to the database if needed.`)
+      await sassybotRespond(
+        message,
+        `I'm sorry ${name}, I don't see you as a current FC member, when I last checked at: ${getMostRecentPull()}. Sasner can add you to the database if needed.`,
+      );
     }
     let apiUser: false | ICotMemberRoW = false;
     if (apiUsers.length === 1) {
@@ -316,23 +336,21 @@ const claimUser = async (message: Message) => {
       switch (rank.toLowerCase()) {
         case 'recruit':
           if (cotRoles.Recruit) {
-            await message.member.addRole(cotRoles.Recruit).catch(console.error)
+            await message.member.addRole(cotRoles.Recruit).catch(console.error);
           }
           break;
         case 'member':
           if (cotRoles.Member) {
-            await message.member.addRole(cotRoles.Member).catch(console.error)
+            await message.member.addRole(cotRoles.Member).catch(console.error);
           }
           break;
         case 'veteran':
           if (cotRoles.Veteran) {
-            await message.member.addRole(cotRoles.Veteran).catch(console.error)
+            await message.member.addRole(cotRoles.Veteran).catch(console.error);
           }
           break;
         case 'officer':
-          if (cotRoles.Officer) {
-            await message.member.addRole(cotRoles.Officer).catch(console.error)
-          }
+          console.error('cannot add office rank to user');
           break;
       }
 
