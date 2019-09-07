@@ -29,31 +29,25 @@ const addPromotion: Statement = db.connection.prepare(
   "INSERT INTO user_promote (guild_id, user_id, name, timestamp) VALUES (?,?,?,strftime('%s','now'));",
 );
 
-export interface IAllAbsentsRow {
+interface IAllAbsentsRow {
   user_id: string;
   name: string;
   start_date: string;
   end_date: string;
   timestamp: string;
 }
-export const getAllAbsents = (guildId: string): IAllAbsentsRow[] => {
-  const stmtGetAllAbsents = db.connection.prepare(
-    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
-  );
-  return stmtGetAllAbsents.all([guildId]);
-};
+const getAllAbsents: Statement = db.connection.prepare(
+  'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+);
 
-export interface IAllPromotionsRow {
+interface IAllPromotionsRow {
   user_id: string;
   name: string;
   timestamp: string;
 }
-export const getAllPromotions = (guildId: string): IAllPromotionsRow[] => {
-  const stmtGetAllPromotions = db.connection.prepare(
-    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
-  );
-  return stmtGetAllPromotions.all([guildId]);
-};
+const getAllPromotions: Statement = db.connection.prepare(
+  'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+);
 
 interface IUserAbsentsRow {
   name: string;
@@ -146,7 +140,7 @@ setInterval(() => {
 setInterval(() => {
   const yesterday = moment().subtract({ days: 1, hours: 12 });
   ACTIVE_SERVERS.forEach((serverId) => {
-    const allAbsentRows: IAllAbsentsRow[] = getAllAbsents(serverId);
+    const allAbsentRows: IAllAbsentsRow[] = getAllAbsents.all([serverId]);
 
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
       const endDate = moment(allAbsentRows[i].end_date, 'YYYY-MM-DD');
@@ -334,7 +328,7 @@ const completePromotion = async (message: Message, activityList: IActivityList) 
 };
 
 const listAllAbsent = async (message: Message) => {
-  const allAbsentRows: IAllAbsentsRow[] = getAllAbsents(message.guild.id);
+  const allAbsentRows: IAllAbsentsRow[] = getAllAbsents.all([message.guild.id]);
 
   if (allAbsentRows.length === 0) {
     await sassybotRespond(message, 'No Current Absentees');
@@ -349,7 +343,7 @@ const listAllAbsent = async (message: Message) => {
 
 const listAllPromotions = async (message: Message) => {
   const { Recruit, Member, Veteran } = fetchCoTRoles(message.member);
-  const allPromotionsRows: IAllPromotionsRow[] = getAllPromotions(message.guild.id);
+  const allPromotionsRows: IAllPromotionsRow[] = getAllPromotions.all([message.guild.id]);
   if (allPromotionsRows.length === 0) {
     await sassybotRespond(message, 'No Current Promotion Requests');
     return;
@@ -409,9 +403,9 @@ const listAllPromotions = async (message: Message) => {
         }
       }
     }
-    let responseMessage: string = `${promotionRow.name} - To: ${toRank} (by ${rankSource} rank) - Requested on ${formatDate(
-      requestDate,
-    )}`;
+    let responseMessage: string = `${
+      promotionRow.name
+    } - To: ${toRank} (by ${rankSource} rank) - Requested on ${formatDate(requestDate)}`;
     const lastPromotion = getLastPromotionByUserId({ id: promotionRow.user_id });
     if (lastPromotion !== '') {
       const lastPromotionDate = moment(lastPromotion);

@@ -2,7 +2,6 @@ import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as moment from 'moment';
-import { getAllAbsents, getAllPromotions, IAllAbsentsRow, IAllPromotionsRow } from './AbsentPromote';
 import { ISassyBotImport } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
@@ -44,6 +43,36 @@ db.connection.exec(
 db.connection.exec(
   'CREATE TABLE IF NOT EXISTS cot_members (api_id TEXT PRIMARY KEY, user_id TEXT, name TEXT, rank TEXT, first_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
 );
+
+interface IAllAbsentsRow {
+  user_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  timestamp: string;
+}
+const getAllAbsents = (guildId: string): IAllAbsentsRow[] => {
+  const stmtGetAllAbsents = db.connection.prepare(
+    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+  );
+  const result = stmtGetAllAbsents.all([guildId]);
+  console.log({ AbResult: result });
+  return result;
+};
+
+interface IAllPromotionsRow {
+  user_id: string;
+  name: string;
+  timestamp: string;
+}
+const getAllPromotions = (guildId: string): IAllPromotionsRow[] => {
+  const stmtGetAllPromotions = db.connection.prepare(
+    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+  );
+  const result = stmtGetAllPromotions.all([guildId]);
+  console.log({ ProResult: result });
+  return result;
+};
 
 const getMostRecentPull = () => {
   const stmt = db.connection.prepare('SELECT MAX(last_seen_api) as max_last from cot_members;');
@@ -185,9 +214,8 @@ const updateAllMemberRecords = async () => {
 
 function mapPromotionAndAbsentRows() {
   const COT_GUILD_ID = '324682549206974473';
-  [...getAllPromotions(COT_GUILD_ID), ...getAllAbsents(COT_GUILD_ID)].map((row) => {
-    updateAPIUserIdIfNotSet({ name: row.name, id: row.user_id });
-  });
+  console.log({ allPromos: getAllPromotions(COT_GUILD_ID) });
+  console.log({ allAbsents: getAllAbsents(COT_GUILD_ID) });
 }
 mapPromotionAndAbsentRows();
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
