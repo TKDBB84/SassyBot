@@ -403,18 +403,18 @@ const listAllPromotions = async (message: Message) => {
         }
       }
     }
-    let responseMessage: string = `${promotionRow.name}\tTo:\t${toRank} (by ${rankSource} rank)\ton ${formatDate(
+    let responseMessage: string = `${promotionRow.name} - To: ${toRank} (by ${rankSource} rank) - Requested on ${formatDate(
       requestDate,
     )}`;
     const lastPromotion = getLastPromotionByUserId({ id: promotionRow.user_id });
     if (lastPromotion !== '') {
       const lastPromotionDate = moment(lastPromotion);
       const daysAgo = currentDate.diff(lastPromotionDate, 'days');
-      responseMessage += ` last promotion through Sassybot: ${daysAgo} ago`;
+      responseMessage += ` - last promotion through Sassybot: ${daysAgo} ago`;
     }
 
     if (daysMemberKnown > -1 && maxDaysKnown > daysMemberKnown) {
-      responseMessage += `\t& they've been in the fc for: ${daysMemberKnown} days`;
+      responseMessage += ` - they've been in the fc for: ${daysMemberKnown} days`;
     }
     responseMessage += '\n';
 
