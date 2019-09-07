@@ -169,7 +169,6 @@ const matchMemberByName = (member: IFreeCompanyMember) => {
       return false;
     }
   } else {
-    console.error('get member by Name failed: ', { name: member.Name, cotMemberRows });
     return false;
   }
   return true;
