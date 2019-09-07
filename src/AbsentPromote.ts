@@ -29,23 +29,23 @@ const addPromotion: Statement = db.connection.prepare(
   "INSERT INTO user_promote (guild_id, user_id, name, timestamp) VALUES (?,?,?,strftime('%s','now'));",
 );
 
-interface IAllAbsentsRow {
+export interface IAllAbsentsRow {
   user_id: string;
   name: string;
   start_date: string;
   end_date: string;
   timestamp: string;
 }
-const getAllAbsents: Statement = db.connection.prepare(
+export const getAllAbsents: Statement = db.connection.prepare(
   'SELECT user_id, name, start_date, end_date, timestamp FROM user_absent WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
 );
 
-interface IAllPromotionsRow {
+export interface IAllPromotionsRow {
   user_id: string;
   name: string;
   timestamp: string;
 }
-const getAllPromotions: Statement = db.connection.prepare(
+export const getAllPromotions: Statement = db.connection.prepare(
   'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
 );
 

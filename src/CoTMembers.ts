@@ -2,6 +2,7 @@ import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as moment from 'moment';
+import { getAllAbsents, getAllPromotions, IAllAbsentsRow, IAllPromotionsRow } from './AbsentPromote';
 import { ISassyBotImport } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
@@ -168,7 +169,7 @@ const matchMemberByName = (member: IFreeCompanyMember) => {
       return false;
     }
   } else {
-    console.error('Duplicate Names in cot_promotion_tracking: ', { name: member.Name });
+    console.error('get member by Name failed: ', { name: member.Name, cotMemberRows });
     return false;
   }
   return true;
@@ -176,12 +177,20 @@ const matchMemberByName = (member: IFreeCompanyMember) => {
 
 const updateAllMemberRecords = async () => {
   const currentMembers = await getLatestMemberList();
+  mapPromotionAndAbsentRows();
   currentMembers.map((member) => {
     upsertMember(member);
     matchMemberByName(member);
   });
 };
 
+function mapPromotionAndAbsentRows() {
+  const COT_GUILD_ID = '324682549206974473';
+  [...getAllPromotions.all([COT_GUILD_ID]), ...getAllAbsents.all([COT_GUILD_ID])].map((row) => {
+    updateAPIUserIdIfNotSet({ name: row.name, id: row.user_id });
+  });
+}
+mapPromotionAndAbsentRows();
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
 type AddMemberFunction = ({ id, name, rank }: { id: string; name: string; rank: string }) => boolean;
