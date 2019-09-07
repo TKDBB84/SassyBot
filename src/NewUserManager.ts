@@ -1,20 +1,9 @@
 import { GuildMember, Message, MessageOptions, Role, TextChannel } from 'discord.js';
-import { CoTMember } from './CoTMembers';
+import { CoTMember, fetchCoTRoles } from './CoTMembers';
 
 const COT_ID = '324682549206974473';
 const COT_NEW_USER_CHANNEL = '601971412000833556';
 let cotNewUserChannel: TextChannel;
-interface IRoleList {
-  [key: string]: Role | null;
-}
-const cotRoles: IRoleList = {
-  Member: null,
-  New: null,
-  Officer: null,
-  Recruit: null,
-  Verified: null,
-  Veteran: null,
-};
 
 interface INewMemberList {
   [key: string]: {
@@ -25,21 +14,7 @@ interface INewMemberList {
 }
 const newMemberList: INewMemberList = {};
 
-const fetchCoTRoles: (member: GuildMember) => void = (member) => {
-  const cot = member.guild;
-  if (cot) {
-    Object.keys(cotRoles).forEach((rank: string) => {
-      if (cotRoles.hasOwnProperty(rank) && !cotRoles[rank]) {
-        const cotRole = cot.roles.find((role) => role.name === rank);
-        if (cotRole) {
-          cotRoles[rank] = cotRole;
-        }
-      }
-    });
-  }
-};
-
-const quietSendMessageToNewChannel = (user: GuildMember, text: string) => {
+const quietSendMessageToNewChannel = (user: GuildMember, text: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {
     disableEveryone: true,
     split: true,
@@ -50,10 +25,10 @@ const quietSendMessageToNewChannel = (user: GuildMember, text: string) => {
       cotNewUserChannel = cotChannel;
     }
   }
-  cotNewUserChannel.send(text, options);
+  return cotNewUserChannel.send(text, options);
 };
 
-const sendMessageToNewChannel = (user: GuildMember, text: string) => {
+const sendMessageToNewChannel = (user: GuildMember, text: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {
     disableEveryone: true,
     reply: user,
@@ -65,35 +40,31 @@ const sendMessageToNewChannel = (user: GuildMember, text: string) => {
       cotNewUserChannel = cotChannel;
     }
   }
-  cotNewUserChannel.send(text, options);
+  return cotNewUserChannel.send(text, options);
 };
 
-const newMemberJoined = (member: GuildMember) => {
-  fetchCoTRoles(member);
-
+const newMemberJoined = async (member: GuildMember): Promise<void> => {
+  const cotRoles = fetchCoTRoles(member);
   if (member.guild.id === COT_ID && cotRoles.New) {
     const roleToAdd: Role | null = cotRoles.New;
     if (roleToAdd) {
-      member
-        .addRole(roleToAdd.id, 'new member')
-        .then(() => {
-          newMemberList[member.user.id] = {
-            joined: new Date(),
-            name: '',
-            step: 1,
-          };
-          sendMessageToNewChannel(
-            member,
-            'Hey, welcome to the Crowne of Thorne server! \n\n' +
-              'First Can you please type your FULL FFXIV character name?',
-          );
-        })
-        .catch((e) => {
-          console.error(
-            'unable to add new member rank:  member has no rank, and thus should have access to everything: ',
-            { e },
-          );
-        });
+      try {
+        await member.addRole(roleToAdd.id, 'new member');
+        newMemberList[member.user.id] = {
+          joined: new Date(),
+          name: '',
+          step: 1,
+        };
+        await sendMessageToNewChannel(
+          member,
+          'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
+        );
+      } catch (e) {
+        console.error(
+          'unable to add new member rank:  member has no rank, and thus should have access to everything: ',
+          { e },
+        );
+      }
     } else {
       console.error(
         'Unable to find the necessary Ranks to add to new members: member has no rank, and thus should have access to everything: ',
@@ -103,7 +74,7 @@ const newMemberJoined = (member: GuildMember) => {
   }
 };
 
-const onboardingStep1 = (message: Message) => {
+const onboardingStep1 = async (message: Message): Promise<void> => {
   const declaredName = message.cleanContent.trim();
   let apiUser: CoTMember | false = false;
   try {
@@ -132,40 +103,39 @@ const onboardingStep1 = (message: Message) => {
   }
 
   const nextStepMessage =
-    'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n' +
-    '\n' +
+    'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
     'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃';
-  message.member
-    .setNickname(declaredName, 'Declared Character Name')
-    .then(() => {
-      sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n`);
-      if (apiUser) {
-        quietSendMessageToNewChannel(
-          message.member,
-          `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
-        );
-      }
-      quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
-      newMemberList[message.member.id].step = 2;
-    })
-    .catch((e) => {
-      console.error('unable to update nickname: ', { e });
-      sendMessageToNewChannel(
+  try {
+    await message.member.setNickname(declaredName, 'Declared Character Name');
+
+    await sendMessageToNewChannel(message.member, `Thank you! I have updated your discord nickname to match.\n`);
+    if (apiUser) {
+      await quietSendMessageToNewChannel(
         message.member,
-        `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.`,
+        `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
       );
-      if (apiUser) {
-        quietSendMessageToNewChannel(
-          message.member,
-          `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
-        );
-      }
-      quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
-      newMemberList[message.member.id].step = 2;
-    });
+    }
+    await quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
+    newMemberList[message.member.id].step = 2;
+  } catch (e) {
+    console.error('unable to update nickname: ', { e });
+    await sendMessageToNewChannel(
+      message.member,
+      `Thank you! I was unable to updated your discord nickname, would you please change it to match your character name when you have a moment?.`,
+    );
+    if (apiUser) {
+      await quietSendMessageToNewChannel(
+        message.member,
+        `I've found your FC membership, it looks like you're currently a: ${apiUser.rank}, i'll be sure to set that for you when we're done.`,
+      );
+    }
+    await quietSendMessageToNewChannel(message.member, `\n\n${nextStepMessage}`);
+    newMemberList[message.member.id].step = 2;
+  }
 };
 
-const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
+const onboardingStep2 = async (message: Message): Promise<boolean> => {
+  const cotRoles = fetchCoTRoles(message.member);
   if (message.cleanContent.trim().toLowerCase() === 'i agree') {
     try {
       const foundMember = CoTMember.fetchMember(message.member.id);
@@ -177,68 +147,68 @@ const onboardingStep2: (message: Message) => Promise<boolean> = (message) => {
     }
     const roleToRemove = cotRoles.New;
     if (roleToRemove) {
-      message.member.removeRole(roleToRemove.id).catch((e) => {
+      try {
+        await message.member.removeRole(roleToRemove.id);
+      } catch (e) {
         console.error({
           error: e,
           member: message.member,
           rankToRemove: roleToRemove,
         });
-        sendMessageToNewChannel(
+        await sendMessageToNewChannel(
           message.member,
           "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
         );
-        return Promise.resolve(false);
-      });
+        return false;
+      }
       if (cotRoles.Recruit) {
-        return message.member
-          .addRole(cotRoles.Recruit)
-          .then(() => {
-            sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
-            return true;
-          })
-          .catch((e) => {
-            console.error({
-              error: e,
-              member: message.member,
-              rankToRemove: cotRoles.Recruit,
-            });
-            sendMessageToNewChannel(
-              message.member,
-              "Sorry I'm a terrible bot, I wasn't able to add your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.",
-            );
-            return false;
+        try {
+          await message.member.addRole(cotRoles.Recruit);
+          await sendMessageToNewChannel(message.member, 'Thank You & Welcome to Crowne Of Thorne');
+          return true;
+        } catch (e) {
+          console.error({
+            error: e,
+            member: message.member,
+            rankToRemove: cotRoles.Recruit,
           });
+          await sendMessageToNewChannel(
+            message.member,
+            "Sorry I'm a terrible bot, I wasn't able to add your Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help.",
+          );
+          return false;
+        }
       } else {
         console.error('Unable to find the necessary Ranks to add to new members', { cotRoles });
-        sendMessageToNewChannel(
+        await sendMessageToNewChannel(
           message.member,
           'Sorry, I was unable to find the Recruit Rank, please contact @Sasner#1337 or @Zed#8495 for help',
         );
-        return Promise.resolve(false);
+        return false;
       }
     } else {
       console.error('Unable to find the necessary Ranks to add to new members', { cotRoles });
-      sendMessageToNewChannel(
+      await sendMessageToNewChannel(
         message.member,
         'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help',
       );
-      return Promise.resolve(false);
+      return false;
     }
   }
-  return Promise.resolve(true);
+  return true;
 };
 
-const newMemberListen = (message: Message) => {
+const newMemberListen = async (message: Message) => {
+  const cotRoles = fetchCoTRoles(message.member);
   if (message.channel.id !== COT_NEW_USER_CHANNEL || !newMemberList.hasOwnProperty(message.member.id)) {
     return false;
   }
-  fetchCoTRoles(message.member);
   const roleToCheck = cotRoles.New;
   if (!roleToCheck) {
     console.error('Unable to find the necessary Ranks to add to new members', {
       cotRoles,
     });
-    sendMessageToNewChannel(
+    await sendMessageToNewChannel(
       message.member,
       'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help',
     );
@@ -250,18 +220,17 @@ const newMemberListen = (message: Message) => {
   }
 
   if (newMemberList[message.member.id].step === 1) {
-    onboardingStep1(message);
+    await onboardingStep1(message);
   } else if (newMemberList[message.member.id].step === 2) {
-    onboardingStep2(message).then((result) => {
-      if (result) {
-        delete newMemberList[message.member.id];
-      }
-    });
+    const result = await onboardingStep2(message);
+    if (result) {
+      delete newMemberList[message.member.id];
+    }
   } else {
     console.error('onboarding step out of bounds', {
       newMember: newMemberList[message.member.id],
     });
-    sendMessageToNewChannel(
+    await sendMessageToNewChannel(
       message.member,
       'Sorry, something has gone horribly wrong, please contact @Sasner#1337 or @Zed#8495 for help',
     );
@@ -271,6 +240,6 @@ const newMemberListen = (message: Message) => {
 
 export let newMemberJoinedCallback = newMemberJoined;
 
-export function newMemberListener(message: Message) {
-  return newMemberListen(message);
+export async function newMemberListener(message: Message) {
+  return await newMemberListen(message);
 }

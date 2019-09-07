@@ -1,14 +1,5 @@
 import { Statement } from 'better-sqlite3';
-import {
-  Collection,
-  GuildMember,
-  Message,
-  MessageOptions,
-  MessageReaction,
-  Snowflake,
-  TextChannel,
-  User,
-} from 'discord.js';
+import { Channel, Collection, Message, MessageOptions, MessageReaction, Snowflake, TextChannel } from 'discord.js';
 import * as Discord from 'discord.js';
 import { ISassyBotImport, SassyBotCommand } from './sassybot';
 
@@ -29,12 +20,12 @@ import SassyDb from './SassyDb';
 const db = new SassyDb();
 const client = new Discord.Client();
 
-const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
+const sassybotRespond = (message: Message, text: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {
     disableEveryone: true,
     split: true,
   };
-  message.channel.send(text, options).catch(console.error);
+  return message.channel.send(text, options);
 };
 
 db.connection.exec(
@@ -69,54 +60,50 @@ const hasQuoteReaction: (message: Message) => boolean = (message: Message): bool
 
 const isNormalInteger: (str: string) => boolean = (str: string): boolean => /^\+?(0|[1-9]\d*)$/.test(str);
 
-const quoteFunction: SassyBotCommand = (message: Message): void => {
+const quoteFunction: SassyBotCommand = async (message) => {
   if (hasSingleMention(message)) {
     /** @var GuildMember quotedMember */
     const quotedMember = message.mentions.members.first();
     /** @var TextChannel activeChannel */
     const activeChannel = message.channel;
-    activeChannel
-      .fetchMessages({
-        before: message.id,
-        limit: 50,
-      })
-      .then((messages: Collection<string, Message>) => {
-        const messagesWithReactions: Message[] = messages
-          .filter((item) => item.author.id === quotedMember.id && hasReaction(item) && hasQuoteReaction(item))
-          .array();
+    const messages = await activeChannel.fetchMessages({
+      before: message.id,
+      limit: 50,
+    });
+    const messagesWithReactions: Message[] = messages
+      .filter((item) => item.author.id === quotedMember.id && hasReaction(item) && hasQuoteReaction(item))
+      .array();
 
-        let foundOne = false;
-        for (let i = 0, iMax = messagesWithReactions.length; i < iMax; i++) {
-          const reactions: MessageReaction[] = messagesWithReactions[i].reactions.array();
-          for (let k = 0, kMax = reactions.length; k < kMax; k++) {
-            const reaction = reactions[k];
-            if (!foundOne) {
-              reaction.fetchUsers().then((users: Collection<Snowflake, User>) => {
-                if (users.get(message.author.id) && !foundOne) {
-                  if (reaction.message.cleanContent !== '') {
-                    addQuote.run([
-                      message.guild.id,
-                      reaction.message.author.id,
-                      activeChannel.id,
-                      reaction.message.id,
-                      reaction.message.cleanContent,
-                    ]);
-                    sassybotRespond(
-                      message,
-                      "I've noted that " + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"',
-                    );
-                    foundOne = true;
-                  }
-                }
-              });
+    let foundOne = false;
+    for (let i = 0, iMax = messagesWithReactions.length; i < iMax; i++) {
+      const reactions: MessageReaction[] = messagesWithReactions[i].reactions.array();
+      for (let k = 0, kMax = reactions.length; k < kMax; k++) {
+        const reaction = reactions[k];
+        if (!foundOne) {
+          const users = await reaction.fetchUsers();
+          if (users.get(message.author.id) && !foundOne) {
+            if (reaction.message.cleanContent !== '') {
+              addQuote.run([
+                message.guild.id,
+                reaction.message.author.id,
+                activeChannel.id,
+                reaction.message.id,
+                reaction.message.cleanContent,
+              ]);
+              await sassybotRespond(
+                message,
+                "I've noted that " + quotedMember.displayName + ' said: "' + reaction.message.cleanContent + '"',
+              );
+              foundOne = true;
             }
           }
         }
-      });
+      }
+    }
   }
 };
 
-const rQuoteFunction: SassyBotCommand = (message: Message): void => {
+const rQuoteFunction: SassyBotCommand = async (message: Message) => {
   const parts = message.content.match(/!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i);
   const quotedMember = message.mentions.members.first();
   if (parts && parts[0] === '!sb rquote list all') {
@@ -129,7 +116,7 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
           member.displayName + '(' + member.user.username + '): ' + countRows[j].cnt + ' saved quotes' + '\n';
       }
     }
-    sassybotRespond(message, outputString);
+    await sassybotRespond(message, outputString);
     return;
   }
   if (hasSingleMention(message)) {
@@ -146,38 +133,23 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
         if (!row.quote_text || row.quote_text === '') {
           const channel = client.channels.get(row.channel_id);
           if (channel instanceof TextChannel) {
-            channel.fetchMessage(row.message_id).then((recalledMessage: Message) => {
-              const content = recalledMessage.cleanContent;
-              updateMessageText.run([content, row.message_id]);
-              quote.content = content;
-              sassybotRespond(
-                message,
-                quotedMember.displayName +
-                  ' said: "' +
-                  quote.content +
-                  '" (quote #' +
-                  quote.number +
-                  ')' +
-                  '\n\n' +
-                  'and has ' +
-                  (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-                  ' other quotes saved',
-              );
-            });
+            const recalledMessage = await channel.fetchMessage(row.message_id);
+            const content = recalledMessage.cleanContent;
+            updateMessageText.run([content, row.message_id]);
+            quote.content = content;
+            await sassybotRespond(
+              message,
+              `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
+                quote.count - 1 === 0 ? 'No' : quote.count - 1
+              } other quotes saved`,
+            );
           }
         } else {
-          sassybotRespond(
+          await sassybotRespond(
             message,
-            quotedMember.displayName +
-              ' said: "' +
-              quote.content +
-              '" (quote #' +
-              quote.number +
-              ')' +
-              '\n\n' +
-              'and has ' +
-              (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-              ' other quotes saved',
+            `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
+              quote.count - 1 === 0 ? 'No' : quote.count - 1
+            } other quotes saved`,
           );
         }
       }
@@ -200,17 +172,16 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
         }
       }
       if (fetches.length > 0) {
-        Promise.all(fetches).then((results: Message[]) => {
-          for (let k = 0, kMax = results.length; k < kMax; k++) {
-            const content = results[k].cleanContent;
-            updateMessageText.run([content, results[k].id]);
-          }
-          const quoteRows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
-          for (let i = 0, iMax = quoteRows.length; i < iMax; i++) {
-            finalMessage += i + 1 + ': ' + quoteRows[i].quote_text + '\n';
-          }
-          target.send(finalMessage + '----------------------------');
-        });
+        const results = await Promise.all(fetches);
+        for (let k = 0, kMax = results.length; k < kMax; k++) {
+          const content = results[k].cleanContent;
+          updateMessageText.run([content, results[k].id]);
+        }
+        const quoteRows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
+        for (let i = 0, iMax = quoteRows.length; i < iMax; i++) {
+          finalMessage += i + 1 + ': ' + quoteRows[i].quote_text + '\n';
+        }
+        target.send(finalMessage + '----------------------------');
       } else {
         for (let j = 0, jMax = builtMessages.length; j < jMax; j++) {
           finalMessage += j + 1 + ': ' + builtMessages[j] + '\n';
@@ -230,46 +201,29 @@ const rQuoteFunction: SassyBotCommand = (message: Message): void => {
         if (!row.quote_text || row.quote_text === '') {
           const channel = client.channels.get(row.channel_id);
           if (channel instanceof TextChannel) {
-            channel.fetchMessage(row.message_id).then((recalledMessage: Message) => {
-              const content = recalledMessage.cleanContent;
-              updateMessageText.run([content, row.message_id]);
-              quote.content = content;
-              sassybotRespond(
-                message,
-                quotedMember.displayName +
-                  ' said: "' +
-                  quote.content +
-                  '" (quote #' +
-                  quote.number +
-                  ')' +
-                  '\n\n' +
-                  'and has ' +
-                  (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-                  ' other quotes saved',
-              );
-            });
+            const recalledMessage = await channel.fetchMessage(row.message_id);
+            const content = recalledMessage.cleanContent;
+            updateMessageText.run([content, row.message_id]);
+            quote.content = content;
+            await sassybotRespond(
+              message,
+              `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
+                quote.count - 1 === 0 ? 'No' : quote.count - 1
+              } other quotes saved`,
+            );
           }
         } else {
-          sassybotRespond(
+          await sassybotRespond(
             message,
-            quotedMember.displayName +
-              ' said: "' +
-              quote.content +
-              '" (quote #' +
-              quote.number +
-              ')' +
-              '\n\n' +
-              'and has ' +
-              (quote.count - 1 === 0 ? 'No' : quote.count - 1) +
-              ' other quotes saved',
+            `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
+              quote.count - 1 === 0 ? 'No' : quote.count - 1
+            } other quotes saved`,
           );
         }
       }
-    } else {
-      sassybotRespond(message, 'ugh waht ?');
     }
   } else {
-    sassybotRespond(message, 'You must specify whose quote you want to retrieve');
+    await sassybotRespond(message, 'You must specify whose quote you want to retrieve');
   }
 };
 

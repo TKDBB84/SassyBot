@@ -3,7 +3,7 @@ export interface ISassyBotImport {
   help: { [key: string]: string };
 }
 type SassyBotImportList = ISassyBotImport[];
-export type SassyBotCommand = (message: Message) => void;
+export type SassyBotCommand = (message: Message) => Promise<void>;
 interface ISassyBotCommandList {
   [key: string]: SassyBotCommand;
 }
@@ -11,7 +11,7 @@ interface IPleaseRequiredList {
   [key: string]: { id: string; lastMessage: Message | null };
 }
 type SassybotTrollList = Array<{ process: SassybotTrollCommand; chance: number }>;
-export type SassybotTrollCommand = (message: Message) => boolean;
+export type SassybotTrollCommand = (message: Message) => Promise<boolean>;
 
 import * as Discord from 'discord.js';
 import { Message, MessageOptions } from 'discord.js';
@@ -41,28 +41,28 @@ const getSecrets: () => IClientSecrets = (): IClientSecrets => {
   return JSON.parse(fileData.toString());
 };
 
-const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
+const sassybotReply = (message: Message, reply: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {
     disableEveryone: true,
     reply: message.author,
     split: true,
   };
-  message.channel.send(reply, options).catch(console.error);
+  return message.channel.send(reply, options);
 };
 
-const sassybotRespond: (message: Message, reply: string) => void = (message: Message, text: string): void => {
+const sassybotRespond = (message: Message, text: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {
     disableEveryone: true,
     split: true,
   };
-  message.channel.send(text, options).catch(console.error);
+  return message.channel.send(text, options);
 };
 
-const getDisplayName: (message: Message) => string = (message: Message): string => {
+const getDisplayName = (message: Message): string => {
   return message.member.nickname ? message.member.nickname : message.author.username;
 };
 
-const shiftyEyes: SassybotTrollCommand = (message: Message): boolean => {
+const shiftyEyes: SassybotTrollCommand = async (message) => {
   let outMessage = '';
   const leftEyesExp = /.*<(\s*.\s*)<.*/;
   const rightEyesExp = /.*>(\s*.\s*)>.*/;
@@ -106,13 +106,13 @@ const shiftyEyes: SassybotTrollCommand = (message: Message): boolean => {
   }
 
   if (outMessage !== '') {
-    sassybotRespond(message, outMessage);
+    await sassybotRespond(message, outMessage);
     return false;
   }
   return true;
 };
 
-const aPingRee: SassybotTrollCommand = (message: Message): boolean => {
+const aPingRee: SassybotTrollCommand = async (message) => {
   if (message.content.toLowerCase().includes(':apingree:') || message.content.toLowerCase().includes(':angeryping:')) {
     setTimeout(() => {
       sassybotReply(message, 'oh I hear you like being pinged!');
@@ -122,30 +122,30 @@ const aPingRee: SassybotTrollCommand = (message: Message): boolean => {
   return true;
 };
 
-const moreDots: SassybotTrollCommand = (message: Message): boolean => {
+const moreDots: SassybotTrollCommand = async (message) => {
   const dotMatch = message.content.match(/(\.)+/);
   if (!dotMatch || !dotMatch.input) {
     return true;
   }
   if (dotMatch[0].toString() === dotMatch.input.toString()) {
-    sassybotRespond(message, dotMatch.input.toString() + dotMatch.input.toString());
+    await sassybotRespond(message, dotMatch.input.toString() + dotMatch.input.toString());
     return false;
   }
   return true;
 };
 
-const pleaseShutUp: SassybotTrollCommand = (message: Message): boolean => {
-  sassybotReply(message, 'will you please shut up?');
+const pleaseShutUp: SassybotTrollCommand = async (message) => {
+  await sassybotReply(message, 'will you please shut up?');
   return false;
 };
 
-const processPleaseStatement: SassybotTrollCommand = (message: Message): boolean => {
+const processPleaseStatement: SassybotTrollCommand = async (message) => {
   const authorId = getAuthorId(message);
   if (pleaseRequiredList.hasOwnProperty(authorId)) {
     const pleaseRequired = pleaseRequiredList[authorId];
     if (message.content.toLowerCase() === 'please') {
       if (pleaseRequired.lastMessage !== null) {
-        processSassybotCommand(pleaseRequired.lastMessage);
+        await processSassybotCommand(pleaseRequired.lastMessage);
         pleaseRequiredList[authorId].lastMessage = null;
         return false;
       }
@@ -154,9 +154,9 @@ const processPleaseStatement: SassybotTrollCommand = (message: Message): boolean
   return true;
 };
 
-const justSayNo: SassybotTrollCommand = (message: Message): boolean => {
+const justSayNo: SassybotTrollCommand = async (message) => {
   if (isSassyBotCall(message)) {
-    sassybotRespond(message, 'No, Fuck you.');
+    await sassybotRespond(message, 'No, Fuck you.');
     return false;
   }
   return true;
@@ -189,23 +189,23 @@ const preProcessTrollFunctions: SassybotTrollList = [
   },
 ];
 
-const isSassyBotCall: (message: Message) => boolean = (message: Message): boolean => {
+const isSassyBotCall = (message: Message): boolean => {
   return message.content.toLowerCase().startsWith('!sassybot') || message.content.toLowerCase().startsWith('!sb');
 };
 
-const spamFunction: SassyBotCommand = (message: Message): void => {
+const spamFunction: SassyBotCommand = async (message) => {
   const authorId = getAuthorId(message);
   if (authorId === Users.Sasner.id || authorId === Users.Verian.id || authorId === Users.Tyr.id) {
     channelList.set(message.guild.id, message.channel.id);
     db.removeSpamChannel(message.guild.id);
     db.addSpamChannel(message.guild.id, message.channel.id);
-    sassybotRespond(message, "Ok, I'll spam this channel");
+    await sassybotRespond(message, "Ok, I'll spam this channel");
   } else {
-    sassybotRespond(message, 'This functionality is limited to Sasner & server owners');
+    await sassybotRespond(message, 'This functionality is limited to Sasner & server owners');
   }
 };
 
-const censusFunction: SassyBotCommand = (message: Message): void => {
+const censusFunction: SassyBotCommand = async (message) => {
   const wordArray = message.content.split(' ');
   let firstWord;
   if (wordArray.length >= 2) {
@@ -215,13 +215,13 @@ const censusFunction: SassyBotCommand = (message: Message): void => {
   switch (firstWord) {
     case '2019':
     default:
-      sassybotRespond(message, 'https://bit.ly/2IFwzke  -- Thanks to Astra');
+      await sassybotRespond(message, 'https://bit.ly/2IFwzke  -- Thanks to Astra');
       break;
   }
   return;
 };
 
-const helpFunction: SassyBotCommand = (message: Message): void => {
+const helpFunction: SassyBotCommand = async (message) => {
   const wordArray = message.content.split(' ');
   let firstWord;
   if (wordArray.length < 2) {
@@ -265,14 +265,14 @@ const helpFunction: SassyBotCommand = (message: Message): void => {
       '\n' +
       `for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`;
   }
-  sassybotRespond(message, reply);
+  await sassybotRespond(message, reply);
 };
 
-const pingFunction: SassyBotCommand = (message: Message): void => {
-  sassybotReply(message, 'pong');
+const pingFunction: SassyBotCommand = async (message) => {
+  await sassybotReply(message, 'pong');
 };
-const echoFunction: SassyBotCommand = (message: Message): void => {
-  sassybotRespond(message, message.content);
+const echoFunction: SassyBotCommand = async (message) => {
+  await sassybotRespond(message, message.content);
 };
 
 let chatFunctions: ISassyBotCommandList = {
@@ -287,11 +287,11 @@ for (const importedFunction of importedFunctions) {
   chatFunctions = Object.assign({}, importedFunction.functions, chatFunctions);
 }
 
-const getAuthorId: (message: Message) => string = (message: Message): string => {
+const getAuthorId = (message: Message): string => {
   return message.author.id;
 };
 
-const processSassybotCommand: (message: Message) => void = (message: Message): void => {
+const processSassybotCommand = async (message: Message): Promise<void> => {
   if (!isSassyBotCall(message)) {
     return;
   }
@@ -301,7 +301,7 @@ const processSassybotCommand: (message: Message) => void = (message: Message): v
   if (pleaseRequiredList.hasOwnProperty(authorId)) {
     if (!message.content.endsWith(' please')) {
       pleaseRequiredList[authorId].lastMessage = message;
-      sassybotRespond(message, 'only if you say "please"');
+      await sassybotRespond(message, 'only if you say "please"');
       return;
     } else {
       message.content = message.content.slice(0, -1 * ' please'.length);
@@ -310,20 +310,20 @@ const processSassybotCommand: (message: Message) => void = (message: Message): v
 
   const parsed = message.content.toLowerCase().split(' ');
   if (chatFunctions.hasOwnProperty(parsed[1])) {
-    chatFunctions[parsed[1]](message);
+    await chatFunctions[parsed[1]](message);
   } else {
-    sassybotRespond(message, "Sorry I Don't Know That Command");
+    await sassybotRespond(message, "Sorry I Don't Know That Command");
   }
 };
 
-const messageEventHandler: (message: Message) => void = (message: Message): void => {
+const messageEventHandler: SassyBotCommand = async (message) => {
   const authorId: string = getAuthorId(message);
   const isFromSassyBot = authorId === Users.Sassybot.id;
   if (!isFromSassyBot) {
     if (resumeAbsentOrPromote(message)) {
       return;
     }
-    const isNewMemberMessage = newMemberListener(message);
+    const isNewMemberMessage = await newMemberListener(message);
     if (isNewMemberMessage) {
       return;
     }
@@ -332,14 +332,14 @@ const messageEventHandler: (message: Message) => void = (message: Message): void
       for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
         randomNumber = Math.random();
         if (randomNumber < preProcessTrollFunctions[i].chance) {
-          const continueProcessing = preProcessTrollFunctions[i].process(message);
+          const continueProcessing = await preProcessTrollFunctions[i].process(message);
           if (!continueProcessing) {
             return;
           }
         }
       }
     }
-    processSassybotCommand(message);
+    await processSassybotCommand(message);
   }
 };
 
