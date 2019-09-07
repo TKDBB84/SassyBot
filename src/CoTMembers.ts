@@ -181,6 +181,7 @@ const updateAllMemberRecords = async () => {
     matchMemberByName(member);
   });
 };
+updateAllMemberRecords();
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
 type AddMemberFunction = ({ id, name, rank }: { id: string; name: string; rank: string }) => boolean;
@@ -190,8 +191,10 @@ const addMember: AddMemberFunction = ({ id, name, rank }) => {
   return !!result.lastInsertRowid;
 };
 
-export const getLastPromotionByUserId = ({id}: {id: string}): string => {
-  const getLastPromotionStmt = db.connection.prepare("SELECT coalesce(last_promotion, '') as last_promotion FROM cot_promotion_tracking WHERE user_id = ?");
+export const getLastPromotionByUserId = ({ id }: { id: string }): string => {
+  const getLastPromotionStmt = db.connection.prepare(
+    "SELECT coalesce(last_promotion, '') as last_promotion FROM cot_promotion_tracking WHERE user_id = ?",
+  );
   const result = getLastPromotionStmt.all([id]);
   if (result && result.length === 1) {
     return result[0].last_promotion;
