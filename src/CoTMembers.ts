@@ -1,10 +1,10 @@
 import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
+import * as moment from 'moment';
 import { ISassyBotImport, SassyBotCommand } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
-import * as moment from "moment";
 
 interface IMemberRow {
   user_id: string;
@@ -50,7 +50,7 @@ const getMostRecentPull = () => {
   return data.max_last;
 };
 
-export let firstApiPull = moment('2019-09-02 22:30:00');
+export const firstApiPull = moment('2019-09-02 22:30:00');
 
 export function fetchCoTRoles(member: GuildMember): IRoleList {
   const cotRoles: IRoleList = {
@@ -113,6 +113,14 @@ const updateAPIUserId: updateUserIdByNameFunction = ({ name, id }) => {
   return !!result.changes;
 };
 
+const updateAPIUserIdIfNotSet: updateUserIdByNameFunction = ({ name, id }) => {
+  const updateAPIUserIdIfNotSetStmt = db.connection.prepare(
+    "UPDATE cot_members SET user_id = ? WHERE (user_id is null OR user_id = '') AND name = ? COLLATE NOCASE",
+  );
+  const result = updateAPIUserIdIfNotSetStmt.run([id, name]);
+  return !!result.changes;
+};
+
 const getSecrets: () => IClientSecrets = (): IClientSecrets => {
   const fileData = fs.readFileSync('/home/nodebot/src/client_secrets.json');
   return JSON.parse(fileData.toString());
@@ -149,9 +157,29 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
   });
 };
 
+const matchMemberByName = (member: IFreeCompanyMember) => {
+  const cotMemberRows = getMemberByName({ name: member.Name });
+  if (cotMemberRows.length === 1) {
+    const cotMember = cotMemberRows[0];
+    try {
+      updateAPIUserIdIfNotSet({ name: member.Name, id: cotMember.user_id });
+    } catch (e) {
+      console.error('error claiming user: ', { name: member.Name, id: cotMember.user_id });
+      return false;
+    }
+  } else {
+    console.error('Duplicate Names in cot_promotion_tracking: ', { name: member.Name });
+    return false;
+  }
+  return true;
+};
+
 const updateAllMemberRecords = async () => {
   const currentMembers = await getLatestMemberList();
-  currentMembers.map(upsertMember);
+  currentMembers.map((member) => {
+    upsertMember(member);
+    matchMemberByName(member);
+  });
 };
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
@@ -196,10 +224,9 @@ export class CoTMember extends User {
       return false;
     }
     const member = new CoTMember(row.user_id, row.name, row.rank);
-    const apiUserRow = getAPIUserByUserId({ id: row.user_id});
-    let apiUser: ICotMemberRoW;
+    const apiUserRow = getAPIUserByUserId({ id: row.user_id });
     if (apiUserRow && apiUserRow.length === 1) {
-      member.firstSeenAPI = moment(apiUserRow[0].first_seen_api)
+      member.firstSeenAPI = moment(apiUserRow[0].first_seen_api);
     }
     return member;
   }
@@ -258,6 +285,7 @@ export class CoTMember extends User {
       return true;
     }
     addMember({ id: this.id, name: this.name, rank: this.rank });
+    updateAPIUserIdIfNotSet({ name: this.name, id: this.id });
     return true;
   }
 
@@ -344,13 +372,15 @@ const claimUser = async (message: Message) => {
             await message.member.addRole(cotRoles.Member).catch(console.error);
           }
           break;
+        case 'officer':
+          await sassybotRespond(
+            message,
+            "I cannot add the Officer Rank, please have Tyr update you. I've temporarily set you to Veteran",
+          );
         case 'veteran':
           if (cotRoles.Veteran) {
             await message.member.addRole(cotRoles.Veteran).catch(console.error);
           }
-          break;
-        case 'officer':
-          console.error('cannot add office rank to user');
           break;
       }
 
@@ -374,7 +404,7 @@ const claimUser = async (message: Message) => {
 export let ClaimUser: ISassyBotImport = {
   functions: {
     claim: (message: Message) => {
-      claimUser(message).catch(console.error);
+      return claimUser(message);
     },
   },
   help: {
