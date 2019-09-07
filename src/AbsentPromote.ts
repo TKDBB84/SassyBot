@@ -410,7 +410,7 @@ const listAllPromotions = async (message: Message) => {
     if (lastPromotion !== '') {
       const lastPromotionDate = moment(lastPromotion);
       const daysAgo = currentDate.diff(lastPromotionDate, 'days');
-      responseMessage += ` - last promotion through Sassybot: ${daysAgo} ago`;
+      responseMessage += ` - last promotion through Sassybot: ${daysAgo} days ago`;
     }
 
     if (daysMemberKnown > -1 && maxDaysKnown > daysMemberKnown) {
