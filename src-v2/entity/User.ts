@@ -10,6 +10,9 @@ export class User {
   @Column('varchar', { length: 255 })
   discordUserId: string;
 
+  @Column('varchar', { length: 255, default: 'UTC'})
+  timezone: string;
+
   @OneToMany((type) => Quote, (quote) => quote.user, { eager: true })
   quotes: Quote[];
 }
