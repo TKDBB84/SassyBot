@@ -1,5 +1,5 @@
 import * as moment from 'moment-timezone';
-import { Channel, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
+import { Channel, Client, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
 import { SassyBot } from './SassyBot';
 import { GuildIds, UserIds } from './consts';
 import { SpamChannel } from './entity/SpamChannel';
@@ -46,11 +46,11 @@ async function sendJoinedMessage(
   }
 }
 
-async function getVoiceChannel(sb: SassyBot, channelId: string): Promise<VoiceChannel | null> {
+async function getVoiceChannel(client: Client, channelId: string): Promise<VoiceChannel | null> {
   if (!channelId) {
     return null;
   }
-  const channel = sb.discordClient.channels.get(channelId);
+  const channel = client.channels.get(channelId);
   if (channel && channel instanceof VoiceChannel) {
     return channel;
   }
@@ -67,13 +67,13 @@ async function getSpamChannelTimezone(sb: SassyBot, guildId: string): Promise<st
   return 'UTC';
 }
 
-async function getSpamTextChannel(sb: SassyBot, guildId: string): Promise<TextChannel | null> {
+async function getSpamTextChannel(sb: SassyBot, client: Client, guildId: string): Promise<TextChannel | null> {
   let spamChannel: Channel | null;
   const spamChannelEntity = await sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
     guildId,
   });
   if (spamChannelEntity && spamChannelEntity.channelId) {
-    spamChannel = sb.discordClient.channels.find((channel) => channel.id === spamChannelEntity.channelId);
+    spamChannel = client.channels.find((channel) => channel.id === spamChannelEntity.channelId);
     if (spamChannel && spamChannel instanceof TextChannel) {
       return spamChannel;
     }
@@ -81,22 +81,27 @@ async function getSpamTextChannel(sb: SassyBot, guildId: string): Promise<TextCh
   return null;
 }
 
-async function logVoiceChatConnection(sb: SassyBot, previousMemberState: GuildMember, currentMemberState: GuildMember) {
-  let userLeftChannel = !!sb.discordClient.channels.get(previousMemberState.voiceChannelID);
+async function logVoiceChatConnection(
+  sb: SassyBot,
+  client: Client,
+  previousMemberState: GuildMember,
+  currentMemberState: GuildMember,
+) {
+  let userLeftChannel = !!client.channels.get(previousMemberState.voiceChannelID);
   let leftSpamChannel: TextChannel | null = null;
   let channelLeft: VoiceChannel | null = null;
   let leftNow: moment.Moment | null = null;
   let previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
 
-  let userJoinedChannel = !!sb.discordClient.channels.get(currentMemberState.voiceChannelID);
+  let userJoinedChannel = !!client.channels.get(currentMemberState.voiceChannelID);
   let joinedSpamChannel: TextChannel | null = null;
   let channelJoined: VoiceChannel | null = null;
   let joinedNow: moment.Moment | null = null;
   let currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
 
   if (userLeftChannel) {
-    leftSpamChannel = await getSpamTextChannel(sb, previousMemberState.guild.id);
-    channelLeft = await getVoiceChannel(sb, previousMemberState.voiceChannelID);
+    leftSpamChannel = await getSpamTextChannel(sb, client, previousMemberState.guild.id);
+    channelLeft = await getVoiceChannel(client, previousMemberState.voiceChannelID);
     leftNow = moment().tz(await getSpamChannelTimezone(sb, previousMemberState.guild.id));
     if (
       channelLeft &&
@@ -110,8 +115,8 @@ async function logVoiceChatConnection(sb: SassyBot, previousMemberState: GuildMe
   }
 
   if (userJoinedChannel) {
-    joinedSpamChannel = await getSpamTextChannel(sb, currentMemberState.guild.id);
-    channelJoined = await getVoiceChannel(sb, currentMemberState.voiceChannelID);
+    joinedSpamChannel = await getSpamTextChannel(sb, client, currentMemberState.guild.id);
+    channelJoined = await getVoiceChannel(client, currentMemberState.voiceChannelID);
     joinedNow = moment().tz(await getSpamChannelTimezone(sb, currentMemberState.guild.id));
     if (
       channelJoined &&
@@ -128,7 +133,7 @@ async function logVoiceChatConnection(sb: SassyBot, previousMemberState: GuildMe
     const leftAndJoinedSameGuild = channelLeft.guild.id === channelJoined.guild.id;
     // user moved
     if (channelJoined.id === channelLeft.id) {
-      const sasner = await sb.discordClient.fetchUser(UserIds.SASNER);
+      const sasner = await client.fetchUser(UserIds.SASNER);
       if (sasner) {
         sasner.send(`left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`, {
           split: true,
@@ -195,5 +200,5 @@ async function logVoiceChatConnection(sb: SassyBot, previousMemberState: GuildMe
 }
 
 export default async function VoiceLogHandler(sb: SassyBot): Promise<void> {
-  sb.discordClient.on('voiceStateUpdate', (newState, oldState) => logVoiceChatConnection(sb, newState, oldState));
+  sb.on('voiceStateUpdate', ({ client, newState, oldState }) => logVoiceChatConnection(sb, client, newState, oldState));
 }
