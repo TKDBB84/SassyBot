@@ -2,7 +2,7 @@ import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as moment from 'moment';
-import { ISassyBotImport, SassyBotCommand } from './sassybot';
+import { ISassyBotImport } from './sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
 
@@ -11,7 +11,7 @@ interface IMemberRow {
   name: string;
   rank: string;
   first_seen_discord: number;
-  last_promotion: number;
+  last_promotion: number | string;
 }
 
 interface IRoleList {
@@ -44,6 +44,32 @@ db.connection.exec(
   'CREATE TABLE IF NOT EXISTS cot_members (api_id TEXT PRIMARY KEY, user_id TEXT, name TEXT, rank TEXT, first_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP, last_seen_api TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
 );
 
+interface IAllAbsentsRow {
+  user_id: string;
+  name: string;
+  start_date: string;
+  end_date: string;
+  timestamp: string;
+}
+const getAllAbsents = (guildId: string): IAllAbsentsRow[] => {
+  const stmtGetAllAbsents = db.connection.prepare(
+    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+  );
+  return stmtGetAllAbsents.all([guildId]);
+};
+
+interface IAllPromotionsRow {
+  user_id: string;
+  name: string;
+  timestamp: string;
+}
+const getAllPromotions = (guildId: string): IAllPromotionsRow[] => {
+  const stmtGetAllPromotions = db.connection.prepare(
+    'SELECT user_id, name, timestamp FROM user_promote WHERE guild_id = ? ORDER BY name COLLATE NOCASE',
+  );
+  return stmtGetAllPromotions.all([guildId]);
+};
+
 const getMostRecentPull = () => {
   const stmt = db.connection.prepare('SELECT MAX(last_seen_api) as max_last from cot_members;');
   const data = stmt.get();
@@ -75,7 +101,7 @@ export function fetchCoTRoles(member: GuildMember): IRoleList {
   return cotRoles;
 }
 
-interface ICotMemberRoW {
+export interface ICotMemberRoW {
   api_id: string;
   user_id: string;
   name: string;
@@ -90,7 +116,7 @@ const getAPIUserByName: getAPIUserByNameFunction = ({ name }) => {
 };
 
 type getAPIUserByUserId = ({ id }: { id: string }) => ICotMemberRoW[];
-const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
+export const getAPIUserByUserId: getAPIUserByUserId = ({ id }) => {
   const stmtGetUserByName = db.connection.prepare('SELECT * FROM cot_members WHERE user_id = ?');
   return stmtGetUserByName.all([id]);
 };
@@ -168,7 +194,6 @@ const matchMemberByName = (member: IFreeCompanyMember) => {
       return false;
     }
   } else {
-    console.error('Duplicate Names in cot_promotion_tracking: ', { name: member.Name });
     return false;
   }
   return true;
@@ -176,11 +201,19 @@ const matchMemberByName = (member: IFreeCompanyMember) => {
 
 const updateAllMemberRecords = async () => {
   const currentMembers = await getLatestMemberList();
+  mapPromotionAndAbsentRows();
   currentMembers.map((member) => {
     upsertMember(member);
     matchMemberByName(member);
   });
 };
+
+function mapPromotionAndAbsentRows() {
+  const COT_GUILD_ID = '324682549206974473';
+  [ ...getAllPromotions(COT_GUILD_ID), ...getAllAbsents(COT_GUILD_ID)].map((row) => {
+    updateAPIUserIdIfNotSet({ name: row.name, id: row.user_id });
+  });
+}
 setInterval(updateAllMemberRecords, ONE_HOUR * 12);
 
 type AddMemberFunction = ({ id, name, rank }: { id: string; name: string; rank: string }) => boolean;
@@ -188,6 +221,17 @@ const addMember: AddMemberFunction = ({ id, name, rank }) => {
   const member = db.connection.prepare('INSERT INTO cot_promotion_tracking (user_id, name, rank) VALUES (?, ?, ?)');
   const result = member.run([id, name, rank]);
   return !!result.lastInsertRowid;
+};
+
+export const getLastPromotionByUserId = ({ id }: { id: string }): string => {
+  const getLastPromotionStmt = db.connection.prepare(
+    "SELECT coalesce(last_promotion, '') as last_promotion FROM cot_promotion_tracking WHERE user_id = ?",
+  );
+  const result = getLastPromotionStmt.all([id]);
+  if (result && result.length === 1) {
+    return result[0].last_promotion;
+  }
+  return '';
 };
 
 type getMemberByNameFunction = ({ name }: { name: string }) => IMemberRow[];
@@ -362,11 +406,6 @@ const claimUser = async (message: Message) => {
       newMember.addMember();
 
       switch (rank.toLowerCase()) {
-        case 'recruit':
-          if (cotRoles.Recruit) {
-            await message.member.addRole(cotRoles.Recruit).catch(console.error);
-          }
-          break;
         case 'member':
           if (cotRoles.Member) {
             await message.member.addRole(cotRoles.Member).catch(console.error);
@@ -380,6 +419,12 @@ const claimUser = async (message: Message) => {
         case 'veteran':
           if (cotRoles.Veteran) {
             await message.member.addRole(cotRoles.Veteran).catch(console.error);
+          }
+          break;
+        case 'recruit':
+        default:
+          if (cotRoles.Recruit) {
+            await message.member.addRole(cotRoles.Recruit).catch(console.error);
           }
           break;
       }

@@ -320,7 +320,8 @@ const messageEventHandler: SassyBotCommand = async (message) => {
   const authorId: string = getAuthorId(message);
   const isFromSassyBot = authorId === Users.Sassybot.id;
   if (!isFromSassyBot) {
-    if (resumeAbsentOrPromote(message)) {
+    const isAbsentOrPromoteRequest = await resumeAbsentOrPromote(message);
+    if (isAbsentOrPromoteRequest) {
       return;
     }
     const isNewMemberMessage = await newMemberListener(message);
