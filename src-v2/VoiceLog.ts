@@ -1,16 +1,16 @@
-import * as moment from 'moment-timezone';
 import { Channel, Client, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
-import { SassyBot } from './SassyBot';
+import * as moment from 'moment-timezone';
 import { GuildIds, UserIds } from './consts';
 import { SpamChannel } from './entity/SpamChannel';
+import { SassyBot } from './SassyBot';
 
-type ignoredVoiceChannelsMap = {
+interface IIgnoredVoiceChannelsMap {
   [key: string]: Set<string>;
-};
+}
 
 const TIME_FORMAT = 'HH:MM:SS z';
 
-const ignoredVoiceChannels: ignoredVoiceChannelsMap = {
+const ignoredVoiceChannels: IIgnoredVoiceChannelsMap = {
   [GuildIds.COT_GUILD_ID]: new Set<string>(['333750400861863936']),
   [GuildIds.GAMEZZZ_GUILD_ID]: new Set<string>(),
   [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: new Set<string>(),
@@ -87,17 +87,17 @@ async function logVoiceChatConnection(
   previousMemberState: GuildMember,
   currentMemberState: GuildMember,
 ) {
-  let userLeftChannel = !!client.channels.get(previousMemberState.voiceChannelID);
+  const userLeftChannel = !!client.channels.get(previousMemberState.voiceChannelID);
   let leftSpamChannel: TextChannel | null = null;
   let channelLeft: VoiceChannel | null = null;
   let leftNow: moment.Moment | null = null;
-  let previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
+  const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
 
-  let userJoinedChannel = !!client.channels.get(currentMemberState.voiceChannelID);
+  const userJoinedChannel = !!client.channels.get(currentMemberState.voiceChannelID);
   let joinedSpamChannel: TextChannel | null = null;
   let channelJoined: VoiceChannel | null = null;
   let joinedNow: moment.Moment | null = null;
-  let currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
+  const currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
 
   if (userLeftChannel) {
     leftSpamChannel = await getSpamTextChannel(sb, client, previousMemberState.guild.id);
@@ -136,8 +136,8 @@ async function logVoiceChatConnection(
       const sasner = await client.fetchUser(UserIds.SASNER);
       if (sasner) {
         sasner.send(`left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`, {
-          split: true,
           disableEveryone: true,
+          split: true,
         });
       }
       return;

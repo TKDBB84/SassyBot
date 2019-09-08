@@ -33,7 +33,7 @@
     "tslint-config-prettier": "^1.18.0"
   },
   "scripts": {
-    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format": "prettier --write \"src/**/*.ts\" \"src-v2/**/*.ts\" \"src/**/*.js\"",
     "lint": "tslint -p tsconfig.json --fix",
     "build": "tsc"
   },

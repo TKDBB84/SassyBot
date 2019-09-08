@@ -1,20 +1,20 @@
-import {PrimaryGeneratedColumn, Entity, ManyToOne, JoinColumn, CreateDateColumn, Column} from 'typeorm';
-import {COTMember, CotRanks} from "./COTMember";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { COTMember, CotRanks } from './COTMember';
 
 @Entity()
 export class AbsentRequest {
   @PrimaryGeneratedColumn()
-  id: number;
+  public id: number;
 
   @CreateDateColumn('datetime')
-  requested: Date;
+  public requested: Date;
 
   @Column('date')
-  startDate: Date;
+  public startDate: Date;
 
   @Column('date')
-  endDate: Date;
+  public endDate: Date;
 
   @ManyToOne((type) => COTMember, (cotMember) => cotMember.promotions, { eager: true })
-  CotMember: COTMember;
+  public CotMember: COTMember;
 }

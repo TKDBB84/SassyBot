@@ -4,14 +4,14 @@ import { User } from './User';
 @ChildEntity()
 export class FFXIVPlayer extends User {
   @Column({ type: 'int', width: 11 })
-  apiId: number;
+  public apiId: number;
 
   @Column('varchar', { length: 255 })
-  charName: string;
+  public charName: string;
 
   @CreateDateColumn('datetime')
-  firstSeenApi: Date;
+  public firstSeenApi: Date;
 
   @Column('datetime')
-  lastSeenApi: Date;
+  public lastSeenApi: Date;
 }

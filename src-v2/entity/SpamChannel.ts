@@ -1,13 +1,13 @@
-import { PrimaryColumn, Column, Entity } from 'typeorm';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class SpamChannel {
   @PrimaryColumn('varchar', { length: 255 })
-  guildId: string;
+  public guildId: string;
 
   @Column('varchar', { length: 255 })
-  channelId: string;
+  public channelId: string;
 
-  @Column('varchar', { length: 255, default: 'UTC'})
-  timezone: string;
+  @Column('varchar', { length: 255, default: 'UTC' })
+  public timezone: string;
 }
