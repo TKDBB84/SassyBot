@@ -1,4 +1,4 @@
-import { Channel, Client, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
+import { Channel, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
 import * as moment from 'moment-timezone';
 import { GuildIds, UserIds } from './consts';
 import { SpamChannel } from './entity/SpamChannel';
@@ -46,11 +46,11 @@ async function sendJoinedMessage(
   }
 }
 
-async function getVoiceChannel(client: Client, channelId: string): Promise<VoiceChannel | null> {
+async function getVoiceChannel(sb: SassyBot, channelId: string): Promise<VoiceChannel | null> {
   if (!channelId) {
     return null;
   }
-  const channel = client.channels.get(channelId);
+  const channel = sb.getChannel(channelId);
   if (channel && channel instanceof VoiceChannel) {
     return channel;
   }
@@ -67,13 +67,13 @@ async function getSpamChannelTimezone(sb: SassyBot, guildId: string): Promise<st
   return 'UTC';
 }
 
-async function getSpamTextChannel(sb: SassyBot, client: Client, guildId: string): Promise<TextChannel | null> {
+async function getSpamTextChannel(sb: SassyBot, guildId: string): Promise<TextChannel | null> {
   let spamChannel: Channel | null;
   const spamChannelEntity = await sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
     guildId,
   });
   if (spamChannelEntity && spamChannelEntity.channelId) {
-    spamChannel = client.channels.find((channel) => channel.id === spamChannelEntity.channelId);
+    spamChannel = sb.getChannel(spamChannelEntity.channelId);
     if (spamChannel && spamChannel instanceof TextChannel) {
       return spamChannel;
     }
@@ -81,124 +81,87 @@ async function getSpamTextChannel(sb: SassyBot, client: Client, guildId: string)
   return null;
 }
 
-async function logVoiceChatConnection(
-  sb: SassyBot,
-  client: Client,
-  previousMemberState: GuildMember,
-  currentMemberState: GuildMember,
-) {
-  const userLeftChannel = !!client.channels.get(previousMemberState.voiceChannelID);
-  let leftSpamChannel: TextChannel | null = null;
-  let channelLeft: VoiceChannel | null = null;
-  let leftNow: moment.Moment | null = null;
+async function logVoiceChatConnection(sb: SassyBot, previousMemberState: GuildMember, currentMemberState: GuildMember) {
+  const [
+    userLeftChannel,
+    leftSpamChannel,
+    leftTimezone,
+    userJoinedChannel,
+    joinedSpamChannel,
+    joinTimezone,
+  ] = await Promise.all([
+    getVoiceChannel(sb, previousMemberState.voiceChannelID),
+    getSpamTextChannel(sb, previousMemberState.guild.id),
+    getSpamChannelTimezone(sb, previousMemberState.guild.id),
+    getVoiceChannel(sb, currentMemberState.voiceChannelID),
+    getSpamTextChannel(sb, currentMemberState.guild.id),
+    getSpamChannelTimezone(sb, currentMemberState.guild.id),
+  ]);
   const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
+  const leftNow: moment.Moment = moment().tz(leftTimezone);
 
-  const userJoinedChannel = !!client.channels.get(currentMemberState.voiceChannelID);
-  let joinedSpamChannel: TextChannel | null = null;
-  let channelJoined: VoiceChannel | null = null;
-  let joinedNow: moment.Moment | null = null;
   const currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
+  const joinedNow: moment.Moment = moment().tz(joinTimezone);
 
-  if (userLeftChannel) {
-    leftSpamChannel = await getSpamTextChannel(sb, client, previousMemberState.guild.id);
-    channelLeft = await getVoiceChannel(client, previousMemberState.voiceChannelID);
-    leftNow = moment().tz(await getSpamChannelTimezone(sb, previousMemberState.guild.id));
-    if (
-      channelLeft &&
-      ignoredVoiceChannels.hasOwnProperty(previousMemberState.guild.id) &&
-      ignoredVoiceChannels[previousMemberState.guild.id].has(channelLeft.id)
-    ) {
-      leftSpamChannel = null;
-      channelLeft = null;
-      leftNow = null;
-    }
-  }
-
-  if (userJoinedChannel) {
-    joinedSpamChannel = await getSpamTextChannel(sb, client, currentMemberState.guild.id);
-    channelJoined = await getVoiceChannel(client, currentMemberState.voiceChannelID);
-    joinedNow = moment().tz(await getSpamChannelTimezone(sb, currentMemberState.guild.id));
-    if (
-      channelJoined &&
-      ignoredVoiceChannels.hasOwnProperty(currentMemberState.guild.id) &&
-      ignoredVoiceChannels[currentMemberState.guild.id].has(channelJoined.id)
-    ) {
-      joinedSpamChannel = null;
-      channelJoined = null;
-      joinedNow = null;
-    }
-  }
-
-  if (channelJoined && channelLeft) {
-    const leftAndJoinedSameGuild = channelLeft.guild.id === channelJoined.guild.id;
+  if (userLeftChannel && userJoinedChannel) {
+    const leftAndJoinedSameGuild = userLeftChannel.guild.id === userJoinedChannel.guild.id;
     // user moved
-    if (channelJoined.id === channelLeft.id) {
-      const sasner = await client.fetchUser(UserIds.SASNER);
-      if (sasner) {
-        sasner.send(`left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`, {
-          disableEveryone: true,
-          split: true,
-        });
-      }
-      return;
-    } else {
+    if (userJoinedChannel.id !== userLeftChannel.id) {
       if (leftAndJoinedSameGuild) {
         // moved within server
         let spamChannel = leftSpamChannel;
+        let time = `(${leftNow.format(TIME_FORMAT)})`;
         if (!spamChannel) {
           spamChannel = joinedSpamChannel;
-        }
-        let time = '';
-        if (leftNow) {
-          time = `(${leftNow.format(TIME_FORMAT)})`;
-        } else if (joinedNow) {
           time = `(${joinedNow.format(TIME_FORMAT)})`;
         }
         if (spamChannel) {
           spamChannel.send(
-            `${time} ${currentMemberName} has moved from: ${channelLeft.name} to: ${channelJoined.name}`,
+            `${time} ${currentMemberName} has moved from: ${userLeftChannel.name} to: ${userJoinedChannel.name}`,
           );
         }
         return;
       } else {
         // moved between servers
-        await sendLeftMessage(
-          leftSpamChannel,
-          leftNow ? leftNow.format(TIME_FORMAT) : '',
-          channelLeft.name,
-          previousMemberName,
-        );
+        await sendLeftMessage(leftSpamChannel, leftNow.format(TIME_FORMAT), userLeftChannel.name, previousMemberName);
         await sendJoinedMessage(
           joinedSpamChannel,
-          joinedNow ? joinedNow.format(TIME_FORMAT) : '',
-          channelJoined.name,
+          joinedNow.format(TIME_FORMAT),
+          userJoinedChannel.name,
           currentMemberName,
         );
         return;
       }
+    } else {
+      const sasner = await sb.fetchUser(UserIds.SASNER);
+      if (sasner) {
+        sasner.send(
+          `weird left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`,
+          {
+            disableEveryone: true,
+            split: true,
+          },
+        );
+      }
+      return;
     }
   }
 
-  if (channelJoined && !channelLeft) {
+  if (userJoinedChannel && !userLeftChannel) {
     await sendJoinedMessage(
       joinedSpamChannel,
-      joinedNow ? joinedNow.format(TIME_FORMAT) : '',
-      channelJoined.name,
+      joinedNow.format(TIME_FORMAT),
+      userJoinedChannel.name,
       currentMemberName,
     );
     return;
   }
-  if (channelLeft && !channelJoined) {
-    await sendLeftMessage(
-      leftSpamChannel,
-      leftNow ? leftNow.format(TIME_FORMAT) : '',
-      channelLeft.name,
-      previousMemberName,
-    );
+  if (userLeftChannel && !userJoinedChannel) {
+    await sendLeftMessage(leftSpamChannel, leftNow.format(TIME_FORMAT), userLeftChannel.name, previousMemberName);
     return;
   }
 }
 
 export default async function VoiceLogHandler(sb: SassyBot): Promise<void> {
-  sb.on('voiceStateUpdate', ({ client, newState, oldState }) => logVoiceChatConnection(sb, client, newState, oldState));
+  sb.on('voiceStateUpdate', ({ newState, oldState }) => logVoiceChatConnection(sb, newState, oldState));
 }
