@@ -37,10 +37,10 @@ export class Sassybot extends EventEmitter {
     const matches = message.cleanContent.match(patternMatch);
     if (matches && matches.groups) {
       if (matches.groups.command) {
-        result.command = matches.groups.command;
+        result.command = matches.groups.command.toLowerCase();
       }
       if (matches.groups.args) {
-        result.args = matches.groups.args;
+        result.args = matches.groups.args.toLowerCase();
       }
       if (message.mentions.members.size > 0) {
         result.mentions = message.mentions;
@@ -115,7 +115,21 @@ export class Sassybot extends EventEmitter {
     this.emit('messageReceived', { message });
     if (Sassybot.isSassybotCommand(message)) {
       this.emit('sassybotCommandPreprocess', { message });
-      this.emit('sassybotCommand', { message, params: Sassybot.getCommandParameters(message) });
+      const params = Sassybot.getCommandParameters(message);
+      if (params.command === 'help') {
+        if (params.args === '') {
+          `Available commands are:\n${[...this.registeredCommands].sort().join(', ')}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`;
+        } else if (params.args === 'help') {
+          message.channel.send(
+            'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
+            {
+              disableEveryone: true,
+              split: true,
+            },
+          );
+        }
+      }
+      this.emit('sassybotCommand', { message, params });
       this.emit('sassybotCommandPostprocess', { message });
     }
     this.emit('messageEnd', { message });
