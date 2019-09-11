@@ -10,5 +10,4 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Build
-      run: npm install
-      run: tsc
+      run: npm install && ./node_modules/.bin/tsc
