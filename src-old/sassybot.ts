@@ -231,11 +231,6 @@ const helpFunction: SassyBotCommand = async (message) => {
   }
   let commandList: { [p: string]: string };
   commandList = {
-    echo:
-      'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging',
-    help:
-      'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
-    ping: 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
     spam:
       'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified',
   };
