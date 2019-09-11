@@ -6,7 +6,7 @@ import { Channel, Client, GuildMember, Message, MessageMentions, User } from 'di
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
 import Dice from './Dice';
-import VoiceLogHandler from './VoiceLog';
+import VoiceLog from './VoiceLog';
 
 export interface ISassyBotCommandParams {
   command: string;
@@ -117,7 +117,7 @@ export class SassyBot extends EventEmitter {
 
 createConnection().then(async (connection: Connection) => {
   const sb = new SassyBot(connection);
-  await VoiceLogHandler(sb);
-  await Dice.init(sb);
+  new VoiceLog(sb);
+  new Dice(sb);
   await sb.run();
 });

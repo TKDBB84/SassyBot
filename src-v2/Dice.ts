@@ -1,37 +1,24 @@
 import { Message } from 'discord.js';
 import { ISassyBotCommandParams, SassyBot } from './SassyBot';
+import SassybotCommand from './SassybotCommand';
 
-export default class Dice {
-  public static getHelpText(command: string): string {
-    if (command.toLowerCase() === 'roll') {
-      return 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
-    }
-    return '';
+export default class Dice extends SassybotCommand {
+  protected command = 'roll';
+
+  protected getHelpText(): string {
+    return 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
   }
 
-  public static async listener(sb: SassyBot, message: Message, params: ISassyBotCommandParams): Promise<void> {
-    if (params.command === 'roll') {
-      const response = await Dice.rollFunction(params.args);
-      message.channel.send(response, {
-        disableEveryone: true,
-        reply: message.author,
-        split: true,
-      });
-      return;
-    }
-    if (params.command === 'help') {
-      const helpText = Dice.getHelpText(params.args[0]);
-      message.channel.send(helpText, {
-        disableEveryone: true,
-        split: true,
-      });
-      return;
-    }
+  protected async listener(message: Message, params: ISassyBotCommandParams): Promise<void> {
+    const response = await Dice.rollFunction(params.args);
+    message.channel.send(response, {
+      disableEveryone: true,
+      reply: message.author,
+      split: true,
+    });
+    return;
   }
 
-  public static async init(sb: SassyBot): Promise<void> {
-    sb.on('sassybotCommand', ({ message, params }) => Dice.listener(sb, message, params));
-  }
   private static parseDice(args: string): { num: number; sides: number } {
     const result = args.match(/^\s*(\d+)d(\d+).*$/i);
 
