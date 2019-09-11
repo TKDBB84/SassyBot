@@ -15,7 +15,6 @@ export type SassybotTrollCommand = (message: Message) => Promise<boolean>;
 
 import * as Discord from 'discord.js';
 import { Message, MessageOptions } from 'discord.js';
-import * as fs from 'fs';
 import SassyDb from './SassyDb';
 import Users from './Users';
 import VoiceLogHandler from './VoiceLog';
@@ -36,10 +35,10 @@ interface IClientSecrets {
   token: string;
   xivApiToken: string;
 }
-const getSecrets: () => IClientSecrets = (): IClientSecrets => {
-  const fileData = fs.readFileSync('/home/nodebot/src/client_secrets.json');
-  return JSON.parse(fileData.toString());
-};
+const getSecrets: () => IClientSecrets = (): IClientSecrets => ({
+  token: process.env.DISCORD_TOKEN as string,
+  xivApiToken: process.env.XIV_API_TOKEN as string,
+});
 
 const sassybotReply = (message: Message, reply: string): Promise<Message | Message[]> => {
   const options: MessageOptions = {

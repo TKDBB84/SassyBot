@@ -147,10 +147,10 @@ const updateAPIUserIdIfNotSet: updateUserIdByNameFunction = ({ name, id }) => {
   return !!result.changes;
 };
 
-const getSecrets: () => IClientSecrets = (): IClientSecrets => {
-  const fileData = fs.readFileSync('/home/nodebot/src/client_secrets.json');
-  return JSON.parse(fileData.toString());
-};
+const getSecrets: () => IClientSecrets = (): IClientSecrets => ({
+  token: process.env.DISCORD_TOKEN as string,
+  xivApiToken: process.env.XIV_API_TOKEN as string,
+});
 
 const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
   return new Promise((resolve) => {
