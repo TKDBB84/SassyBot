@@ -18,14 +18,14 @@ export class COTMember extends FFXIVPlayer {
     enum: CotRanks,
     type: 'enum',
   })
-  public rank: CotRanks;
+  public rank!: CotRanks;
 
   @Column('datetime')
-  public firstSeenDiscord: Date;
+  public firstSeenDiscord!: Date;
 
   @Column('datetime')
-  public lastPromotion: Date;
+  public lastPromotion!: Date;
 
   @OneToMany((type) => PromotionRequest, (promotionRequest) => promotionRequest.CotMember, { eager: true })
-  public promotions: PromotionRequest[];
+  public promotions!: PromotionRequest[];
 }

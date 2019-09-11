@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from './Sassybot';
+import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class Dice extends SassybotCommand {

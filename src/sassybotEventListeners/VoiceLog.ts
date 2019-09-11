@@ -1,7 +1,7 @@
 import { Channel, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
 import * as moment from 'moment-timezone';
-import { GuildIds, UserIds } from './consts';
-import { SpamChannel } from './entity/SpamChannel';
+import { GuildIds, UserIds } from '../consts';
+import { SpamChannel } from '../entity/SpamChannel';
 import SassybotEventListener from './SassybotEventListener';
 
 interface IIgnoredVoiceChannelsMap {
@@ -9,7 +9,6 @@ interface IIgnoredVoiceChannelsMap {
 }
 
 export default class VoiceLog extends SassybotEventListener {
-
   private static readonly TIME_FORMAT = 'HH:MM:SS z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {

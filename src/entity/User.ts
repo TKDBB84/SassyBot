@@ -5,14 +5,14 @@ import { Quote } from './Quote';
 @TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export class User {
   @PrimaryGeneratedColumn()
-  public id: number;
+  public id!: number;
 
   @Column('varchar', { length: 255 })
-  public discordUserId: string;
+  public discordUserId!: string;
 
   @Column('varchar', { length: 255, default: 'UTC' })
-  public timezone: string;
+  public timezone!: string;
 
   @OneToMany((type) => Quote, (quote) => quote.user, { eager: true })
-  public quotes: Quote[];
+  public quotes!: Quote[];
 }

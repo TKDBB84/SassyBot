@@ -1,14 +1,12 @@
 /* tslint:disable:ordered-imports */
 import './env';
 
-import EventEmitter = NodeJS.EventEmitter;
+import { EventEmitter } from 'events';
 import { Channel, Client, GuildMember, Message, MessageMentions, User } from 'discord.js';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
-import Dice from './Dice';
-import VoiceLog from './VoiceLog';
-import SassybotCommand from './SassybotCommand';
-import SassybotEventListener from './SassybotEventListener';
+import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
+import SassybotEventsToRegister from './sassybotEventListeners';
 
 export interface ISassybotEventListener {
   init: () => void;
@@ -21,7 +19,6 @@ export interface ISassybotCommandParams {
 }
 
 export class Sassybot extends EventEmitter {
-
   private static isSassybotCommand(message: Message): boolean {
     return message.cleanContent.startsWith('!sb ') || message.cleanContent.startsWith('!sassybot ');
   }
@@ -93,10 +90,10 @@ export class Sassybot extends EventEmitter {
   public async run(): Promise<void> {
     this.discordClient.on('message', this.onMessageHandler);
     this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdateHandler);
-    this.discordClient.on('disconnect', () => {
-      setTimeout(this.login, 30000);
+    this.discordClient.on('disconnect', async () => {
+      setTimeout(async () => await this.login(), 30000);
     });
-    this.login();
+    await this.login();
   }
 
   public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
@@ -110,10 +107,7 @@ export class Sassybot extends EventEmitter {
 
   private async login() {
     this.emit('preLogin');
-    this.discordClient
-      .login(process.env.DISCORD_TOKEN)
-      .then(console.log)
-      .catch(console.error);
+    await this.discordClient.login(process.env.DISCORD_TOKEN);
     this.emit('postLogin');
   }
 
@@ -134,7 +128,6 @@ export class Sassybot extends EventEmitter {
 
 createConnection().then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
-  sb.registerSassybotEventListener(new VoiceLog(sb));
-  sb.registerSassybotEventListener(new Dice(sb));
+  SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   await sb.run();
 });

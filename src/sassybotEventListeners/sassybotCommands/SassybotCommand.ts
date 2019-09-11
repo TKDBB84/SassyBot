@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from './Sassybot';
-import SassybotEventListener from './SassybotEventListener';
+import { ISassybotCommandParams } from '../../Sassybot';
+import SassybotEventListener from '../SassybotEventListener';
 
 export default abstract class SassybotCommand extends SassybotEventListener {
   public abstract readonly command: string;
