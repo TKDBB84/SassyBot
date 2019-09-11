@@ -7,19 +7,26 @@ import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
 import Dice from './Dice';
 import VoiceLog from './VoiceLog';
+import SassybotCommand from './SassybotCommand';
+import SassybotEventListener from './SassybotEventListener';
 
-export interface ISassyBotCommandParams {
+export interface ISassybotEventListener {
+  init: () => void;
+}
+
+export interface ISassybotCommandParams {
   command: string;
   args: string;
   mentions: MessageMentions | false;
 }
 
-export class SassyBot extends EventEmitter {
-  private static isSassyBotCommand(message: Message): boolean {
+export class Sassybot extends EventEmitter {
+
+  private static isSassybotCommand(message: Message): boolean {
     return message.cleanContent.startsWith('!sb ') || message.cleanContent.startsWith('!sassybot ');
   }
 
-  private static getCommandParameters(message: Message): ISassyBotCommandParams {
+  private static getCommandParameters(message: Message): ISassybotCommandParams {
     const result: {
       args: string;
       command: string;
@@ -46,6 +53,7 @@ export class SassyBot extends EventEmitter {
   }
   public dbConnection: Connection;
   protected discordClient: Client;
+  private registeredCommands = new Set<string>();
 
   constructor(connection: Connection) {
     super();
@@ -91,6 +99,15 @@ export class SassyBot extends EventEmitter {
     this.login();
   }
 
+  public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
+    if (sbEvent instanceof SassybotCommand) {
+      if (this.registeredCommands.has(sbEvent.command)) {
+        throw new Error('Command Already Registered');
+      }
+    }
+    sbEvent.init();
+  }
+
   private async login() {
     this.emit('preLogin');
     this.discordClient
@@ -102,9 +119,9 @@ export class SassyBot extends EventEmitter {
 
   private async onMessageHandler(message: Message) {
     this.emit('messageReceived', { message });
-    if (SassyBot.isSassyBotCommand(message)) {
+    if (Sassybot.isSassybotCommand(message)) {
       this.emit('sassybotCommandPreprocess', { message });
-      this.emit('sassybotCommand', { message, params: SassyBot.getCommandParameters(message) });
+      this.emit('sassybotCommand', { message, params: Sassybot.getCommandParameters(message) });
       this.emit('sassybotCommandPostprocess', { message });
     }
     this.emit('messageEnd', { message });
@@ -116,8 +133,8 @@ export class SassyBot extends EventEmitter {
 }
 
 createConnection().then(async (connection: Connection) => {
-  const sb = new SassyBot(connection);
-  new VoiceLog(sb);
-  new Dice(sb);
+  const sb = new Sassybot(connection);
+  sb.registerSassybotEventListener(new VoiceLog(sb));
+  sb.registerSassybotEventListener(new Dice(sb));
   await sb.run();
 });
