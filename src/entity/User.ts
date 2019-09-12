@@ -1,9 +1,9 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn, TableInheritance } from 'typeorm';
-import { Quote } from './Quote';
+import Quote from './Quote';
 
 @Entity()
 @TableInheritance({ column: { type: 'varchar', name: 'type' } })
-export class User {
+export default class User {
   @PrimaryGeneratedColumn()
   public id!: number;
 
@@ -13,6 +13,6 @@ export class User {
   @Column('varchar', { length: 255, default: 'UTC' })
   public timezone!: string;
 
-  @OneToMany((type) => Quote, (quote) => quote.user, { eager: true })
+  @OneToMany((type) => Quote, (quote: Quote) => quote.user, { eager: true })
   public quotes!: Quote[];
 }

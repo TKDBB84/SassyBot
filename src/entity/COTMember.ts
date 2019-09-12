@@ -1,6 +1,6 @@
 import { ChildEntity, Column, OneToMany } from 'typeorm';
-import { FFXIVPlayer } from './FFXIVPlayer';
-import { PromotionRequest } from './PromotionRequest';
+import FFXIVPlayer from './FFXIVPlayer';
+import PromotionRequest from './PromotionRequest';
 
 export enum CotRanks {
   DIGNITARY = 'Dignitary/Mod',
@@ -12,7 +12,7 @@ export enum CotRanks {
 }
 
 @ChildEntity()
-export class COTMember extends FFXIVPlayer {
+export default class COTMember extends FFXIVPlayer {
   @Column({
     default: CotRanks.NEW,
     enum: CotRanks,
@@ -26,6 +26,6 @@ export class COTMember extends FFXIVPlayer {
   @Column('datetime')
   public lastPromotion!: Date;
 
-  @OneToMany((type) => PromotionRequest, (promotionRequest) => promotionRequest.CotMember, { eager: true })
+  @OneToMany((type) => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember, { eager: true })
   public promotions!: PromotionRequest[];
 }

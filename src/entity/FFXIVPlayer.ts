@@ -1,8 +1,8 @@
 import { ChildEntity, Column, CreateDateColumn } from 'typeorm';
-import { User } from './User';
+import User from './User';
 
 @ChildEntity()
-export class FFXIVPlayer extends User {
+export default class FFXIVPlayer extends User {
   @Column({ type: 'int', width: 11 })
   public apiId!: number;
 

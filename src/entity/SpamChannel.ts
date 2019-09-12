@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class SpamChannel {
+export default class SpamChannel {
   @PrimaryColumn('varchar', { length: 255 })
   public guildId!: string;
 

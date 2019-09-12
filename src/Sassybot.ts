@@ -1,12 +1,9 @@
-/* tslint:disable:ordered-imports */
-import './env';
-
-import { EventEmitter } from 'events';
 import { Channel, Client, GuildMember, Message, MessageMentions, User } from 'discord.js';
+import { EventEmitter } from 'events';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
-import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import SassybotEventsToRegister from './sassybotEventListeners';
+import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
 export interface ISassybotEventListener {
   init: () => void;
@@ -40,7 +37,7 @@ export class Sassybot extends EventEmitter {
         result.command = matches.groups.command.toLowerCase();
       }
       if (matches.groups.args) {
-        result.args = matches.groups.args.toLowerCase();
+        result.args = matches.groups.args.toLowerCase().trim();
       }
       if (message.mentions.members.size > 0) {
         result.mentions = message.mentions;
@@ -118,7 +115,17 @@ export class Sassybot extends EventEmitter {
       const params = Sassybot.getCommandParameters(message);
       if (params.command === 'help') {
         if (params.args === '') {
-          `Available commands are:\n${[...this.registeredCommands].sort().join(', ')}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`;
+          message.channel.send(
+            `Available commands are:\n${[...this.registeredCommands]
+              .sort()
+              .join(
+                ', ',
+              )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
+            {
+              disableEveryone: true,
+              split: true,
+            },
+          );
         } else if (params.args === 'help') {
           message.channel.send(
             'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',

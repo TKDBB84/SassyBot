@@ -1,11 +1,11 @@
-import SassybotCommand from './SassybotCommand';
-import { ISassybotCommandParams } from '../../Sassybot';
 import { Message } from 'discord.js';
+import { ISassybotCommandParams } from '../../Sassybot';
+import SassybotCommand from './SassybotCommand';
 
 export default class Echo extends SassybotCommand {
   public readonly command = 'echo';
 
-  getHelpText(): string {
+  public getHelpText(): string {
     return 'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging';
   }
 
