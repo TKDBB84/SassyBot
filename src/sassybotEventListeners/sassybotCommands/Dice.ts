@@ -165,7 +165,7 @@ export default class Dice extends SassybotCommand {
     return 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
   }
 
-  protected async listener(message: Message, params: ISassybotCommandParams): Promise<void> {
+  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
     const response = await Dice.rollFunction(params.args);
     message.channel.send(response, {
       disableEveryone: true,

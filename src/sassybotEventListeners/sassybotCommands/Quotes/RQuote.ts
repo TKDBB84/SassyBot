@@ -1,51 +1,53 @@
-import { Message, User } from 'discord.js';
+import { Message } from 'discord.js';
 import Quote from '../../../entity/Quote';
-import { ISassybotCommandParams } from '../../../Sassybot';
+import {ISassybotCommandParams, Sassybot} from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
+import User from '../../../entity/User'
 
-export default class Echo extends SassybotCommand {
+export default class RQuote extends SassybotCommand {
   public readonly command = 'rquote';
 
   public getHelpText(): string {
     return 'usage: `!{sassybot|sb} rquote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.';
   }
 
-  protected async listener(message: Message, params: ISassybotCommandParams): Promise<void> {
+  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
     if (params.args.includes('list all') && !params.mentions) {
       await this.listAllCounts(message);
     }
-
     if (params.args.includes('list') && params.mentions) {
       const users = params.mentions.users.array();
       await users.reduce(async (previousPromise, user) => {
         await previousPromise;
-        return this.listAllUserQuotes(message, user);
+        // return this.listAllUserQuotes(message, user);
       }, Promise.resolve());
     }
   }
 
   private async listAllCounts(message: Message): Promise<void> {
-    const results = await this.sb.dbConnection
-      .getRepository<Quote>(Quote)
+    const results: Array<{cnt: string, userId: number}> = await this.sb.dbConnection
+      .getRepository(Quote)
       .createQueryBuilder('quote')
-      .select('COUNT(1)', 'cnt')
+      .select('COUNT(1) as cnt, userId')
       .where('guildId = :guildId', { guildId: message.guild.id })
       .groupBy('quote.user')
-      .getMany();
-    // SELECT COUNT(1) as cnt, user_id FROM user_quotes WHERE guild_id = ? GROUP BY user_id
-    let outputString = '';
-    for (let j = 0, jMax = results.length; j < jMax; j++) {
-      const member = message.guild.members.get(results[j].user.discordUserId);
-      if (member) {
-        outputString += member.displayName + '(' + member.user.username + '): ' + results[j] + ' saved quotes' + '\n';
-      }
-    }
-  }
+      .getRawMany();
 
-  private async listAllUserQuotes(message: Message, user: User): Promise<void> {
-    const foo = 'bar';
-    console.log(foo);
+    const allUsers = await this.sb.dbConnection.getRepository(User).findByIds(results.map(result => result.userId));
+    console.log({users: allUsers.map(u => u.discordUserId)});
+    // let outputString = '';
+    // for (let j = 0, jMax = results.length; j < jMax; j++) {
+    //   const member = message.guild.members.get(results[j].user.discordUserId);
+    //   if (member) {
+    //     outputString += member.displayName + '(' + member.user.username + '): ' + results[j] + ' saved quotes' + '\n';
+    //   }
+    // }
   }
+  //
+  // private async listAllUserQuotes(message: Message, user: User): Promise<void> {
+  //   const foo = 'bar';
+  //   console.log(foo);
+  // }
 }
 /*
 const parts = message.content.match(/!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i);

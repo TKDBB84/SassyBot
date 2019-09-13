@@ -9,6 +9,6 @@ export default abstract class SassybotEventListener implements ISassybotEventLis
     this.sb = sb;
   }
   public readonly init = () => {
-    this.sb.on(this.event, this.onEvent);
+    this.sb.on(this.event, this.onEvent.bind(this));
   };
 }

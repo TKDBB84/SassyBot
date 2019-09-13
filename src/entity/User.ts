@@ -2,17 +2,16 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn, TableInheritance } f
 import Quote from './Quote';
 
 @Entity()
-@TableInheritance({ column: { type: 'varchar', name: 'type' } })
 export default class User {
   @PrimaryGeneratedColumn()
   public id!: number;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public discordUserId!: string;
 
-  @Column('varchar', { length: 255, default: 'UTC' })
+  @Column()
   public timezone!: string;
 
-  @OneToMany((type) => Quote, (quote: Quote) => quote.user, { eager: true })
+  @OneToMany(type => Quote, quote => quote.user)
   public quotes!: Quote[];
 }

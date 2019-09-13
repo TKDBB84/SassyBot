@@ -147,8 +147,42 @@ export class Sassybot extends EventEmitter {
   }
 }
 
-createConnection().then(async (connection: Connection) => {
+let connection;
+if (process.env.NODE_ENV !== 'production') {
+  connection = createConnection({
+    type: 'mariadb',
+    host: 'localhost',
+    port: 3306,
+    username: 'sassybot',
+    password: 'sassy123',
+    database: 'sassybot',
+    synchronize: false,
+    logging: true,
+    entities: ['dist/entity/**/*.js', 'src/entity/**/*.ts'],
+  });
+} else {
+  connection = createConnection();
+}
+connection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
-  await sb.run();
+  console.log('emitting BS');
+  sb.emit('sassybotCommand', {message: {}, params: {command: 'fdsaf',
+      args: 'list all',
+      mentions: false,}});
+
+  console.log('emitting rquote');
+  sb.emit('sassybotCommand', {
+    message: {
+      guild: {
+        id: 1,
+      },
+    },
+    params: {
+      command: 'rquote',
+      args: 'list all',
+      mentions: false,
+    },
+  });
+  // await sb.run();
 });

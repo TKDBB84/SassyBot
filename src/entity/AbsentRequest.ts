@@ -6,15 +6,15 @@ export default class AbsentRequest {
   @PrimaryGeneratedColumn()
   public id!: number;
 
-  @CreateDateColumn('datetime')
+  @CreateDateColumn()
   public requested!: Date;
 
-  @Column('date')
+  @Column()
   public startDate!: Date;
 
-  @Column('date')
+  @Column()
   public endDate!: Date;
 
-  @ManyToOne((type) => COTMember, (cotMember: COTMember) => cotMember.promotions, { eager: true })
+  @ManyToOne((type) => COTMember, (cotMember: COTMember) => cotMember.absences)
   public CotMember!: COTMember;
 }

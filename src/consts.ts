@@ -7,3 +7,12 @@ export const enum GuildIds {
 export const enum UserIds {
   SASNER = '107435240686931968',
 }
+
+export enum CotRanks {
+  DIGNITARY = 'Dignitary/Mod',
+  MEMBER = 'Member',
+  NEW = 'New',
+  OFFICER = 'Officer',
+  RECRUIT = 'Recruit',
+  VETERAN = 'Veteran',
+}

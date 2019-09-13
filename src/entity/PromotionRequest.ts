@@ -1,12 +1,13 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import COTMember, { CotRanks } from './COTMember';
+import COTMember  from './COTMember';
+import { CotRanks } from "../consts";
 
 @Entity()
 export default class PromotionRequest {
   @PrimaryGeneratedColumn()
   public id!: number;
 
-  @CreateDateColumn('datetime')
+  @CreateDateColumn()
   public requested!: Date;
 
   @Column({
@@ -16,6 +17,6 @@ export default class PromotionRequest {
   })
   public toRank!: CotRanks;
 
-  @ManyToOne((type) => COTMember, (cotMember: COTMember) => cotMember.promotions, { eager: true })
+  @ManyToOne((type) => COTMember, (cotMember: COTMember) => cotMember.promotions)
   public CotMember!: COTMember;
 }

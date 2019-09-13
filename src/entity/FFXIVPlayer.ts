@@ -1,17 +1,22 @@
-import { ChildEntity, Column, CreateDateColumn } from 'typeorm';
+import { ChildEntity, Column, CreateDateColumn, OneToOne, JoinColumn, Entity } from 'typeorm';
 import User from './User';
+import COTMember from "./COTMember";
 
-@ChildEntity()
+@Entity()
 export default class FFXIVPlayer extends User {
-  @Column({ type: 'int', width: 11 })
+  @Column()
   public apiId!: number;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public charName!: string;
 
-  @CreateDateColumn('datetime')
+  @CreateDateColumn()
   public firstSeenApi!: Date;
 
-  @Column('datetime')
+  @Column()
   public lastSeenApi!: Date;
+
+  @OneToOne(type => User, {eager: true})
+  @JoinColumn()
+  public user!: User;
 }

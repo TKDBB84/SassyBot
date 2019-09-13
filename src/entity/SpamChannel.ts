@@ -2,12 +2,12 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export default class SpamChannel {
-  @PrimaryColumn('varchar', { length: 255 })
+  @PrimaryColumn()
   public guildId!: string;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public channelId!: string;
 
-  @Column('varchar', { length: 255, default: 'UTC' })
+  @Column()
   public timezone!: string;
 }

@@ -6,18 +6,21 @@ export default class Quote {
   @PrimaryGeneratedColumn()
   public id!: number;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public guildId!: string;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public channelId!: string;
 
-  @Column('varchar', { length: 255 })
+  @Column()
   public messageId!: string;
 
   @CreateDateColumn()
   public created!: Date;
 
-  @ManyToOne((type) => User, (user: User) => user.quotes, { eager: true })
+  @Column()
+  public quoteText!: string;
+
+  @ManyToOne(type => User, user => user.quotes)
   public user!: User;
 }

@@ -9,7 +9,7 @@ export default class Echo extends SassybotCommand {
     return 'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging';
   }
 
-  protected async listener(message: Message, params: ISassybotCommandParams): Promise<void> {
+  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
     await message.channel.send(params.args, {
       disableEveryone: true,
       split: true,

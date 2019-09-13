@@ -1,7 +1,7 @@
 import { Channel, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
 import * as moment from 'moment-timezone';
 import { GuildIds, UserIds } from '../consts';
-import { SpamChannel } from '../entity/SpamChannel';
+import SpamChannel from '../entity/SpamChannel';
 import SassybotEventListener from './SassybotEventListener';
 
 interface IIgnoredVoiceChannelsMap {

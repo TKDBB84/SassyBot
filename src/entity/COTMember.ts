@@ -1,17 +1,10 @@
-import { ChildEntity, Column, OneToMany } from 'typeorm';
+import {Column, JoinColumn, OneToMany, OneToOne, Entity, ManyToOne} from 'typeorm';
 import FFXIVPlayer from './FFXIVPlayer';
 import PromotionRequest from './PromotionRequest';
+import { CotRanks } from "../consts";
+import AbsentRequest from "./AbsentRequest";
 
-export enum CotRanks {
-  DIGNITARY = 'Dignitary/Mod',
-  MEMBER = 'Member',
-  NEW = 'New',
-  OFFICER = 'Officer',
-  RECRUIT = 'Recruit',
-  VETERAN = 'Veteran',
-}
-
-@ChildEntity()
+@Entity()
 export default class COTMember extends FFXIVPlayer {
   @Column({
     default: CotRanks.NEW,
@@ -20,12 +13,19 @@ export default class COTMember extends FFXIVPlayer {
   })
   public rank!: CotRanks;
 
-  @Column('datetime')
+  @Column()
   public firstSeenDiscord!: Date;
 
-  @Column('datetime')
+  @Column()
   public lastPromotion!: Date;
 
-  @OneToMany((type) => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember, { eager: true })
+  @OneToMany((type) => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember)
   public promotions!: PromotionRequest[];
+
+  @OneToMany((type) => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
+  public absences!: AbsentRequest[];
+
+  @OneToOne(type => FFXIVPlayer, {eager: true})
+  @JoinColumn()
+  public player!: FFXIVPlayer;
 }
