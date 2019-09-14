@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import COTMember  from './COTMember';
-import { CotRanks } from "../consts";
+import { CotRanks } from '../consts';
+import COTMember from './COTMember';
 
 @Entity()
 export default class PromotionRequest {

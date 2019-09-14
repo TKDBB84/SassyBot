@@ -9,7 +9,7 @@ export default class Echo extends SassybotCommand {
     return 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all';
   }
 
-  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
+  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     await message.channel.send('pong', {
       reply: message.author,
       split: true,

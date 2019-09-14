@@ -1,4 +1,13 @@
-import { Channel, Client, GuildMember, Message, MessageMentions, User } from 'discord.js';
+import {
+  Channel,
+  Client,
+  GuildMember,
+  Message,
+  MessageMentions,
+  MessageReaction,
+  User,
+  UserResolvable,
+} from 'discord.js';
 import { EventEmitter } from 'events';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
@@ -51,7 +60,7 @@ export class Sassybot extends EventEmitter {
 
   constructor(connection: Connection) {
     super();
-    this.discordClient = new Client({disableEveryone: true});
+    this.discordClient = new Client({ disableEveryone: true });
     this.dbConnection = connection;
   }
 
@@ -71,13 +80,13 @@ export class Sassybot extends EventEmitter {
     return user;
   }
 
-  public async getMember(guildId: string, userId: string): Promise<GuildMember | undefined> {
-    let member
+  public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {
+    let member;
     const guild = this.discordClient.guilds.get(guildId);
     if (guild) {
-       member = guild.member(userId);
+      member = guild.member(userResolvable);
       if (!member) {
-        member = guild.fetchMember(userId)
+        member = guild.fetchMember(userResolvable);
       }
     }
     return member;
@@ -92,6 +101,7 @@ export class Sassybot extends EventEmitter {
       'sassybotCommand',
       'sassybotCommandPostprocess',
       'messageEnd',
+      'messageReactionAdd',
       'voiceStateUpdate',
     ];
   }
@@ -99,6 +109,7 @@ export class Sassybot extends EventEmitter {
   public async run(): Promise<void> {
     this.discordClient.on('message', this.onMessageHandler);
     this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdateHandler);
+    this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd);
     this.discordClient.on('disconnect', async () => {
       setTimeout(async () => await this.login(), 30000);
     });
@@ -121,30 +132,15 @@ export class Sassybot extends EventEmitter {
   }
 
   private async onMessageHandler(message: Message) {
+    if (message.author.bot) {
+      return;
+    }
     this.emit('messageReceived', { message });
     if (Sassybot.isSassybotCommand(message)) {
       this.emit('sassybotCommandPreprocess', { message });
       const params = Sassybot.getCommandParameters(message);
       if (params.command === 'help') {
-        if (params.args === '') {
-          message.channel.send(
-            `Available commands are:\n${[...this.registeredCommands]
-              .sort()
-              .join(
-                ', ',
-              )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
-            {
-              split: true,
-            },
-          );
-        } else if (params.args === 'help') {
-          message.channel.send(
-            'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
-            {
-              split: true,
-            },
-          );
-        }
+        this.processHelpCommand(message, params);
       }
       this.emit('sassybotCommand', { message, params });
       this.emit('sassybotCommandPostprocess', { message });
@@ -152,45 +148,57 @@ export class Sassybot extends EventEmitter {
     this.emit('messageEnd', { message });
   }
 
+  private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
+    if (params.args === '') {
+      message.channel.send(
+        `Available commands are:\n${[...this.registeredCommands]
+          .sort()
+          .join(
+            ', ',
+          )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
+        {
+          split: true,
+        },
+      );
+    } else if (params.args === 'help') {
+      message.channel.send(
+        'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
+        {
+          split: true,
+        },
+      );
+    }
+  }
+
   private async onVoiceStateUpdateHandler(oldMember: GuildMember, newMember: GuildMember) {
     this.emit('voiceStateUpdate', { oldMember, newMember });
   }
+  private async onMessageReactionAdd(messageReaction: MessageReaction, user: User) {
+    if (messageReaction.message.author.bot) {
+      return;
+    }
+    this.emit('messageReactionAdd', { messageReaction, user });
+  }
 }
 
-let connection;
+let dbConnection;
 if (process.env.NODE_ENV !== 'production') {
-  connection = createConnection({
-    type: 'mariadb',
-    host: 'localhost',
-    port: 3306,
-    username: 'sassybot',
-    password: 'sassy123',
+  dbConnection = createConnection({
     database: 'sassybot',
-    synchronize: false,
-    logging: true,
     entities: ['dist/entity/**/*.js', 'src/entity/**/*.ts'],
+    host: 'localhost',
+    logging: true,
+    password: 'sassy123',
+    port: 3306,
+    synchronize: false,
+    type: 'mariadb',
+    username: 'sassybot',
   });
 } else {
-  connection = createConnection();
+  dbConnection = createConnection();
 }
-connection.then(async (connection: Connection) => {
+dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
-  console.log('emitting BS');
-  sb.emit('sassybotCommand', { message: {}, params: { command: 'fdsaf', args: 'list all', mentions: false } });
-
-  console.log('emitting rquote');
-  sb.emit('sassybotCommand', {
-    message: {
-      guild: {
-        id: 1,
-      },
-    },
-    params: {
-      command: 'rquote',
-      args: 'list all',
-      mentions: false,
-    },
-  });
   // await sb.run();
 });

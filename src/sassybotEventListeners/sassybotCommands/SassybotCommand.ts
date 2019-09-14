@@ -7,12 +7,24 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   protected readonly event = 'sassybotCommand';
   protected readonly onEvent = this.onEventCallback;
 
-  protected abstract async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void>;
+  protected abstract async listener({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void>;
   protected abstract getHelpText(): string;
 
-  private async onEventCallback({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
+  private async onEventCallback({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void> {
     if (params.command.toLowerCase() === this.command.toLowerCase()) {
-      await this.listener({message, params});
+      await this.listener({ message, params });
     }
     if (params.command.toLowerCase() === 'help' && params.args[0].toLowerCase() === this.command.toLowerCase()) {
       message.channel.send(this.getHelpText(), {

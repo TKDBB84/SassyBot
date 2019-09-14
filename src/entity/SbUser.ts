@@ -12,6 +12,6 @@ export default class SbUser {
   @Column()
   public timezone!: string;
 
-  @OneToMany(type => Quote, quote => quote.user)
+  @OneToMany((type) => Quote, (quote) => quote.user)
   public quotes!: Quote[];
 }

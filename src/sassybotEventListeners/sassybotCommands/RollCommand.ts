@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
-export default class Dice extends SassybotCommand {
+export default class RollCommand extends SassybotCommand {
   private static parseDice(args: string): { num: number; sides: number } {
     const result = args.match(/^\s*(\d+)d(\d+).*$/i);
 
@@ -113,8 +113,8 @@ export default class Dice extends SassybotCommand {
     }
 
     return {
-      dropped: Dice.shuffle(dropped),
-      kept: Dice.shuffle(kept),
+      dropped: RollCommand.shuffle(dropped),
+      kept: RollCommand.shuffle(kept),
     };
   }
 
@@ -126,8 +126,11 @@ export default class Dice extends SassybotCommand {
   }
 
   private static rollFunction(args: string) {
-    const keptAndDropped = Dice.actionKeepOrDrops(Dice.parseKeepOrDrops(args), Dice.rollDice(Dice.parseDice(args)));
-    const additions = Dice.parseStaticAdditions(args);
+    const keptAndDropped = RollCommand.actionKeepOrDrops(
+      RollCommand.parseKeepOrDrops(args),
+      RollCommand.rollDice(RollCommand.parseDice(args)),
+    );
+    const additions = RollCommand.parseStaticAdditions(args);
     let total = 0;
 
     if (keptAndDropped.kept.length > 0) {
@@ -165,8 +168,8 @@ export default class Dice extends SassybotCommand {
     return 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
   }
 
-  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
-    const response = await Dice.rollFunction(params.args);
+  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    const response = await RollCommand.rollFunction(params.args);
     message.channel.send(response, {
       reply: message.author,
       split: true,

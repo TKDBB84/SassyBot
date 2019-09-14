@@ -1,6 +1,5 @@
-import { ChildEntity, Column, CreateDateColumn, OneToOne, JoinColumn, Entity } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne } from 'typeorm';
 import SbUser from './SbUser';
-import COTMember from "./COTMember";
 
 @Entity()
 export default class FFXIVPlayer extends SbUser {
@@ -16,7 +15,7 @@ export default class FFXIVPlayer extends SbUser {
   @Column()
   public lastSeenApi!: Date;
 
-  @OneToOne(type => SbUser, {eager: true})
+  @OneToOne((type) => SbUser, { eager: true })
   @JoinColumn()
   public user!: SbUser;
 }

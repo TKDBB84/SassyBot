@@ -1,10 +1,10 @@
-import { GuildMember, Message, User } from 'discord.js';
-import Quote from '../../../entity/Quote';
-import { ISassybotCommandParams, Sassybot } from '../../../Sassybot';
-import SassybotCommand from '../SassybotCommand';
-import SbUser from '../../../entity/SbUser';
+import { GuildMember, Message } from 'discord.js';
+import Quote from '../../entity/Quote';
+import SbUser from '../../entity/SbUser';
+import { ISassybotCommandParams } from '../../Sassybot';
+import SassybotCommand from './SassybotCommand';
 
-export default class RQuote extends SassybotCommand {
+export default class RQuoteCommand extends SassybotCommand {
   public readonly command = 'rquote';
 
   public getHelpText(): string {
@@ -62,7 +62,7 @@ export default class RQuote extends SassybotCommand {
     let outputString = '';
     allMembers.forEach((member) => {
       if (member) {
-        let foundResult = results.find((result) => result.discordUserId === member.user.id);
+        const foundResult = results.find((result) => result.discordUserId === member.user.id);
         if (foundResult) {
           outputString += `${member.displayName} (${member.user.username}): ${foundResult.cnt} saved quotes\n`;
         }

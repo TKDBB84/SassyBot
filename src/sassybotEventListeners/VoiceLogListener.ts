@@ -8,7 +8,7 @@ interface IIgnoredVoiceChannelsMap {
   [key: string]: Set<string>;
 }
 
-export default class VoiceLog extends SassybotEventListener {
+export default class VoiceLogListener extends SassybotEventListener {
   private static readonly TIME_FORMAT = 'HH:MM:SS z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
@@ -101,8 +101,8 @@ export default class VoiceLog extends SassybotEventListener {
 
     if (
       userLeftChannel &&
-      VoiceLog.IGNORED_VOICE_CHANNELS[userLeftChannel.guild.id] &&
-      VoiceLog.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userLeftChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[userLeftChannel.guild.id] &&
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userLeftChannel.id)
     ) {
       userLeftChannel = null;
       leftSpamChannel = null;
@@ -110,8 +110,8 @@ export default class VoiceLog extends SassybotEventListener {
     }
     if (
       userJoinedChannel &&
-      VoiceLog.IGNORED_VOICE_CHANNELS[userJoinedChannel.guild.id] &&
-      VoiceLog.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userJoinedChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[userJoinedChannel.guild.id] &&
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userJoinedChannel.id)
     ) {
       userJoinedChannel = null;
       joinedSpamChannel = null;
@@ -134,10 +134,10 @@ export default class VoiceLog extends SassybotEventListener {
         if (leftAndJoinedSameGuild) {
           // moved within server
           let spamChannel = leftSpamChannel;
-          let time = `(${leftNow.format(VoiceLog.TIME_FORMAT)})`;
+          let time = `(${leftNow.format(VoiceLogListener.TIME_FORMAT)})`;
           if (!spamChannel) {
             spamChannel = joinedSpamChannel;
-            time = `(${joinedNow.format(VoiceLog.TIME_FORMAT)})`;
+            time = `(${joinedNow.format(VoiceLogListener.TIME_FORMAT)})`;
           }
           if (spamChannel) {
             spamChannel.send(
@@ -147,15 +147,15 @@ export default class VoiceLog extends SassybotEventListener {
           return;
         } else {
           // moved between servers
-          await VoiceLog.sendLeftMessage(
+          await VoiceLogListener.sendLeftMessage(
             leftSpamChannel,
-            leftNow.format(VoiceLog.TIME_FORMAT),
+            leftNow.format(VoiceLogListener.TIME_FORMAT),
             userLeftChannel.name,
             previousMemberName,
           );
-          await VoiceLog.sendJoinedMessage(
+          await VoiceLogListener.sendJoinedMessage(
             joinedSpamChannel,
-            joinedNow.format(VoiceLog.TIME_FORMAT),
+            joinedNow.format(VoiceLogListener.TIME_FORMAT),
             userJoinedChannel.name,
             currentMemberName,
           );
@@ -175,18 +175,18 @@ export default class VoiceLog extends SassybotEventListener {
       }
     }
     if (userJoinedChannel && !userLeftChannel) {
-      await VoiceLog.sendJoinedMessage(
+      await VoiceLogListener.sendJoinedMessage(
         joinedSpamChannel,
-        joinedNow.format(VoiceLog.TIME_FORMAT),
+        joinedNow.format(VoiceLogListener.TIME_FORMAT),
         userJoinedChannel.name,
         currentMemberName,
       );
       return;
     }
     if (userLeftChannel && !userJoinedChannel) {
-      await VoiceLog.sendLeftMessage(
+      await VoiceLogListener.sendLeftMessage(
         leftSpamChannel,
-        leftNow.format(VoiceLog.TIME_FORMAT),
+        leftNow.format(VoiceLogListener.TIME_FORMAT),
         userLeftChannel.name,
         previousMemberName,
       );

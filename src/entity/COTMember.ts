@@ -1,8 +1,8 @@
-import { Column, JoinColumn, OneToMany, OneToOne, Entity } from 'typeorm';
+import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { CotRanks } from '../consts';
+import AbsentRequest from './AbsentRequest';
 import FFXIVPlayer from './FFXIVPlayer';
 import PromotionRequest from './PromotionRequest';
-import { CotRanks } from "../consts";
-import AbsentRequest from "./AbsentRequest";
 
 @Entity()
 export default class COTMember extends FFXIVPlayer {
@@ -25,7 +25,7 @@ export default class COTMember extends FFXIVPlayer {
   @OneToMany((type) => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
   public absences!: AbsentRequest[];
 
-  @OneToOne(type => FFXIVPlayer, {eager: true})
+  @OneToOne((type) => FFXIVPlayer, { eager: true })
   @JoinColumn()
   public player!: FFXIVPlayer;
 }
