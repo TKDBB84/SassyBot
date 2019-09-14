@@ -11,7 +11,6 @@ export default class Echo extends SassybotCommand {
 
   protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
     await message.channel.send(params.args, {
-      disableEveryone: true,
       split: true,
     });
   }

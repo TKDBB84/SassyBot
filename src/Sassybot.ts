@@ -51,7 +51,7 @@ export class Sassybot extends EventEmitter {
 
   constructor(connection: Connection) {
     super();
-    this.discordClient = new Client();
+    this.discordClient = new Client({disableEveryone: true});
     this.dbConnection = connection;
   }
 
@@ -63,12 +63,24 @@ export class Sassybot extends EventEmitter {
     return null;
   }
 
-  public async fetchUser(userId: string): Promise<User | null> {
-    const user = await this.discordClient.fetchUser(userId);
-    if (user) {
-      return user;
+  public async getUser(userId: string): Promise<User | undefined> {
+    let user = this.discordClient.users.get(userId);
+    if (!user) {
+      user = await this.discordClient.fetchUser(userId);
     }
-    return null;
+    return user;
+  }
+
+  public async getMember(guildId: string, userId: string): Promise<GuildMember | undefined> {
+    let member
+    const guild = this.discordClient.guilds.get(guildId);
+    if (guild) {
+       member = guild.member(userId);
+      if (!member) {
+        member = guild.fetchMember(userId)
+      }
+    }
+    return member;
   }
 
   public eventNames(): Array<string | symbol> {
@@ -122,7 +134,6 @@ export class Sassybot extends EventEmitter {
                 ', ',
               )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
             {
-              disableEveryone: true,
               split: true,
             },
           );
@@ -130,7 +141,6 @@ export class Sassybot extends EventEmitter {
           message.channel.send(
             'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
             {
-              disableEveryone: true,
               split: true,
             },
           );
@@ -167,9 +177,7 @@ connection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   console.log('emitting BS');
-  sb.emit('sassybotCommand', {message: {}, params: {command: 'fdsaf',
-      args: 'list all',
-      mentions: false,}});
+  sb.emit('sassybotCommand', { message: {}, params: { command: 'fdsaf', args: 'list all', mentions: false } });
 
   console.log('emitting rquote');
   sb.emit('sassybotCommand', {

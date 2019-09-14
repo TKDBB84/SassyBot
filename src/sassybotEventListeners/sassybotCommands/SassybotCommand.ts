@@ -16,7 +16,6 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     }
     if (params.command.toLowerCase() === 'help' && params.args[0].toLowerCase() === this.command.toLowerCase()) {
       message.channel.send(this.getHelpText(), {
-        disableEveryone: true,
         split: true,
       });
     }

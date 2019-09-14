@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import User from './User';
+import SbUser from './SbUser';
 
 @Entity()
 export default class Quote {
@@ -21,6 +21,6 @@ export default class Quote {
   @Column()
   public quoteText!: string;
 
-  @ManyToOne(type => User, user => user.quotes)
-  public user!: User;
+  @ManyToOne((type) => SbUser, (user) => user.quotes, { eager: true })
+  public user!: SbUser;
 }

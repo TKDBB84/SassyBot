@@ -1,8 +1,8 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn, TableInheritance } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import Quote from './Quote';
 
 @Entity()
-export default class User {
+export default class SbUser {
   @PrimaryGeneratedColumn()
   public id!: number;
 

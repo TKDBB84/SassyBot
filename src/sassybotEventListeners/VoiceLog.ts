@@ -25,7 +25,6 @@ export default class VoiceLog extends SassybotEventListener {
   ): Promise<Message | Message[] | void> {
     if (channel) {
       const options: MessageOptions = {
-        disableEveryone: true,
         split: false,
       };
       return await channel.send(`(${time}) ${charName} left: ${channelName}`, options);
@@ -40,7 +39,6 @@ export default class VoiceLog extends SassybotEventListener {
   ): Promise<Message | Message[] | void> {
     if (channel) {
       const options: MessageOptions = {
-        disableEveryone: true,
         split: false,
       };
       return await channel.send(`(${time}) ${charName} joined: ${channelName}`, options);
@@ -164,12 +162,11 @@ export default class VoiceLog extends SassybotEventListener {
           return;
         }
       } else {
-        const sasner = await this.sb.fetchUser(UserIds.SASNER);
+        const sasner = await this.sb.getUser(UserIds.SASNER);
         if (sasner) {
           sasner.send(
             `weird left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`,
             {
-              disableEveryone: true,
               split: true,
             },
           );

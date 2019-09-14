@@ -1,9 +1,9 @@
 import { ChildEntity, Column, CreateDateColumn, OneToOne, JoinColumn, Entity } from 'typeorm';
-import User from './User';
+import SbUser from './SbUser';
 import COTMember from "./COTMember";
 
 @Entity()
-export default class FFXIVPlayer extends User {
+export default class FFXIVPlayer extends SbUser {
   @Column()
   public apiId!: number;
 
@@ -16,7 +16,7 @@ export default class FFXIVPlayer extends User {
   @Column()
   public lastSeenApi!: Date;
 
-  @OneToOne(type => User, {eager: true})
+  @OneToOne(type => SbUser, {eager: true})
   @JoinColumn()
-  public user!: User;
+  public user!: SbUser;
 }

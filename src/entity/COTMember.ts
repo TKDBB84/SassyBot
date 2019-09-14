@@ -1,4 +1,4 @@
-import {Column, JoinColumn, OneToMany, OneToOne, Entity, ManyToOne} from 'typeorm';
+import { Column, JoinColumn, OneToMany, OneToOne, Entity } from 'typeorm';
 import FFXIVPlayer from './FFXIVPlayer';
 import PromotionRequest from './PromotionRequest';
 import { CotRanks } from "../consts";

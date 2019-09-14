@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
+import { GuildMember, Message, User } from 'discord.js';
 import Quote from '../../../entity/Quote';
-import {ISassybotCommandParams, Sassybot} from '../../../Sassybot';
+import { ISassybotCommandParams, Sassybot } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
-import User from '../../../entity/User'
+import SbUser from '../../../entity/SbUser';
 
 export default class RQuote extends SassybotCommand {
   public readonly command = 'rquote';
@@ -11,164 +11,120 @@ export default class RQuote extends SassybotCommand {
     return 'usage: `!{sassybot|sb} rquote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.';
   }
 
-  protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
+  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     if (params.args.includes('list all') && !params.mentions) {
       await this.listAllCounts(message);
+      return;
     }
-    if (params.args.includes('list') && params.mentions) {
-      const users = params.mentions.users.array();
-      await users.reduce(async (previousPromise, user) => {
+
+    if (params.mentions) {
+      const members = params.mentions.members.array();
+      if (params.args.includes('list') && members.length > 0) {
+        await members.reduce(async (previousPromise, member) => {
+          await previousPromise;
+          return this.listAllUserQuotes(message, member);
+        }, Promise.resolve());
+        return;
+      }
+
+      const paramParts = params.args.split(' ');
+      const quoteNumbersRequested: number[] = paramParts.filter(/^\+?(0|[1-9]\d*)$/.test).map(parseInt);
+      if (quoteNumbersRequested.length && members.length === 1) {
+        await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
+          await previousPromise;
+          return this.getUserQuote(message, members[0], quoteNumber);
+        }, Promise.resolve());
+        return;
+      }
+
+      await members.reduce(async (previousPromise, member) => {
         await previousPromise;
-        // return this.listAllUserQuotes(message, user);
+        return this.getRandomMemberQuote(message, member);
       }, Promise.resolve());
+      return;
     }
+    return await this.getRandomQuote(message);
   }
 
   private async listAllCounts(message: Message): Promise<void> {
-    const results: Array<{cnt: string, userId: number}> = await this.sb.dbConnection
+    const results: Array<{ cnt: string; discordUserId: string }> = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .select('COUNT(1) as cnt, userId')
+      .innerJoin(SbUser, 'sbUser', 'sbUser.id = quote.userId')
+      .select('COUNT(1) as cnt, sbUser.discordUserId')
       .where('guildId = :guildId', { guildId: message.guild.id })
       .groupBy('quote.user')
       .getRawMany();
 
-    const allUsers = await this.sb.dbConnection.getRepository(User).findByIds(results.map(result => result.userId));
-    console.log({users: allUsers.map(u => u.discordUserId)});
-    // let outputString = '';
-    // for (let j = 0, jMax = results.length; j < jMax; j++) {
-    //   const member = message.guild.members.get(results[j].user.discordUserId);
-    //   if (member) {
-    //     outputString += member.displayName + '(' + member.user.username + '): ' + results[j] + ' saved quotes' + '\n';
-    //   }
-    // }
-  }
-  //
-  // private async listAllUserQuotes(message: Message, user: User): Promise<void> {
-  //   const foo = 'bar';
-  //   console.log(foo);
-  // }
-}
-/*
-const parts = message.content.match(/!(?:sassybot|sb)\srquote\s(?:@\w+)?(\d+|list)\s?(?:@\w+)?(all)?/i);
-  const quotedMember = message.mentions.members.first();
-  if (parts && parts[0] === '!sb rquote list all') {
-    const countRows: IQuoteCountRow[] = getQuoteCounts.all([message.guild.id]);
+    const allMembers = await Promise.all(
+      results.map((result) => this.sb.getMember(message.guild.id, result.discordUserId)),
+    );
     let outputString = '';
-    for (let j = 0, jMax = countRows.length; j < jMax; j++) {
-      const member = message.guild.members.get(countRows[j].user_id);
+    allMembers.forEach((member) => {
       if (member) {
-        outputString +=
-          member.displayName + '(' + member.user.username + '): ' + countRows[j].cnt + ' saved quotes' + '\n';
-      }
-    }
-    await sassybotRespond(message, outputString);
-    return;
-  }
-  if (hasSingleMention(message)) {
-    if (!parts) {
-      const rows: IQuoteRow[] = getQuotesByUser.all(message.guild.id, quotedMember.id);
-      if (rows.length > 0) {
-        const selectedQuoted = Math.floor(Math.random() * rows.length);
-        const row = rows[selectedQuoted];
-        const quote = {
-          content: row.quote_text ? row.quote_text : '',
-          count: rows.length,
-          number: selectedQuoted + 1,
-        };
-        if (!row.quote_text || row.quote_text === '') {
-          const channel = client.channels.get(row.channel_id);
-          if (channel instanceof TextChannel) {
-            const recalledMessage = await channel.fetchMessage(row.message_id);
-            const content = recalledMessage.cleanContent;
-            updateMessageText.run([content, row.message_id]);
-            quote.content = content;
-            await sassybotRespond(
-              message,
-              `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
-                quote.count - 1 === 0 ? 'No' : quote.count - 1
-              } other quotes saved`,
-            );
-          }
-        } else {
-          await sassybotRespond(
-            message,
-            `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
-              quote.count - 1 === 0 ? 'No' : quote.count - 1
-            } other quotes saved`,
-          );
+        let foundResult = results.find((result) => result.discordUserId === member.user.id);
+        if (foundResult) {
+          outputString += `${member.displayName} (${member.user.username}): ${foundResult.cnt} saved quotes\n`;
         }
       }
-    } else if (parts.length >= 2 && parts[1].toLowerCase() === 'list') {
-      const target = message.author;
-      const rows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
+    });
+  }
 
-      const builtMessages = [];
-      const fetches = [];
-      let finalMessage = quotedMember.displayName + '\n----------------------------\n';
-      for (let i = 0, iMax = rows.length; i < iMax; i++) {
-        const row = rows[i];
-        if (!row.quote_text || row.quote_text === '') {
-          const channel = client.channels.get(row.channel_id);
-          if (channel instanceof TextChannel) {
-            fetches.push(channel.fetchMessage(row.message_id));
-          }
-        } else {
-          builtMessages[i] = row.quote_text;
-        }
-      }
-      if (fetches.length > 0) {
-        const results = await Promise.all(fetches);
-        for (let k = 0, kMax = results.length; k < kMax; k++) {
-          const content = results[k].cleanContent;
-          updateMessageText.run([content, results[k].id]);
-        }
-        const quoteRows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
-        for (let i = 0, iMax = quoteRows.length; i < iMax; i++) {
-          finalMessage += i + 1 + ': ' + quoteRows[i].quote_text + '\n';
-        }
-        target.send(finalMessage + '----------------------------');
-      } else {
-        for (let j = 0, jMax = builtMessages.length; j < jMax; j++) {
-          finalMessage += j + 1 + ': ' + builtMessages[j] + '\n';
-        }
-        target.send(finalMessage + '----------------------------');
-      }
-    } else if (parts.length >= 2 && isNormalInteger(parts[1])) {
-      const rows: IQuoteRow[] = getQuotesByUser.all([message.guild.id, quotedMember.id]);
-      if (rows.length > 0) {
-        const selectedQuoted = Number(parts[1]);
-        const row = rows[selectedQuoted - 1];
-        const quote = {
-          content: row.quote_text ? row.quote_text : '',
-          count: rows.length,
-          number: selectedQuoted,
-        };
-        if (!row.quote_text || row.quote_text === '') {
-          const channel = client.channels.get(row.channel_id);
-          if (channel instanceof TextChannel) {
-            const recalledMessage = await channel.fetchMessage(row.message_id);
-            const content = recalledMessage.cleanContent;
-            updateMessageText.run([content, row.message_id]);
-            quote.content = content;
-            await sassybotRespond(
-              message,
-              `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
-                quote.count - 1 === 0 ? 'No' : quote.count - 1
-              } other quotes saved`,
-            );
-          }
-        } else {
-          await sassybotRespond(
-            message,
-            `${quotedMember.displayName} said: "${quote.content}" (quote #${quote.number})\n\n and has ${
-              quote.count - 1 === 0 ? 'No' : quote.count - 1
-            } other quotes saved`,
-          );
-        }
+  private async listAllUserQuotes(message: Message, mentionedMember: GuildMember): Promise<void> {
+    const dmChannel = await message.author.createDM();
+    const allQuotesForMentioned = await this.sb.dbConnection
+      .getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where({ user: mentionedMember.user.id })
+      .getMany();
+
+    if (allQuotesForMentioned && allQuotesForMentioned.length) {
+      let finalMessage = mentionedMember.displayName + '\n----------------------------\n';
+      allQuotesForMentioned.forEach((quote, index) => {
+        finalMessage += `${index + 1} - ${quote.quoteText}\n`;
+      });
+      dmChannel.send(finalMessage + '----------------------------\n');
+    }
+  }
+
+  private async getUserQuote(message: Message, member: GuildMember, quoteNumber: number): Promise<void> {
+    const userQuotes = await this.sb.dbConnection
+      .getRepository(Quote)
+      .createQueryBuilder('quote')
+      .where({ user: member.user.id })
+      .orderBy('id')
+      .getMany();
+
+    const quote = userQuotes[quoteNumber - 1];
+
+    message.channel.send(
+      `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber})\n\n and has ${
+        userQuotes.length - 1 === 0 ? 'No' : userQuotes.length - 1
+      } other quotes saved`,
+      {
+        split: true,
+      },
+    );
+  }
+
+  private async getRandomMemberQuote(message: Message, member: GuildMember) {
+    const userQuoteCount = await this.sb.dbConnection.getRepository(Quote).count();
+    const index = Math.floor(Math.random() * userQuoteCount);
+    await this.getUserQuote(message, member, index);
+  }
+
+  private async getRandomQuote(message: Message) {
+    const randomQuote = await this.sb.dbConnection
+      .getRepository(Quote)
+      .createQueryBuilder()
+      .addOrderBy('RAND()')
+      .limit(1)
+      .getOne();
+    if (randomQuote) {
+      const member = await this.sb.getMember(message.guild.id, randomQuote.user.discordUserId);
+      if (member) {
+        await this.getRandomMemberQuote(message, member);
       }
     }
-  } else {
-    await sassybotRespond(message, 'You must specify whose quote you want to retrieve');
   }
- */
+}

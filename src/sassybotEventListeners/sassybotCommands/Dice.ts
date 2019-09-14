@@ -168,7 +168,6 @@ export default class Dice extends SassybotCommand {
   protected async listener({message, params}: {message: Message, params: ISassybotCommandParams}): Promise<void> {
     const response = await Dice.rollFunction(params.args);
     message.channel.send(response, {
-      disableEveryone: true,
       reply: message.author,
       split: true,
     });
