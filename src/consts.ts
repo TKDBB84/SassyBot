@@ -4,6 +4,12 @@ export const enum GuildIds {
   SASNERS_TEST_SERVER_GUILD_ID = '367724585019506688',
 }
 
+export const NewUserChannels = {
+  [GuildIds.COT_GUILD_ID]: '601971412000833556',
+  [GuildIds.GAMEZZZ_GUILD_ID]: '',
+  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: '',
+};
+
 export const enum UserIds {
   BRIGIE = '189195422114381824',
   EITRI = '106004012347695104',
@@ -26,12 +32,21 @@ export const enum UserIds {
 }
 
 export enum CotRanks {
-  DIGNITARY = 'Dignitary/Mod',
-  MEMBER = 'Member',
-  NEW = 'New',
-  OFFICER = 'Officer',
-  RECRUIT = 'Recruit',
-  VETERAN = 'Veteran',
+  DIGNITARY = '331193662748885013',
+  MEMBER = '600338911755239424',
+  NEW = '601962184926429206',
+  OFFICER = '331191333672845312',
+  RECRUIT = '601963080137703424',
+  VETERAN = '600338562298413076',
+}
+
+export enum CoTRankValueToString {
+  '331193662748885013' = 'Dignitary',
+  '600338911755239424' = 'Member',
+  '601962184926429206' = 'New',
+  '331191333672845312' = 'Officer',
+  '601963080137703424' = 'Recruit',
+  '600338562298413076' = 'Veteran',
 }
 
 export const QUOTE_REACTIONS = {

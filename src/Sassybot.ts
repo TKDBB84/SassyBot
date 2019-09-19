@@ -4,7 +4,7 @@ import {
   GuildMember,
   Message,
   MessageMentions,
-  MessageReaction,
+  MessageReaction, Role,
   User,
   UserResolvable,
 } from 'discord.js';
@@ -64,6 +64,15 @@ export class Sassybot extends EventEmitter {
     this.dbConnection = connection;
   }
 
+  public async getRole(guildId: string, roleId: string): Promise<Role | undefined> {
+    let role;
+    const guild = this.discordClient.guilds.get(guildId);
+    if (guild) {
+      role = guild.roles.get(roleId);
+    }
+    return role;
+  }
+
   public getChannel(channelId: string): Channel | null {
     const channel = this.discordClient.channels.get(channelId);
     if (channel) {
@@ -108,8 +117,9 @@ export class Sassybot extends EventEmitter {
 
   public async run(): Promise<void> {
     this.discordClient.on('message', this.onMessageHandler);
-    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdateHandler);
+    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdate);
     this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd);
+    this.discordClient.on('guildMemberAdd', this.onGuildMemberAdd);
     this.discordClient.on('disconnect', async () => {
       setTimeout(async () => await this.login(), 30000);
     });
@@ -170,7 +180,14 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  private async onVoiceStateUpdateHandler(oldMember: GuildMember, newMember: GuildMember) {
+  private async onGuildMemberAdd(member: GuildMember) {
+    if (member.user.bot) {
+      return;
+    }
+    this.emit('guildMemberAdd', { member });
+  }
+
+  private async onVoiceStateUpdate(oldMember: GuildMember, newMember: GuildMember) {
     this.emit('voiceStateUpdate', { oldMember, newMember });
   }
   private async onMessageReactionAdd(messageReaction: MessageReaction, user: User) {
