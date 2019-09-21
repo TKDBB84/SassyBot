@@ -3,10 +3,18 @@ import { CotRanks, GuildIds, NewUserChannels, UserIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import SassybotEventListener from '../SassybotEventListener';
 import CoTNewMemberResponseListener from './CoTNewMemberResponseListener';
+import { Sassybot } from '../../Sassybot';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   protected readonly event = 'guildMemberAdd';
   protected readonly onEvent = this.listener;
+  private readonly responseListener: CoTNewMemberResponseListener;
+
+  constructor(sb: Sassybot) {
+    super(sb);
+    this.responseListener = new CoTNewMemberResponseListener(sb);
+    this.responseListener.init();
+  }
 
   protected async listener({ member }: { member: GuildMember }): Promise<void> {
     if (member.guild.id !== GuildIds.COT_GUILD_ID) {
@@ -47,7 +55,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    CoTNewMemberResponseListener.activeMemberList[member.user.id] = {
+    this.responseListener.activeMemberList[member.user.id] = {
       joined: new Date(),
       name: '',
       step: 1,

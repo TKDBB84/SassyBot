@@ -14,7 +14,7 @@ interface IActiveMemberList {
 }
 
 export default class CoTNewMemberResponseListener extends SassybotEventListener {
-  public static activeMemberList: IActiveMemberList = {};
+  public activeMemberList: IActiveMemberList = {};
 
   private static async requestRuleAgreement(message: Message) {
     message.channel.send(
@@ -42,17 +42,17 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
   protected readonly onEvent = this.listener;
 
   protected async listener({ message }: { message: Message }): Promise<void> {
-    if (CoTNewMemberResponseListener.activeMemberList.hasOwnProperty(message.author.id)) {
-      const currentStep = CoTNewMemberResponseListener.activeMemberList[message.author.id].step;
+    if (this.activeMemberList.hasOwnProperty(message.author.id)) {
+      const currentStep = this.activeMemberList[message.author.id].step;
       switch (currentStep) {
         case 1:
           await this.declaringCharacterName(message);
           await CoTNewMemberResponseListener.requestRuleAgreement(message);
-          CoTNewMemberResponseListener.activeMemberList[message.author.id].step = 2;
+          this.activeMemberList[message.author.id].step = 2;
           break;
         case 2:
           await this.acceptingTerms(message);
-          delete CoTNewMemberResponseListener.activeMemberList[message.author.id];
+          delete this.activeMemberList[message.author.id];
           break;
       }
     }
@@ -106,12 +106,12 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
         { split: true },
       );
     }
-    CoTNewMemberResponseListener.activeMemberList[message.author.id].name = declaredName;
+    this.activeMemberList[message.author.id].name = declaredName;
   }
 
   private async acceptingTerms(message: Message) {
     if (message.cleanContent.trim().toLowerCase() === 'i agree') {
-      const declaredName = CoTNewMemberResponseListener.activeMemberList[message.author.id].name;
+      const declaredName = this.activeMemberList[message.author.id].name;
       const cotMember = await this.getCotMemberByName(declaredName, message.author.id);
       if (cotMember.rank === CotRanks.NEW) {
         await cotMember.promote();
