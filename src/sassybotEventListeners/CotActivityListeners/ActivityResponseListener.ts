@@ -3,7 +3,7 @@ import SassybotEventListener from '../SassybotEventListener';
 
 export interface IActivityList {
   [userId: string]: {
-    next: (message: Message, activityList: IActivityList) => Promise<void>;
+    next: (message: Message) => Promise<void>;
     guildId: string;
     initDate: Date;
     name: string;
@@ -15,6 +15,7 @@ export default abstract class ActivityResponseListener extends SassybotEventList
   protected readonly event = 'messageReceived';
   protected readonly onEvent = this.listener;
   protected readonly intervalId = setInterval(this.removeExpiredEntries, 1000 * 60 * 5);
+  public abstract async addToActivityList(message: Message): Promise<void>;
 
   protected abstract async activityMessageListener({ message }: { message: Message }): Promise<void>;
 
@@ -26,12 +27,7 @@ export default abstract class ActivityResponseListener extends SassybotEventList
 
   protected async requestCharacterName(message: Message) {
     if (this.activeRequestList[message.author.id]) {
-      return undefined;
-    }
-  }
-  protected async parseCharacterName(message: Message, next: () => void) {
-    if (this.activeRequestList[message.author.id]) {
-      return next;
+      message.channel.send('');
     }
   }
 

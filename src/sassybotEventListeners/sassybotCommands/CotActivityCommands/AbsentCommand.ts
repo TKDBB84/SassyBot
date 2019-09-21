@@ -1,21 +1,20 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../../Sassybot';
+import { Sassybot } from '../../../Sassybot';
+import AbsentResponseListener from '../../CotActivityListeners/AbsentResponseListener';
 import ActivityCommand from './ActivityCommand';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
+  protected readonly activityListener: AbsentResponseListener;
 
-  protected async listAll(message: Message): Promise<void> {
-    return undefined;
+  constructor(sb: Sassybot) {
+    super(sb);
+    this.command = 'absent';
+    this.activityListener = new AbsentResponseListener(sb);
+    this.activityListener.init();
   }
 
-  protected async activityCommandListener({
-    message,
-    params,
-  }: {
-    message: Message;
-    params: ISassybotCommandParams;
-  }): Promise<void> {
+  protected async listAll(message: Message): Promise<void> {
     return undefined;
   }
 }

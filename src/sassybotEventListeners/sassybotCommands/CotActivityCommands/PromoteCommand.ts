@@ -1,21 +1,20 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../../Sassybot';
+import { Sassybot } from '../../../Sassybot';
+import PromotionResponseListener from '../../CotActivityListeners/PromotionResponseListener';
 import ActivityCommand from './ActivityCommand';
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';
+  protected readonly activityListener: PromotionResponseListener;
 
-  protected async listAll(message: Message): Promise<void> {
-    return undefined;
+  constructor(sb: Sassybot) {
+    super(sb);
+    this.command = 'promote';
+    this.activityListener = new PromotionResponseListener(sb);
+    this.activityListener.init();
   }
 
-  protected async activityCommandListener({
-    message,
-    params,
-  }: {
-    message: Message;
-    params: ISassybotCommandParams;
-  }): Promise<void> {
+  protected async listAll(message: Message): Promise<void> {
     return undefined;
   }
 }
