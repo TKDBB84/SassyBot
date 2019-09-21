@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
+import { ISassybotCommandParams } from '../../../Sassybot';
 import ActivityCommand from './ActivityCommand';
-import {ISassybotCommandParams} from "../../../Sassybot";
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';
@@ -12,7 +12,10 @@ export default class PromoteCommand extends ActivityCommand {
   protected async activityCommandListener({
     message,
     params,
-  }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void> {
     return undefined;
   }
 }

@@ -1,7 +1,5 @@
 import { Message } from 'discord.js';
 import SassybotEventListener from '../SassybotEventListener';
-import * as moment from 'moment';
-import { ISassybotCommandParams } from '../../Sassybot';
 
 export interface IActivityList {
   [userId: string]: {
@@ -12,16 +10,11 @@ export interface IActivityList {
   };
 }
 
-export interface InterfaceActivityResponseListener {
-  activeRequestList: IActivityList;
-}
-
-export default abstract class ActivityResponseListener extends SassybotEventListener
-  implements InterfaceActivityResponseListener {
+export default abstract class ActivityResponseListener extends SassybotEventListener {
+  public abstract activeRequestList: IActivityList;
   protected readonly event = 'messageReceived';
   protected readonly onEvent = this.listener;
   protected readonly intervalId = setInterval(this.removeExpiredEntries, 1000 * 60 * 5);
-  public abstract activeRequestList: IActivityList;
 
   protected abstract async activityMessageListener({ message }: { message: Message }): Promise<void>;
 
@@ -33,10 +26,12 @@ export default abstract class ActivityResponseListener extends SassybotEventList
 
   protected async requestCharacterName(message: Message) {
     if (this.activeRequestList[message.author.id]) {
+      return undefined;
     }
   }
-  protected async parseCharacterName(message: Message, next: Function) {
+  protected async parseCharacterName(message: Message, next: () => void) {
     if (this.activeRequestList[message.author.id]) {
+      return next;
     }
   }
 
@@ -46,12 +41,11 @@ export default abstract class ActivityResponseListener extends SassybotEventList
 
   protected async removeExpiredEntries() {
     const keys = Object.keys(this.activeRequestList);
-    const fifteenMinAgo = new Date( Date.now() - 1000 * 60 * 15 );
-    keys.forEach(key => {
+    const fifteenMinAgo = new Date(Date.now() - 1000 * 60 * 15);
+    keys.forEach((key) => {
       if (this.activeRequestList[key].initDate < fifteenMinAgo) {
         delete this.activeRequestList[key];
       }
-    })
+    });
   }
-
 }

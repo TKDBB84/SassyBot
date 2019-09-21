@@ -1,8 +1,7 @@
 import { Message } from 'discord.js';
+import { CotRanks, GuildIds } from '../../../consts';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
-import { IActivityList } from '../../CotActivityListeners/ActivityResponseListener';
-import { CotRanks, GuildIds } from '../../../consts';
 
 export default abstract class ActivityCommand extends SassybotCommand {
   public getHelpText(): string {
