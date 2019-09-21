@@ -15,21 +15,27 @@ export default abstract class ActivityResponseListener extends SassybotEventList
   protected readonly event = 'messageReceived';
   protected readonly onEvent = this.listener;
   protected readonly intervalId = setInterval(this.removeExpiredEntries, 1000 * 60 * 5);
-  public abstract async addToActivityList(message: Message): Promise<void>;
 
-  protected abstract async activityMessageListener({ message }: { message: Message }): Promise<void>;
-
-  protected async listener({ message }: { message: Message }): Promise<void> {
-    if (this.activeRequestList.hasOwnProperty(message.author.id)) {
-      await this.activityMessageListener({ message });
-    }
+  public async addToActivityList(message: Message): Promise<void> {
+    this.activeRequestList[message.author.id] = {
+      guildId: message.guild.id,
+      initDate: new Date(),
+      name: message.member.nickname,
+      next: this.requestCharacterName,
+    };
+    await this.requestCharacterName(message);
+    this.activeRequestList[message.author.id].next = this.parseCharacterName;
   }
 
   protected async requestCharacterName(message: Message) {
     if (this.activeRequestList[message.author.id]) {
-      message.channel.send('');
+      message.channel.send('First, Tell Me Your Full Character Name');
     }
   }
+
+  protected abstract async parseCharacterName(message: Message): Promise<void>;
+
+  protected abstract async listener({ message }: { message: Message }): Promise<void>;
 
   protected async removeFromList(userId: string): Promise<void> {
     delete this.activeRequestList[userId];

@@ -1,9 +1,9 @@
 import { GuildMember, TextChannel } from 'discord.js';
 import { CotRanks, GuildIds, NewUserChannels, UserIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
+import { Sassybot } from '../../Sassybot';
 import SassybotEventListener from '../SassybotEventListener';
 import CoTNewMemberResponseListener from './CoTNewMemberResponseListener';
-import { Sassybot } from '../../Sassybot';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   protected readonly event = 'guildMemberAdd';

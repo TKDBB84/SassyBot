@@ -7,9 +7,4 @@ export { default as CoTNewMemberListener } from './NewMemberManagement/CoTNewMem
 export { default as QuoteListener } from './QuoteListener';
 export { default as VoiceLogListener } from './VoiceLogListener';
 
-export default [
-  CoTNewMemberListener,
-  QuoteListener,
-  ...sassyBotCommands,
-  VoiceLogListener,
-];
+export default [CoTNewMemberListener, QuoteListener, ...sassyBotCommands, VoiceLogListener];

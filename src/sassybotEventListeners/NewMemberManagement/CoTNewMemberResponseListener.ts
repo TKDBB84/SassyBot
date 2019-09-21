@@ -14,7 +14,6 @@ interface IActiveMemberList {
 }
 
 export default class CoTNewMemberResponseListener extends SassybotEventListener {
-  public activeMemberList: IActiveMemberList = {};
 
   private static async requestRuleAgreement(message: Message) {
     message.channel.send(
@@ -38,6 +37,7 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
       { reply: message.author },
     );
   }
+  public activeMemberList: IActiveMemberList = {};
   protected readonly event = 'messageReceived';
   protected readonly onEvent = this.listener;
 
