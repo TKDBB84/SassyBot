@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
-export default class Echo extends SassybotCommand {
+export default class PingCommand extends SassybotCommand {
   public readonly command = 'ping';
 
   public getHelpText(): string {

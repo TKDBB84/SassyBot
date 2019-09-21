@@ -1,7 +1,7 @@
-import SassybotEventListener from '../SassybotEventListener';
 import { GuildMember, TextChannel } from 'discord.js';
 import { CotRanks, GuildIds, NewUserChannels, UserIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
+import SassybotEventListener from '../SassybotEventListener';
 import CoTNewMemberResponseListener from './CoTNewMemberResponseListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
@@ -48,8 +48,8 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
 
     CoTNewMemberResponseListener.activeMemberList[member.user.id] = {
-      name: '',
       joined: new Date(),
+      name: '',
       step: 1,
     };
     newMemberChannel.send(

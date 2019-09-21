@@ -1,9 +1,9 @@
-import SassybotEventListener from '../SassybotEventListener';
 import { Message } from 'discord.js';
-import COTMember from '../../entity/COTMember';
 import { CotRanks, CoTRankValueToString, GuildIds } from '../../consts';
+import COTMember from '../../entity/COTMember';
 import FFXIVPlayer from '../../entity/FFXIVPlayer';
 import SbUser from '../../entity/SbUser';
+import SassybotEventListener from '../SassybotEventListener';
 
 interface IActiveMemberList {
   [userId: string]: {
@@ -14,9 +14,32 @@ interface IActiveMemberList {
 }
 
 export default class CoTNewMemberResponseListener extends SassybotEventListener {
+  public static activeMemberList: IActiveMemberList = {};
+
+  private static async requestRuleAgreement(message: Message) {
+    message.channel.send(
+      'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
+        'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃',
+      { split: true, reply: message.author },
+    );
+  }
+
+  private static async couldNotRemoveRole(message: Message, role: any, error: any) {
+    console.error('could not remove role', { role, error });
+    await message.channel.send(
+      "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
+      { reply: message.author },
+    );
+  }
+  private static async couldNotAddRole(message: Message, role: any, error: any) {
+    console.error('could not add role', { role, error });
+    await message.channel.send(
+      `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
+      { reply: message.author },
+    );
+  }
   protected readonly event = 'messageReceived';
   protected readonly onEvent = this.listener;
-  public static activeMemberList: IActiveMemberList = {};
 
   protected async listener({ message }: { message: Message }): Promise<void> {
     if (CoTNewMemberResponseListener.activeMemberList.hasOwnProperty(message.author.id)) {
@@ -39,7 +62,7 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
     const cotMemberRepo = this.sb.dbConnection.getRepository(COTMember);
     let cotMember = await cotMemberRepo
       .createQueryBuilder()
-      .where('LOWER(charName) = :charName', { charName: charName })
+      .where('LOWER(charName) = :charName', { charName })
       .getOne();
     if (!cotMember) {
       const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
@@ -86,21 +109,12 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
     CoTNewMemberResponseListener.activeMemberList[message.author.id].name = declaredName;
   }
 
-  private static async requestRuleAgreement(message: Message) {
-    message.channel.send(
-      'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
-        'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃',
-      { split: true, reply: message.author },
-    );
-  }
-
   private async acceptingTerms(message: Message) {
     if (message.cleanContent.trim().toLowerCase() === 'i agree') {
       const declaredName = CoTNewMemberResponseListener.activeMemberList[message.author.id].name;
       const cotMember = await this.getCotMemberByName(declaredName, message.author.id);
       if (cotMember.rank === CotRanks.NEW) {
-        cotMember.rank = CotRanks.MEMBER;
-        await this.sb.dbConnection.getRepository(COTMember).save(cotMember);
+        await cotMember.promote();
       }
       const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
       if (newRole) {
@@ -132,20 +146,5 @@ export default class CoTNewMemberResponseListener extends SassybotEventListener 
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
     }
-  }
-
-  private static async couldNotRemoveRole(message: Message, role: any, error: any) {
-    console.error('could not remove role', { role, error });
-    await message.channel.send(
-      "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
-      { reply: message.author },
-    );
-  }
-  private static async couldNotAddRole(message: Message, role: any, error: any) {
-    console.error('could not add role', { role, error });
-    await message.channel.send(
-      `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
-      { reply: message.author },
-    );
   }
 }
