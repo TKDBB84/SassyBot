@@ -1,3 +1,5 @@
+import AbsentResponseListener
+  from "./CotActivityListeners/AbsentResponseListener";
 import CoTNewMemberListener from './NewMemberManagement/CoTNewMemberListener';
 import CoTNewMemberResponseListener from './NewMemberManagement/CoTNewMemberResponseListener';
 import QuoteListener from './QuoteListener';
