@@ -1,5 +1,7 @@
 import {Message, MessageCollector} from 'discord.js';
 import ActivityCommand from './ActivityCommand';
+import COTMember from "../../../entity/COTMember";
+import PromotionRequest from "../../../entity/PromotionRequest";
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';
@@ -9,21 +11,18 @@ export default class PromoteCommand extends ActivityCommand {
   }
 
   protected async activityListener({message}: { message: Message }): Promise<void> {
-    let messageCount = 0;
+    const promotion = new PromotionRequest();
     await this.requestCharacterName(message);
     const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
     const messageCollector = new MessageCollector(message.channel, filter);
     messageCollector.on('collect', async (collectedMessage: Message) => {
-        await this.parseCharacterName(message);
-        await this.summarizeData(message);
+      promotion.CotMember = await this.parseCharacterName(message);
+        // await this.summarizeData(message);
         messageCollector.stop();
     })
   }
 
-  protected async parseCharacterName(message: Message): Promise<void> {
-    return undefined;
-  }
-  protected async summarizeData(message: Message): Promise<void> {
-    return;
+  protected async parseCharacterName(message: Message): Promise<COTMember> {
+    return new COTMember();
   }
 }
