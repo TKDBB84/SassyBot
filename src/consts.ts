@@ -9,9 +9,10 @@ export const NewUserChannels = {
   [GuildIds.GAMEZZZ_GUILD_ID]: '',
   [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: '',
 };
-
+export const ONE_HOUR = 3600000;
 export const CoTOfficerChannelId = '331196148079394836';
 export const CoTButtStuffChannelId = '331786517041119233';
+export const CoTPromotionChannelId = '362037806178238464';
 
 export const enum UserIds {
   BRIGIE = '189195422114381824',

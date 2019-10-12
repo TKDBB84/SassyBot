@@ -2,12 +2,25 @@ import { Message, MessageCollector } from 'discord.js';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import COTMember from '../../../entity/COTMember';
 import ActivityCommand from './ActivityCommand';
+import {MoreThan} from "typeorm";
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
 
   protected async listAll(message: Message): Promise<void> {
-    return undefined;
+    const yesterday = new Date();
+    yesterday.setTime(new Date().getTime() - 36 * (60 * 60 * 1000));
+    const allAbsences = await this.sb.dbConnection
+      .getRepository(AbsentRequest)
+      .find({ where: { endDate: MoreThan<Date>(yesterday) } });
+    const sortedAbsences = allAbsences.sort((a, b) => a.CotMember.charName.localeCompare(b.CotMember.charName, 'en'));
+
+    let reply = '__Current Absentee List:__\n';
+    sortedAbsences.forEach((absence) => {
+      reply += `${absence.CotMember.charName}\tFrom: ${absence.startDate}\tTo: ${absence.endDate}\n`;
+    });
+    await message.channel.send(reply, { split: true });
+    return;
   }
 
   protected async activityListener({ message }: { message: Message }): Promise<void> {
