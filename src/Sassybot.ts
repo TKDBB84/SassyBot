@@ -5,7 +5,8 @@ import {
   Message,
   MessageMentions,
   MessageReaction,
-  Role, TextChannel,
+  Role,
+  TextChannel,
   User,
   UserResolvable,
 } from 'discord.js';
@@ -83,9 +84,9 @@ export class Sassybot extends EventEmitter {
   }
 
   public getTextChannel(channelId: string): TextChannel | null {
-    const channel = this.getChannel(channelId)
+    const channel = this.getChannel(channelId);
     if (!channel || !(channel instanceof TextChannel)) {
-      return null
+      return null;
     }
     return channel;
   }

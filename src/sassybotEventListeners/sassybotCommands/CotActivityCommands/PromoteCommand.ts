@@ -1,10 +1,8 @@
 import { CollectorFilter, Message, MessageCollector, MessageReaction, ReactionEmoji, User } from 'discord.js';
+import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, ONE_HOUR } from '../../../consts';
 import COTMember from '../../../entity/COTMember';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
-import AbsentRequest from '../../../entity/AbsentRequest';
-import { MoreThan } from 'typeorm';
-import {CoTPromotionChannelId, CotRanks, CoTRankValueToString, ONE_HOUR} from '../../../consts';
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';

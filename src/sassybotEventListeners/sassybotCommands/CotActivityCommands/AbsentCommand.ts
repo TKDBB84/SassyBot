@@ -1,8 +1,8 @@
 import { Message, MessageCollector } from 'discord.js';
+import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import COTMember from '../../../entity/COTMember';
 import ActivityCommand from './ActivityCommand';
-import {MoreThan} from "typeorm";
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
