@@ -117,8 +117,7 @@ function formatDate(d: moment.Moment) {
   return d.format('MMM Do YYYY');
 }
 
-// remove entry when it's more than 5 min old
-setInterval(() => {
+const clearAbandonedCalls = () => {
   const now = moment();
   [activeAbsentList, activePromotionList].forEach((activityList) => {
     Object.keys(activityList).forEach((key) => {
@@ -135,9 +134,14 @@ setInterval(() => {
       }
     });
   });
-}, entryPersistenceDuration);
+};
+clearAbandonedCalls();
 
-setInterval(() => {
+// remove entry when it's more than 5 min old
+setInterval(clearAbandonedCalls, entryPersistenceDuration);
+
+
+const removeOldAbsentees = () => {
   const yesterday = moment().subtract({ days: 1, hours: 12 });
   ACTIVE_SERVERS.forEach((serverId) => {
     const allAbsentRows: IAllAbsentsRow[] = getAllAbsents.all([serverId]);
@@ -149,7 +153,10 @@ setInterval(() => {
       }
     }
   });
-}, ONE_HOUR * 12);
+};
+removeOldAbsentees();
+
+setInterval(removeOldAbsentees, ONE_HOUR * 12);
 
 const sassybotReply: (message: Message, reply: string) => Promise<void> = async (
   message: Message,
