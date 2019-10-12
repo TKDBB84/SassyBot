@@ -147,7 +147,7 @@ const removeOldAbsentees = () => {
     const allAbsentRows: IAllAbsentsRow[] = getAllAbsents.all([serverId]);
 
     for (let i = 0, iMax = allAbsentRows.length; i < iMax; i++) {
-      const endDate = moment(allAbsentRows[i].end_date, 'YYYY-MM-DD');
+      const endDate = moment(allAbsentRows[i].end_date, 'MMM Do YYYY');
       if (endDate.isBefore(yesterday)) {
         deleteUserAbsentRow.run([serverId, allAbsentRows[i].user_id]);
       }
