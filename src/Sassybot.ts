@@ -218,5 +218,5 @@ if (process.env.NODE_ENV !== 'production') {
 dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
-  // await sb.run();
+  await sb.run();
 });

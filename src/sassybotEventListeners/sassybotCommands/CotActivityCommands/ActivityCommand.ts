@@ -1,11 +1,10 @@
-import {Message} from 'discord.js';
+import { Message } from 'discord.js';
 import { CotRanks, GuildIds } from '../../../consts';
+import COTMember from '../../../entity/COTMember';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
-import COTMember from "../../../entity/COTMember";
 
 export default abstract class ActivityCommand extends SassybotCommand {
-
   public getHelpText(): string {
     return `usage: \`!{sassybot|sb} ${this.command}\` -- something something something`;
   }
@@ -15,7 +14,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
     if (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) {
       await this.listAll(message);
     } else {
-      await this.activityListener({message});
+      await this.activityListener({ message });
     }
   }
 

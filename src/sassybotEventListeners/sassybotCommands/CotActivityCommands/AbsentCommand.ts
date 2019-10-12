@@ -1,7 +1,7 @@
 import { Message, MessageCollector } from 'discord.js';
+import AbsentRequest from '../../../entity/AbsentRequest';
+import COTMember from '../../../entity/COTMember';
 import ActivityCommand from './ActivityCommand';
-import AbsentRequest from "../../../entity/AbsentRequest";
-import COTMember from "../../../entity/COTMember";
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
@@ -61,7 +61,7 @@ export default class AbsentCommand extends ActivityCommand {
   protected async requestEndDate(message: Message) {
     return message; // make lint happy
   }
-  protected async parseEndDate(message: Message): Promise<Date | false > {
+  protected async parseEndDate(message: Message): Promise<Date | false> {
     return new Date(); // make lint happy
   }
 

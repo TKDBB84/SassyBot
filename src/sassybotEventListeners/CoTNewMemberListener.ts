@@ -6,7 +6,6 @@ import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
-
   private static async requestRuleAgreement(message: Message) {
     message.channel.send(
       'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
@@ -88,6 +87,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         case 0:
           declaredName = message.cleanContent;
           await this.declaringCharacterName(message);
+          await CoTNewMemberListener.requestRuleAgreement(message);
           break;
         case 1:
           await this.acceptingTerms(declaredName, message);
@@ -96,7 +96,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       }
       messageCount++;
     });
-    //
   }
 
   private async declaringCharacterName(message: Message) {
