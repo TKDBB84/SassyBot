@@ -4,8 +4,8 @@ import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class QuoteListener extends SassybotEventListener {
-  protected readonly event = 'messageReactionAdd';
-  protected getEventListener() { return this.listener; }
+  public readonly event = 'messageReactionAdd';
+  public getEventListener() { return this.listener; }
 
   protected async listener({ messageReaction, user }: { messageReaction: MessageReaction; user: User }): Promise<void> {
     const quoteStrings = ['quote', 'quote-1'];

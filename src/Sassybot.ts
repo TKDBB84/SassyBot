@@ -17,7 +17,8 @@ import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
 export interface ISassybotEventListener {
-  init: (sb: Sassybot) => void;
+  event: string,
+  getEventListener: () =>  (...args: any) => Promise<void>;
 }
 
 export interface ISassybotCommandParams {
@@ -143,7 +144,7 @@ export class Sassybot extends EventEmitter {
       }
       this.registeredCommands.add(sbEvent.command);
     }
-    sbEvent.init(this);
+    this.addListener(sbEvent.event, sbEvent.getEventListener())
   }
 
   private async login() {

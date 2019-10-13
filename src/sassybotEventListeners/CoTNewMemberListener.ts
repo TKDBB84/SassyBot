@@ -28,8 +28,8 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       { reply: message.author },
     );
   }
-  protected readonly event = 'guildMemberAdd';
-  protected getEventListener() {
+  public readonly event = 'guildMemberAdd';
+  public getEventListener() {
     return this.listener;
   }
 

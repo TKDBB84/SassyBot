@@ -44,8 +44,8 @@ export default class VoiceLogListener extends SassybotEventListener {
       return await channel.send(`(${time}) ${charName} joined: ${channelName}`, options);
     }
   }
-  protected readonly event = 'voiceStateUpdate';
-  protected getEventListener() { return this.listener; }
+  public readonly event = 'voiceStateUpdate';
+  public getEventListener() { return this.listener; }
 
   private async getVoiceChannel(channelId: string): Promise<VoiceChannel | null> {
     if (!channelId) {
