@@ -17,7 +17,7 @@ import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
 export interface ISassybotEventListener {
-  init: () => void;
+  init: (sb: Sassybot) => void;
 }
 
 export interface ISassybotCommandParams {
@@ -41,7 +41,7 @@ export class Sassybot extends EventEmitter {
       command: '',
       mentions: false,
     };
-    const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s(?<args>.*)$/i;
+    const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s*(?<args>.*)$/i;
     const matches = message.cleanContent.match(patternMatch);
     if (matches && matches.groups) {
       if (matches.groups.command) {
@@ -142,12 +142,13 @@ export class Sassybot extends EventEmitter {
         throw new Error('Command Already Registered');
       }
     }
-    sbEvent.init();
+    sbEvent.init(this);
   }
 
   private async login() {
     this.emit('preLogin');
-    await this.discordClient.login(process.env.DISCORD_TOKEN);
+    const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
+    console.log({loginComplete: loginResult});
     this.emit('postLogin');
   }
 
