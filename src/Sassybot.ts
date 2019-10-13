@@ -17,8 +17,8 @@ import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
 export interface ISassybotEventListener {
-  event: string,
-  getEventListener: () =>  (...args: any) => Promise<void>;
+  event: string;
+  getEventListener: () => (...args: any) => Promise<void>;
 }
 
 export interface ISassybotCommandParams {
@@ -144,13 +144,13 @@ export class Sassybot extends EventEmitter {
       }
       this.registeredCommands.add(sbEvent.command);
     }
-    this.on(sbEvent.event, sbEvent.getEventListener())
+    this.on(sbEvent.event, sbEvent.getEventListener());
   }
 
   private async login() {
     this.emit('preLogin');
     const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
-    console.log({loginComplete: loginResult});
+    console.log({ loginComplete: loginResult });
     this.emit('postLogin');
   }
 

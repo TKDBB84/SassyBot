@@ -28,13 +28,17 @@ export default class QuoteCommand extends SassybotCommand {
       }
 
       const paramParts = params.args.split(' ');
-      const quoteNumbersRequested: number[] = paramParts.filter(/^\+?(0|[1-9]\d*)$/.test).map(parseInt);
-      if (quoteNumbersRequested.length && members.length === 1) {
-        await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
-          await previousPromise;
-          return this.getUserQuote(message, members[0], quoteNumber);
-        }, Promise.resolve());
-        return;
+      if (paramParts.length) {
+        const quoteNumbersRequested: number[] = paramParts
+          .filter(RegExp.prototype.test.bind(/^\+?(0|[1-9]\d*)$/))
+          .map(parseInt);
+        if (quoteNumbersRequested.length && members.length === 1) {
+          await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
+            await previousPromise;
+            return this.getUserQuote(message, members[0], quoteNumber);
+          }, Promise.resolve());
+          return;
+        }
       }
 
       await members.reduce(async (previousPromise, member) => {
