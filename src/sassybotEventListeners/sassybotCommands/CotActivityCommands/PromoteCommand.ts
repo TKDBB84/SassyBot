@@ -115,5 +115,6 @@ export default class PromoteCommand extends ActivityCommand {
         break;
     }
     const summary = `__Here's the data I have Stored:__ \n Character: ${savedPromotion.CotMember.charName} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
+    await message.reply(summary, {reply: message.author, split: true})
   }
 }

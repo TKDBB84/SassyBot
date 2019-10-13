@@ -46,9 +46,8 @@ export default class COTMember extends FFXIVPlayer {
         break;
     }
     this.lastPromotion = new Date();
-    await getManager()
+    return await getManager()
       .getRepository(COTMember)
       .save(this);
-    return this;
   }
 }
