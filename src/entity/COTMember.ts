@@ -29,7 +29,7 @@ export default class COTMember extends FFXIVPlayer {
   @JoinColumn()
   public player!: FFXIVPlayer;
 
-  public async promote() {
+  public async promote(): Promise<COTMember> {
     switch (this.rank) {
       case CotRanks.NEW:
         this.rank = CotRanks.RECRUIT;
@@ -49,5 +49,6 @@ export default class COTMember extends FFXIVPlayer {
     await getManager()
       .getRepository(COTMember)
       .save(this);
+    return this;
   }
 }
