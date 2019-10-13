@@ -99,6 +99,11 @@ export default class QuoteCommand extends SassybotCommand {
       .orderBy('id')
       .getMany();
 
+    if (!userQuotes.length) {
+      message.channel.send(`${member.displayName} has no saved quotes`);
+      return;
+    }
+
     const quote = userQuotes[quoteNumber - 1];
 
     message.channel.send(
