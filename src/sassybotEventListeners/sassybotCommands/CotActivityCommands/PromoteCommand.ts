@@ -1,6 +1,5 @@
-import { CollectorFilter, Message, MessageCollector, MessageReaction, ReactionEmoji, User } from 'discord.js';
+import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
-import COTMember from '../../../entity/COTMember';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 
@@ -92,14 +91,15 @@ export default class PromoteCommand extends ActivityCommand {
     const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
     const messageCollector = new MessageCollector(message.channel, filter);
     messageCollector.on('collect', async (collectedMessage: Message) => {
-      promotion.CotMember = await this.parseCharacterName(message);
-      await this.summarizeData(message, promotion);
-      messageCollector.stop();
+      const declaredMember = await this.parseCharacterName(message);
+      if (declaredMember) {
+        promotion.CotMember = declaredMember;
+        await this.summarizeData(message, promotion);
+        messageCollector.stop();
+      } else {
+        // request character
+      }
     });
-  }
-
-  protected async parseCharacterName(message: Message): Promise<COTMember> {
-    return new COTMember();
   }
 
   protected async summarizeData(message: Message, promotion: PromotionRequest): Promise<void> {

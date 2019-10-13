@@ -22,7 +22,18 @@ export default abstract class ActivityCommand extends SassybotCommand {
     message.channel.send('First, Tell Me Your Full Character Name');
   }
 
-  protected abstract async parseCharacterName(message: Message): Promise<COTMember>;
+  protected async parseCharacterName(message: Message): Promise<COTMember | false> {
+    const declaredName = message.cleanContent;
+    const requestingMember = await this.sb.dbConnection
+      .getRepository(COTMember)
+      .createQueryBuilder('member')
+      .where('LOWER(member.charName) = LOWER(:charName)', { charName: declaredName })
+      .getOne();
+    if (!requestingMember) {
+      return false
+    }
+    return requestingMember;
+  }
 
   protected abstract async activityListener({ message }: { message: Message }): Promise<void>;
 

@@ -1,8 +1,8 @@
 import { Message, MessageCollector } from 'discord.js';
 import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
-import COTMember from '../../../entity/COTMember';
 import ActivityCommand from './ActivityCommand';
+// import * as moment from 'moment';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
@@ -32,7 +32,12 @@ export default class AbsentCommand extends ActivityCommand {
     messageCollector.on('collect', async (collectedMessage: Message) => {
       switch (messageCount) {
         case 0:
-          absent.CotMember = await this.parseCharacterName(collectedMessage);
+          const foundMember = await this.parseCharacterName(collectedMessage);
+          if (foundMember === false) {
+            messageCount--;
+            break;
+          }
+          absent.CotMember = foundMember;
           await this.requestStartDate(collectedMessage);
           break;
         case 1:
@@ -59,10 +64,6 @@ export default class AbsentCommand extends ActivityCommand {
       }
       messageCount++;
     });
-  }
-
-  protected async parseCharacterName(message: Message): Promise<COTMember> {
-    return new COTMember(); // make lint happy
   }
 
   protected async requestStartDate(message: Message) {
