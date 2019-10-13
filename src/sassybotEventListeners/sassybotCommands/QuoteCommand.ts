@@ -72,6 +72,10 @@ export default class QuoteCommand extends SassybotCommand {
         }
       }
     });
+    if (outputString.length) {
+      const dmChannel = await message.author.createDM();
+      dmChannel.send(outputString);
+    }
   }
 
   private async listAllUserQuotes(message: Message, mentionedMember: GuildMember): Promise<void> {
