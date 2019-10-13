@@ -54,8 +54,8 @@ export default class QuoteCommand extends SassybotCommand {
     const results: Array<{ cnt: string; discordUserId: string }> = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
-      .select('COUNT(1) as cnt, sbUser.discordUserId')
+      .innerJoinAndSelect(SbUser, 'user')
+      .select('COUNT(1) as cnt, user.discordUserId')
       .where('guildId = :guildId', { guildId: message.guild.id })
       .groupBy('quote.user')
       .getRawMany();
@@ -79,8 +79,8 @@ export default class QuoteCommand extends SassybotCommand {
     const allQuotesForMentioned = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
-      .where({ 'quote.userId': mentionedMember.user.id })
+      .innerJoinAndSelect(SbUser, 'user')
+      .where({ 'quote.user': mentionedMember.user.id })
       .getMany();
 
     if (allQuotesForMentioned && allQuotesForMentioned.length) {
@@ -96,7 +96,7 @@ export default class QuoteCommand extends SassybotCommand {
     const userQuotes = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
+      .innerJoinAndSelect(SbUser, 'user')
       .where({ 'user.discordUserId': member.user.id })
       .orderBy('quote.id')
       .getMany();
@@ -137,7 +137,7 @@ export default class QuoteCommand extends SassybotCommand {
     const randomQuote = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder()
-      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
+      .innerJoinAndSelect(SbUser, 'user')
       .addOrderBy('RAND()')
       .limit(1)
       .getOne();
