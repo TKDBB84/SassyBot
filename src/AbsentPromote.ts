@@ -1,6 +1,6 @@
 import { Statement } from 'better-sqlite3';
 import { CollectorFilter, GuildMember, Message, MessageOptions, Role, TextChannel, User } from 'discord.js';
-import { ISassyBotImport, SassyBotCommand } from './sassybot';
+import { ISassyBotImport, SassyBotCommand } from './Sassybot';
 import SassyDb from './SassyDb';
 
 import * as moment from 'moment';

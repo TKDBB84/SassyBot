@@ -1,7 +1,7 @@
 import { Statement } from 'better-sqlite3';
 import { Channel, Collection, Message, MessageOptions, MessageReaction, Snowflake, TextChannel } from 'discord.js';
 import * as Discord from 'discord.js';
-import { ISassyBotImport, SassyBotCommand } from './sassybot';
+import { ISassyBotImport, SassyBotCommand } from './Sassybot';
 
 interface IQuoteRow {
   guild_id: string;

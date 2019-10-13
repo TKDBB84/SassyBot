@@ -1,5 +1,5 @@
 import { Message, MessageOptions } from 'discord.js';
-import { ISassyBotImport, SassyBotCommand } from './sassybot';
+import { ISassyBotImport, SassyBotCommand } from './Sassybot';
 
 const sassybotReply: (message: Message, reply: string) => void = (message: Message, reply: string): void => {
   const options: MessageOptions = {

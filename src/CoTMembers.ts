@@ -2,7 +2,7 @@ import { GuildMember, Message, MessageOptions, Role } from 'discord.js';
 import * as fs from 'fs';
 import * as http2 from 'http2';
 import * as moment from 'moment';
-import { ISassyBotImport } from './sassybot';
+import { ISassyBotImport } from './Sassybot';
 import SassyDb from './SassyDb';
 import { User } from './Users';
 
