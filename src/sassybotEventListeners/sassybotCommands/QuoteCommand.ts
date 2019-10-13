@@ -54,7 +54,7 @@ export default class QuoteCommand extends SassybotCommand {
     const results: Array<{ cnt: string; discordUserId: string }> = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoin(SbUser, 'sbUser', 'sbUser.id = quote.userId')
+      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
       .select('COUNT(1) as cnt, sbUser.discordUserId')
       .where('guildId = :guildId', { guildId: message.guild.id })
       .groupBy('quote.user')
@@ -79,7 +79,8 @@ export default class QuoteCommand extends SassybotCommand {
     const allQuotesForMentioned = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .where({ user: mentionedMember.user.id })
+      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
+      .where({ 'quote.userId': mentionedMember.user.id })
       .getMany();
 
     if (allQuotesForMentioned && allQuotesForMentioned.length) {
@@ -95,9 +96,9 @@ export default class QuoteCommand extends SassybotCommand {
     const userQuotes = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoin(SbUser, 'sbUser')
-      .where({ 'sbUser.discordUserId': member.user.id })
-      .orderBy('id')
+      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
+      .where({ 'user.discordUserId': member.user.id })
+      .orderBy('quote.id')
       .getMany();
 
     if (!userQuotes.length) {
@@ -106,7 +107,12 @@ export default class QuoteCommand extends SassybotCommand {
     }
 
     if (!quoteNumber) {
-      quoteNumber = Math.floor(Math.random() * userQuotes.length);
+      quoteNumber = Math.floor(Math.random() * userQuotes.length) + 1;
+    }
+
+    if (quoteNumber > userQuotes.length) {
+      message.channel.send(`${member.displayName} only has ${userQuotes.length} saved quotes`);
+      return;
     }
 
     const quote = userQuotes[quoteNumber - 1];
@@ -131,6 +137,7 @@ export default class QuoteCommand extends SassybotCommand {
     const randomQuote = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder()
+      .innerJoinAndSelect(SbUser, 'user', 'user.id = quote.userId')
       .addOrderBy('RAND()')
       .limit(1)
       .getOne();
