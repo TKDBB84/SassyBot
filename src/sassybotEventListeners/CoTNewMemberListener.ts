@@ -29,7 +29,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     );
   }
   protected readonly event = 'guildMemberAdd';
-  protected readonly getEventListener = () => this.listener;
+  protected getEventListener() {
+    return this.listener;
+  }
 
   protected async listener({ member }: { member: GuildMember }): Promise<void> {
     if (member.guild.id !== GuildIds.COT_GUILD_ID) {

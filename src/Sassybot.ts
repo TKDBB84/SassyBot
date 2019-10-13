@@ -141,6 +141,7 @@ export class Sassybot extends EventEmitter {
       if (this.registeredCommands.has(sbEvent.command)) {
         throw new Error('Command Already Registered');
       }
+      this.registeredCommands.add(sbEvent.command);
     }
     sbEvent.init(this);
   }

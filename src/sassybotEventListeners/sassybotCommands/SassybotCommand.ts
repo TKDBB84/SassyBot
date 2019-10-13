@@ -5,7 +5,6 @@ import SassybotEventListener from '../SassybotEventListener';
 export default abstract class SassybotCommand extends SassybotEventListener {
   public abstract readonly command: string;
   protected readonly event = 'sassybotCommand';
-  protected readonly getEventListener = () => this.onEventCallback;
 
   protected abstract async listener({
     message,
@@ -15,6 +14,10 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     params: ISassybotCommandParams;
   }): Promise<void>;
   protected abstract getHelpText(): string;
+
+  protected getEventListener(): (...args: any) => Promise<void> {
+    return this.onEventCallback;
+  }
 
   private async onEventCallback({
     message,
