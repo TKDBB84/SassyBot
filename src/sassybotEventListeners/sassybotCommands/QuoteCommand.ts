@@ -95,13 +95,18 @@ export default class QuoteCommand extends SassybotCommand {
     const userQuotes = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .where({ user: member.user.id })
+      .innerJoin(SbUser, 'sbUser')
+      .where({ 'sbUser.discordUserId': member.user.id })
       .orderBy('id')
       .getMany();
 
     if (!userQuotes.length) {
       message.channel.send(`${member.displayName} has no saved quotes`);
       return;
+    }
+
+    if (!quoteNumber) {
+      quoteNumber = Math.floor(Math.random() * userQuotes.length);
     }
 
     const quote = userQuotes[quoteNumber - 1];
