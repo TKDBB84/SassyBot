@@ -87,19 +87,22 @@ export default class PromoteCommand extends ActivityCommand {
 
   protected async activityListener({ message }: { message: Message }): Promise<void> {
     const promotion = new PromotionRequest();
-    await this.requestCharacterName(message);
-    const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-    const messageCollector = new MessageCollector(message.channel, filter);
-    messageCollector.on('collect', async (collectedMessage: Message) => {
-      const declaredMember = await this.parseCharacterName(message);
-      if (declaredMember) {
-        promotion.CotMember = declaredMember;
-        await this.summarizeData(message, promotion);
+    promotion.requested = new Date();
+
+    const foundMember = await this.findCoTMemberByDiscordId(message.author.id);
+    if (!foundMember) {
+      await this.requestCharacterName(message);
+      const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
+      const messageCollector = new MessageCollector(message.channel, filter);
+      messageCollector.on('collect', async (collectedMessage: Message) => {
+        promotion.CotMember = await this.parseCharacterName(collectedMessage);
+        await this.summarizeData(collectedMessage, promotion);
         messageCollector.stop();
-      } else {
-        // request character
-      }
-    });
+      });
+    } else {
+      promotion.CotMember = foundMember;
+      await this.summarizeData(message, promotion);
+    }
   }
 
   protected async summarizeData(message: Message, promotion: PromotionRequest): Promise<void> {
@@ -114,7 +117,7 @@ export default class PromoteCommand extends ActivityCommand {
         toRankName = CoTRankValueToString[CotRanks.MEMBER];
         break;
     }
-    const summary = `__Here's the data I have Stored:__ \n Character: ${savedPromotion.CotMember.charName} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
-    await message.reply(summary, {reply: message.author, split: true})
+    const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.charName} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
+    await message.reply(summary, { reply: message.author, split: true });
   }
 }

@@ -1,8 +1,8 @@
 import { Message, MessageCollector } from 'discord.js';
+import * as moment from 'moment';
 import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
-// import * as moment from 'moment';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly command = 'absent';
@@ -25,39 +25,43 @@ export default class AbsentCommand extends ActivityCommand {
 
   protected async activityListener({ message }: { message: Message }): Promise<void> {
     const absent = new AbsentRequest();
+    absent.requested = new Date();
+    let foundMember = await this.findCoTMemberByDiscordId(message.author.id);
     let messageCount = 0;
-    await this.requestCharacterName(message);
+    if (!foundMember) {
+      await this.requestCharacterName(message);
+    } else {
+      absent.CotMember = foundMember;
+      await this.requestStartDate(message, absent);
+      messageCount = 1;
+    }
     const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
     const messageCollector = new MessageCollector(message.channel, filter);
     messageCollector.on('collect', async (collectedMessage: Message) => {
       switch (messageCount) {
         case 0:
-          const foundMember = await this.parseCharacterName(collectedMessage);
-          if (foundMember === false) {
-            messageCount--;
-            break;
-          }
+          foundMember = await this.parseCharacterName(collectedMessage);
           absent.CotMember = foundMember;
-          await this.requestStartDate(collectedMessage);
+          await this.requestStartDate(collectedMessage, absent);
           break;
         case 1:
-          const startDate = await this.parseStartDate(collectedMessage);
+          const startDate = await this.parseDate(collectedMessage);
           if (!startDate) {
-            await this.requestStartDate(collectedMessage);
+            await this.requestStartDate(collectedMessage, absent);
             messageCount--;
           } else {
             absent.startDate = startDate;
-            this.requestEndDate(collectedMessage);
+            this.requestEndDate(collectedMessage, absent);
           }
           break;
         case 2:
-          const endDate = await this.parseEndDate(collectedMessage);
+          const endDate = await this.parseDate(collectedMessage);
           if (!endDate) {
-            await this.requestEndDate(collectedMessage);
+            await this.requestEndDate(collectedMessage, absent);
             messageCount--;
           } else {
             absent.endDate = endDate;
-            await this.summarizeData(collectedMessage);
+            await this.summarizeData(collectedMessage, absent);
             messageCollector.stop();
           }
           break;
@@ -66,20 +70,34 @@ export default class AbsentCommand extends ActivityCommand {
     });
   }
 
-  protected async requestStartDate(message: Message) {
-    return message; // make lint happy
-  }
-  protected async parseStartDate(message: Message): Promise<Date | false> {
-    return false; // make lint happy
-  }
-  protected async requestEndDate(message: Message) {
-    return message; // make lint happy
-  }
-  protected async parseEndDate(message: Message): Promise<Date | false> {
-    return new Date(); // make lint happy
+  protected async requestStartDate(message: Message, absentRequest: AbsentRequest) {
+    return await message.reply(
+      `Ok, ${absentRequest.CotMember.charName}, What is the first day you'll be gone?  (because i'm a dumb bot please use YYYY-MM-DD format)`,
+    );
   }
 
-  protected async summarizeData(message: Message): Promise<void> {
-    return;
+  protected async parseDate(message: Message): Promise<Date | false> {
+    const possibleDate = message.cleanContent;
+    if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
+      return moment(possibleDate, 'YYYY-MM-DD').toDate();
+    }
+    await message.reply('Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format', {
+      reply: message.author,
+    });
+    return false;
+  }
+
+  protected async requestEndDate(message: Message, absentRequest: AbsentRequest) {
+    return await message.reply(
+      `Ok, ${absentRequest.CotMember.charName}, When do you think you'll be back? If you're not sure, just add a few days to the end.  (because i'm a dumb bot please use YYYY-MM-DD format)`,
+    );
+  }
+
+  protected async summarizeData(message: Message, absentRequest: AbsentRequest): Promise<void> {
+    const savedAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).save(absentRequest);
+    const summary = `__Here's the data I have Stored:__ \n\n Character: ${
+      savedAbsences.CotMember.charName
+    } \n First Day Gone: ${savedAbsences.startDate.toDateString()} \n Returning: ${savedAbsences.endDate.toDateString()}`;
+    await message.reply(summary, { reply: message.author, split: true });
   }
 }
