@@ -7,7 +7,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   public readonly event = 'sassybotCommand';
 
   public getEventListener(): (...args: any) => Promise<void> {
-    return this.onEventCallback;
+    return this.onEventCallback.bind(this);
   }
 
   protected abstract async listener({

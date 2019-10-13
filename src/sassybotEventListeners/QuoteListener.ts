@@ -5,7 +5,7 @@ import SassybotEventListener from './SassybotEventListener';
 
 export default class QuoteListener extends SassybotEventListener {
   public readonly event = 'messageReactionAdd';
-  public getEventListener() { return this.listener; }
+  public getEventListener() { return this.listener.bind(this); }
 
   protected async listener({ messageReaction, user }: { messageReaction: MessageReaction; user: User }): Promise<void> {
     const quoteStrings = ['quote', 'quote-1'];

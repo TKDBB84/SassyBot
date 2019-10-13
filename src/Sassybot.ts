@@ -127,10 +127,10 @@ export class Sassybot extends EventEmitter {
   }
 
   public async run(): Promise<void> {
-    this.discordClient.on('message', this.onMessageHandler);
-    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdate);
-    this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd);
-    this.discordClient.on('guildMemberAdd', this.onGuildMemberAdd);
+    this.discordClient.on('message', this.onMessageHandler.bind(this));
+    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdate.bind(this));
+    this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd.bind(this));
+    this.discordClient.on('guildMemberAdd', this.onGuildMemberAdd.bind(this));
     this.discordClient.on('disconnect', async () => {
       setTimeout(async () => await this.login(), 30000);
     });
@@ -144,7 +144,7 @@ export class Sassybot extends EventEmitter {
       }
       this.registeredCommands.add(sbEvent.command);
     }
-    this.addListener(sbEvent.event, sbEvent.getEventListener())
+    this.on(sbEvent.event, sbEvent.getEventListener())
   }
 
   private async login() {
