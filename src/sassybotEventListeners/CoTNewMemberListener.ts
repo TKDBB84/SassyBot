@@ -1,8 +1,6 @@
 import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels, UserIds } from '../consts';
 import COTMember from '../entity/COTMember';
-import FFXIVPlayer from '../entity/FFXIVPlayer';
-import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
@@ -109,7 +107,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       );
       console.error('unable to update nickname', { e });
     });
-    const cotMember = await this.getCotMemberByName(declaredName, message.author.id);
+    const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
     if (cotMember.rank !== CotRanks.NEW) {
       // found in API before
       message.channel.send(
@@ -121,38 +119,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
   }
 
-  private async getCotMemberByName(charName: string, discordUserId: string): Promise<COTMember> {
-    const cotMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    let cotMember = await cotMemberRepo
-      .createQueryBuilder()
-      .where('LOWER(charName) = :charName', { charName })
-      .getOne();
-    if (!cotMember) {
-      const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
-      const sbUser = new SbUser();
-      sbUser.discordUserId = discordUserId;
-      await sbUserRepo.save(sbUser);
-
-      const cotPlayerRepo = this.sb.dbConnection.getRepository(FFXIVPlayer);
-      const cotPlayer = new FFXIVPlayer();
-      cotPlayer.user = sbUser;
-      cotPlayer.charName = charName;
-      await cotPlayerRepo.save(cotPlayer);
-
-      cotMember = new COTMember();
-      cotMember.player = cotPlayer;
-      cotMember.rank = CotRanks.NEW;
-      cotMember.firstSeenDiscord = new Date();
-    }
-
-    cotMember.discordUserId = discordUserId;
-    await cotMemberRepo.save(cotMember);
-    return cotMember;
-  }
-
   private async acceptingTerms(declaredName: string, message: Message) {
     if (message.cleanContent.trim().toLowerCase() === 'i agree') {
-      const cotMember = await this.getCotMemberByName(declaredName, message.author.id);
+      const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
       if (cotMember.rank === CotRanks.NEW) {
         await cotMember.promote();
       }

@@ -3,9 +3,51 @@ import { CotRanks } from '../consts';
 import AbsentRequest from './AbsentRequest';
 import FFXIVPlayer from './FFXIVPlayer';
 import PromotionRequest from './PromotionRequest';
+import SbUser from './SbUser';
 
 @Entity()
 export default class COTMember extends FFXIVPlayer {
+  public static async getCotMemberByName(charName: string, discordUserId: string): Promise<COTMember> {
+    const cotMemberRepo = getManager().getRepository(COTMember);
+    let cotMember = await cotMemberRepo
+      .createQueryBuilder()
+      .where('LOWER(charName) = :charName', { charName })
+      .getOne();
+    if (!cotMember) {
+      const sbUserRepo = getManager().getRepository(SbUser);
+      let sbUser = await sbUserRepo
+        .createQueryBuilder()
+        .where('id = :id', { discordUserId })
+        .getOne();
+      if (!sbUser) {
+        sbUser = new SbUser();
+        sbUser.discordUserId = discordUserId;
+        await sbUserRepo.save(sbUser);
+      }
+      const cotPlayerRepo = getManager().getRepository(FFXIVPlayer);
+      let cotPlayer = await cotPlayerRepo
+        .createQueryBuilder()
+        .innerJoinAndSelect(SbUser, 'user')
+        .where('user.id = :id', { id: sbUser.id })
+        .getOne();
+      if (!cotPlayer) {
+        cotPlayer = new FFXIVPlayer();
+        cotPlayer.user = sbUser;
+      }
+      cotPlayer.charName = charName;
+      await cotPlayerRepo.save(cotPlayer);
+
+      cotMember = new COTMember();
+      cotMember.player = cotPlayer;
+      cotMember.rank = CotRanks.NEW;
+      cotMember.firstSeenDiscord = new Date();
+    }
+
+    cotMember.discordUserId = discordUserId;
+    await cotMemberRepo.save(cotMember);
+    return cotMember;
+  }
+
   @Column({
     default: CotRanks.NEW,
     enum: CotRanks,
@@ -19,13 +61,13 @@ export default class COTMember extends FFXIVPlayer {
   @Column()
   public lastPromotion!: Date;
 
-  @OneToMany((type) => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember)
+  @OneToMany(() => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember)
   public promotions!: PromotionRequest[];
 
-  @OneToMany((type) => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
+  @OneToMany(() => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
   public absences!: AbsentRequest[];
 
-  @OneToOne((type) => FFXIVPlayer, { eager: true })
+  @OneToOne(() => FFXIVPlayer, { eager: true })
   @JoinColumn()
   public player!: FFXIVPlayer;
 

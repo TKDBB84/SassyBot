@@ -1,8 +1,6 @@
 import { Message, Snowflake } from 'discord.js';
 import { CotRanks, GuildIds } from '../../../consts';
 import COTMember from '../../../entity/COTMember';
-import FFXIVPlayer from '../../../entity/FFXIVPlayer';
-import SbUser from '../../../entity/SbUser';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
 
@@ -34,24 +32,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
 
   protected async parseCharacterName(message: Message): Promise<COTMember> {
     const declaredName = message.cleanContent;
-    const requestingMember = await this.sb.dbConnection
-      .getRepository(COTMember)
-      .createQueryBuilder('member')
-      .where('LOWER(member.charName) = LOWER(:charName)', { charName: declaredName })
-      .getOne();
-    if (!requestingMember) {
-      const newUser = new SbUser();
-      newUser.discordUserId = message.author.id;
-      const newPlayer = new FFXIVPlayer();
-      newPlayer.charName = message.cleanContent;
-      newPlayer.user = await this.sb.dbConnection.getRepository(SbUser).save(newUser);
-      const newMember = new COTMember();
-      newMember.rank = CotRanks.RECRUIT;
-      newMember.charName = message.cleanContent;
-      newMember.player = await this.sb.dbConnection.getRepository(FFXIVPlayer).save(newPlayer);
-      return await this.sb.dbConnection.getRepository(COTMember).save(newMember);
-    }
-    return requestingMember;
+    return await COTMember.getCotMemberByName(declaredName, message.author.id)
   }
 
   protected abstract async activityListener({ message }: { message: Message }): Promise<void>;
