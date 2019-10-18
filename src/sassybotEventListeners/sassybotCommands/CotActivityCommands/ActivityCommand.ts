@@ -32,7 +32,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
 
   protected async parseCharacterName(message: Message): Promise<COTMember> {
     const declaredName = message.cleanContent;
-    return await COTMember.getCotMemberByName(declaredName, message.author.id)
+    return await COTMember.getCotMemberByName(declaredName, message.author.id);
   }
 
   protected abstract async activityListener({ message }: { message: Message }): Promise<void>;
