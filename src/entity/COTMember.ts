@@ -17,7 +17,7 @@ export default class COTMember extends FFXIVPlayer {
       const sbUserRepo = getManager().getRepository(SbUser);
       let sbUser = await sbUserRepo
         .createQueryBuilder()
-        .where('id = :id', { discordUserId })
+        .where('discordUserId = :discordUserId', { discordUserId })
         .getOne();
       if (!sbUser) {
         sbUser = new SbUser();
