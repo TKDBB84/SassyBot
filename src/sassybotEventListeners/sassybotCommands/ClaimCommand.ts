@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { CotRanks, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
-import FFXIVPlayer from '../../entity/FFXIVPlayer';
+import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
@@ -19,12 +19,12 @@ export default class ClaimCommand extends SassybotCommand {
       .getOne();
     if (memberByUserId) {
       await message.channel.send(
-        `I already have you as: ${memberByUserId.charName}, if this isn't correct, please contact Sasner`,
+        `I already have you as: ${memberByUserId.character.name}, if this isn't correct, please contact Sasner`,
       );
       return;
     }
     const lastSeenData = await this.sb.dbConnection
-      .getRepository(FFXIVPlayer)
+      .getRepository(FFXIVChar)
       .createQueryBuilder()
       .select('MAX(`lastSeenApi`) as lastPull')
       .getRawOne();
@@ -32,7 +32,7 @@ export default class ClaimCommand extends SassybotCommand {
     const mostRecentPull = lastSeenData.lastPull;
     const name = params.args.trim().toLowerCase();
     memberByUserId = await CoTMemberRepo.createQueryBuilder()
-      .where('LOWER(charName) = :name', { name })
+      .where('LOWER(name) = :name', { name })
       .getOne();
     if (!memberByUserId) {
       await message.channel.send(
@@ -41,9 +41,9 @@ export default class ClaimCommand extends SassybotCommand {
       return;
     }
 
-    memberByUserId.discordUserId = message.member.id;
+    memberByUserId.character.user.discordUserId = message.member.id;
     await CoTMemberRepo.save(memberByUserId);
-    await message.channel.send(`Thank you, I now have you as: ${memberByUserId.charName}`);
+    await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
     let rank = await this.sb.getRole(GuildIds.COT_GUILD_ID, memberByUserId.rank);
     if (!rank) {
       console.error('unable to fetch rank');

@@ -2,12 +2,12 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne } from 'typeorm'
 import SbUser from './SbUser';
 
 @Entity()
-export default class FFXIVPlayer {
+export default class FFXIVChar {
   @Column()
   public apiId!: number;
 
   @Column()
-  public charName!: string;
+  public name!: string;
 
   @CreateDateColumn()
   public firstSeenApi!: Date;

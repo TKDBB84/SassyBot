@@ -13,11 +13,13 @@ export default class AbsentCommand extends ActivityCommand {
     const allAbsences = await this.sb.dbConnection
       .getRepository(AbsentRequest)
       .find({ where: { endDate: MoreThan<Date>(yesterday) } });
-    const sortedAbsences = allAbsences.sort((a, b) => a.CotMember.charName.localeCompare(b.CotMember.charName, 'en'));
+    const sortedAbsences = allAbsences.sort((a, b) =>
+      a.CotMember.character.name.localeCompare(b.CotMember.character.name, 'en'),
+    );
 
     let reply = '__Current Absentee List:__\n';
     sortedAbsences.forEach((absence) => {
-      reply += `${absence.CotMember.charName}\tFrom: ${absence.startDate}\tTo: ${absence.endDate}\n`;
+      reply += `${absence.CotMember.character.name}\tFrom: ${absence.startDate}\tTo: ${absence.endDate}\n`;
     });
     await message.channel.send(reply, { split: true });
     return;
@@ -72,7 +74,7 @@ export default class AbsentCommand extends ActivityCommand {
 
   protected async requestStartDate(message: Message, absentRequest: AbsentRequest) {
     return await message.reply(
-      `Ok, ${absentRequest.CotMember.charName}, What is the first day you'll be gone?  (because i'm a dumb bot please use YYYY-MM-DD format)`,
+      `Ok, ${absentRequest.CotMember.character.name}, What is the first day you'll be gone?  (because i'm a dumb bot please use YYYY-MM-DD format)`,
     );
   }
 
@@ -89,14 +91,14 @@ export default class AbsentCommand extends ActivityCommand {
 
   protected async requestEndDate(message: Message, absentRequest: AbsentRequest) {
     return await message.reply(
-      `Ok, ${absentRequest.CotMember.charName}, When do you think you'll be back? If you're not sure, just add a few days to the end.  (because i'm a dumb bot please use YYYY-MM-DD format)`,
+      `Ok, ${absentRequest.CotMember.character.name}, When do you think you'll be back? If you're not sure, just add a few days to the end.  (because i'm a dumb bot please use YYYY-MM-DD format)`,
     );
   }
 
   protected async summarizeData(message: Message, absentRequest: AbsentRequest): Promise<void> {
     const savedAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).save(absentRequest);
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${
-      savedAbsences.CotMember.charName
+      savedAbsences.CotMember.character.name
     } \n First Day Gone: ${savedAbsences.startDate.toDateString()} \n Returning: ${savedAbsences.endDate.toDateString()}`;
     await message.reply(summary, { reply: message.author, split: true });
   }

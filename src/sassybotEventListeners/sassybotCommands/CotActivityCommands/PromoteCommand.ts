@@ -27,7 +27,7 @@ export default class PromoteCommand extends ActivityCommand {
             toRankName = CoTRankValueToString[CotRanks.MEMBER];
             break;
         }
-        const response = `${promotion.CotMember.charName} From ${
+        const response = `${promotion.CotMember.character.name} From ${
           CoTRankValueToString[promotion.CotMember.rank]
         } To ${toRankName} on ${promotion.requested}`;
         let sentMessages = await message.channel.send(response);
@@ -50,14 +50,14 @@ export default class PromoteCommand extends ActivityCommand {
             }
             if (collection.first() && collection.first().emoji.name === '✅') {
               if (promotionChannel) {
-                await promotionChannel.send(`${promotion.CotMember.charName} your promotion has been approved`);
+                await promotionChannel.send(`${promotion.CotMember.character.name} your promotion has been approved`);
               }
               const previousRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, promotion.CotMember.rank);
               const updatedMember = await promotion.CotMember.promote();
               await promotionsRepo.delete(promotion.id);
               const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, updatedMember.rank);
 
-              const member = await this.sb.getMember(GuildIds.COT_GUILD_ID, updatedMember.discordUserId);
+              const member = await this.sb.getMember(GuildIds.COT_GUILD_ID, updatedMember.character.user.discordUserId);
               if (member && newRole) {
                 let reason = `promoted`;
                 if (promotingMember) {
@@ -71,7 +71,7 @@ export default class PromoteCommand extends ActivityCommand {
               }
             } else {
               await message.channel.send(
-                `Please Remember To Follow Up With ${promotion.CotMember.charName} On Why They Were Denied`,
+                `Please Remember To Follow Up With ${promotion.CotMember.character.name} On Why They Were Denied`,
               );
               await promotionsRepo.delete(promotion.id);
               await sentMessage.delete(100);
@@ -117,7 +117,7 @@ export default class PromoteCommand extends ActivityCommand {
         toRankName = CoTRankValueToString[CotRanks.MEMBER];
         break;
     }
-    const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.charName} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
+    const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.character.name} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
     await message.reply(summary, { reply: message.author, split: true });
   }
 }
