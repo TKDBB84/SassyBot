@@ -1,12 +1,9 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import Quote from './Quote';
 
 @Entity()
 export default class SbUser {
-  @PrimaryGeneratedColumn()
-  public id!: number;
-
-  @Column()
+  @PrimaryColumn()
   public discordUserId!: string;
 
   @Column()

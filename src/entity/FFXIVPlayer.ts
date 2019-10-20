@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne } from 'typeorm'
 import SbUser from './SbUser';
 
 @Entity()
-export default class FFXIVPlayer extends SbUser {
+export default class FFXIVPlayer {
   @Column()
   public apiId!: number;
 
@@ -15,7 +15,7 @@ export default class FFXIVPlayer extends SbUser {
   @Column()
   public lastSeenApi!: Date;
 
-  @OneToOne((type) => SbUser, { eager: true })
+  @OneToOne(() => SbUser, { eager: true })
   @JoinColumn()
   public user!: SbUser;
 }

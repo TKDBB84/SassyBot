@@ -6,7 +6,7 @@ import PromotionRequest from './PromotionRequest';
 import SbUser from './SbUser';
 
 @Entity()
-export default class COTMember extends FFXIVPlayer {
+export default class COTMember {
   public static async getCotMemberByName(charName: string, discordUserId: string): Promise<COTMember> {
     const cotMemberRepo = getManager().getRepository(COTMember);
     let cotMember = await cotMemberRepo
@@ -28,7 +28,7 @@ export default class COTMember extends FFXIVPlayer {
       let cotPlayer = await cotPlayerRepo
         .createQueryBuilder()
         .innerJoinAndSelect(SbUser, 'user')
-        .where('user.id = :id', { id: sbUser.id })
+        .where('user.discordUserId = :discordUserId', { discordUserId })
         .getOne();
       if (!cotPlayer) {
         cotPlayer = new FFXIVPlayer();
@@ -42,8 +42,7 @@ export default class COTMember extends FFXIVPlayer {
       cotMember.rank = CotRanks.NEW;
       cotMember.firstSeenDiscord = new Date();
     }
-
-    cotMember.discordUserId = discordUserId;
+    cotMember.player.user.discordUserId = discordUserId;
     await cotMemberRepo.save(cotMember);
     return cotMember;
   }
