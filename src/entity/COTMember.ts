@@ -1,4 +1,4 @@
-import { Column, Entity, getManager, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, getManager, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CotRanks } from '../consts';
 import AbsentRequest from './AbsentRequest';
 import FFXIVChar from './FFXIVChar';
@@ -46,6 +46,9 @@ export default class COTMember {
     await cotMemberRepo.save(cotMember);
     return cotMember;
   }
+
+  @PrimaryGeneratedColumn()
+  public id!: number;
 
   @Column({
     default: CotRanks.NEW,

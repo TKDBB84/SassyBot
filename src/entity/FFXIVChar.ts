@@ -1,8 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import SbUser from './SbUser';
 
 @Entity()
 export default class FFXIVChar {
+  @PrimaryGeneratedColumn()
+  public id!: number;
+
   @Column()
   public apiId!: number;
 
