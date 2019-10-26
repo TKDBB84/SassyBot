@@ -15,6 +15,6 @@ export default class AbsentRequest {
   @Column()
   public endDate!: Date;
 
-  @ManyToOne((type) => COTMember, (cotMember: COTMember) => cotMember.absences)
+  @ManyToOne(() => COTMember, (cotMember: COTMember) => cotMember.absences)
   public CotMember!: COTMember;
 }

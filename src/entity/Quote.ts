@@ -21,6 +21,6 @@ export default class Quote {
   @Column()
   public quoteText!: string;
 
-  @ManyToOne((type) => SbUser, (user) => user.quotes, { eager: true })
+  @ManyToOne(() => SbUser, (user) => user.quotes, { eager: true })
   public user!: SbUser;
 }
