@@ -54,7 +54,7 @@ export default class VoiceLogListener extends SassybotEventListener {
       return null;
     }
     const channel = this.sb.getChannel(channelId);
-    if (channel && channel instanceof VoiceChannel) {
+    if (this.sb.isVoiceChannel(channel)) {
       return channel;
     }
     return null;
@@ -71,14 +71,13 @@ export default class VoiceLogListener extends SassybotEventListener {
   }
 
   private async getSpamTextChannel(guildId: string): Promise<TextChannel | null> {
-    let spamChannel: Channel | null;
     const spamChannelEntity = await this.sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
       guildId,
     });
     if (spamChannelEntity && spamChannelEntity.channelId) {
-      spamChannel = this.sb.getChannel(spamChannelEntity.channelId);
-      if (spamChannel && spamChannel instanceof TextChannel) {
-        return spamChannel;
+      const spamTextChannel = this.sb.getTextChannel(spamChannelEntity.channelId);
+      if (spamTextChannel) {
+        return spamTextChannel;
       }
     }
     return null;

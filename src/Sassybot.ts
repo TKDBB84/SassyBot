@@ -8,7 +8,7 @@ import {
   Role,
   TextChannel,
   User,
-  UserResolvable,
+  UserResolvable, VoiceChannel
 } from 'discord.js';
 import { EventEmitter } from 'events';
 import 'reflect-metadata';
@@ -86,10 +86,10 @@ export class Sassybot extends EventEmitter {
 
   public getTextChannel(channelId: string): TextChannel | null {
     const channel = this.getChannel(channelId);
-    if (!channel || !(channel instanceof TextChannel)) {
-      return null;
+    if (this.isTextChannel(channel)) {
+      return channel;
     }
-    return channel;
+    return null;
   }
 
   public async getUser(userId: string): Promise<User | undefined> {
@@ -110,6 +110,18 @@ export class Sassybot extends EventEmitter {
       }
     }
     return member;
+  }
+
+  public isVoiceChannel(channel: Channel | null): channel is VoiceChannel {
+    return !!channel && channel.type === 'voice'
+  }
+
+  public isTextChannel(channel: Channel | null): channel is TextChannel {
+    return !!channel && channel.type === 'text'
+  }
+
+  public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
+    return 'command' in sbEvent;
   }
 
   public eventNames(): Array<string | symbol> {
@@ -138,7 +150,7 @@ export class Sassybot extends EventEmitter {
   }
 
   public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
-    if (sbEvent instanceof SassybotCommand) {
+    if (this.isSassyBotCommand(sbEvent)) {
       if (this.registeredCommands.has(sbEvent.command)) {
         throw new Error('Command Already Registered');
       }
