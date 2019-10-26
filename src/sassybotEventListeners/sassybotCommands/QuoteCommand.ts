@@ -100,8 +100,7 @@ export default class QuoteCommand extends SassybotCommand {
     const userQuotes = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user', 'quote.userId = user.id')
-      .where('user.discordUserId = :id', { id: member.id })
+      .where('quote.discordUserId = :id', { id: member.id })
       .orderBy('quote.id')
       .getMany();
 
@@ -122,9 +121,7 @@ export default class QuoteCommand extends SassybotCommand {
     const quote = userQuotes[quoteNumber - 1];
 
     message.channel.send(
-      `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber})\n\n and has ${
-        userQuotes.length - 1 === 0 ? 'No' : userQuotes.length - 1
-      } other quotes saved`,
+      `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber}) of ${userQuotes.length}`,
       {
         split: true,
       },
