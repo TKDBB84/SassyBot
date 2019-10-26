@@ -18,8 +18,8 @@ export default class QuoteCommand extends SassybotCommand {
     }
 
     if (params.mentions) {
-      const members = params.mentions.members.array();
-      if (params.args.includes('list') && members.length > 0) {
+      const members = params.mentions.members;
+      if (params.args.includes('list') && members.size > 0) {
         await members.reduce(async (previousPromise, member) => {
           await previousPromise;
           return this.listAllUserQuotes(message, member);
@@ -32,10 +32,10 @@ export default class QuoteCommand extends SassybotCommand {
         const quoteNumbersRequested: number[] = paramParts
           .filter(RegExp.prototype.test.bind(/^\+?(0|[1-9]\d*)$/))
           .map(parseInt);
-        if (quoteNumbersRequested.length && members.length === 1) {
+        if (quoteNumbersRequested.length && members.size === 1) {
           await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
             await previousPromise;
-            return this.getUserQuote(message, members[0], quoteNumber);
+            return this.getUserQuote(message, members.first(), quoteNumber);
           }, Promise.resolve());
           return;
         }
@@ -53,11 +53,10 @@ export default class QuoteCommand extends SassybotCommand {
   private async listAllCounts(message: Message): Promise<void> {
     const results: Array<{ cnt: string; discordUserId: string }> = await this.sb.dbConnection
       .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user')
-      .select('COUNT(1) as cnt, user.discordUserId')
+      .createQueryBuilder()
+      .select('COUNT(1) as cnt, discordUserId')
       .where('guildId = :guildId', { guildId: message.guild.id })
-      .groupBy('quote.user')
+      .groupBy('discordUserId')
       .getRawMany();
 
     const allMembers = await Promise.all(
@@ -82,9 +81,8 @@ export default class QuoteCommand extends SassybotCommand {
     const dmChannel = await message.author.createDM();
     const allQuotesForMentioned = await this.sb.dbConnection
       .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user')
-      .where('user.discordUserId = :id', { id: mentionedMember.user.id })
+      .createQueryBuilder()
+      .where('discordUserId = :id', { id: mentionedMember.user.id })
       .getMany();
 
     if (allQuotesForMentioned && allQuotesForMentioned.length) {
@@ -131,9 +129,8 @@ export default class QuoteCommand extends SassybotCommand {
   private async getRandomMemberQuote(message: Message, member: GuildMember) {
     const userQuoteCount = await this.sb.dbConnection
       .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .innerJoinAndSelect(SbUser, 'user')
-      .where('user.discordUserId = :id', { id: member.id })
+      .createQueryBuilder()
+      .where('discordUserId = :id', { id: member.id })
       .getCount();
     const index = Math.floor(Math.random() * userQuoteCount);
     await this.getUserQuote(message, member, index);
