@@ -123,10 +123,10 @@ export default class VoiceLogListener extends SassybotEventListener {
     }
 
     const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
-    const leftNow: moment.Moment = moment().tz(leftTimezone);
+    const leftNow: moment.Moment = moment().tz(leftTimezone ? leftTimezone : 'UTC');
 
     const currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
-    const joinedNow: moment.Moment = moment().tz(joinTimezone);
+    const joinedNow: moment.Moment = moment().tz(joinTimezone ? joinTimezone : 'UTC');
 
     if (userLeftChannel && userJoinedChannel) {
       const leftAndJoinedSameGuild = userLeftChannel.guild.id === userJoinedChannel.guild.id;
