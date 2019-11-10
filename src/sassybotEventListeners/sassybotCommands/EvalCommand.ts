@@ -19,16 +19,16 @@ export default class EvalCommand extends SassybotCommand {
       if (message.author.id !== UserIds.SASNER) {
         await message.reply("I sure hope you know what you're doing...");
         const forUser = message.author.id === UserIds.CAIT ? 'Cait' : 'Ryk';
-        const log = `Running Eval'd: ${message.content} for ${forUser}`;
+        const log = `Running Eval'd: ${params.args} for ${forUser}`;
         const sasner = await this.sb.getUser(UserIds.SASNER);
         if (sasner) {
           const sasnerDm = await sasner.createDM();
-          sasnerDm.send(`eval-ing code for ${forUser} \`\`\`js\n${message.content}\n\`\`\``);
+          sasnerDm.send(`eval-ing code for ${forUser} \`\`\`js\n${params.args}\n\`\`\``);
         }
         console.log(log, { message });
       }
       // tslint:disable-next-line:no-eval
-      let result = eval(message.content);
+      let result = eval(params.args);
       if (typeof result !== 'string') {
         result = require('util').inspect(result);
       }
