@@ -16,7 +16,7 @@ interface IFreeCompanyMember {
   FeastMatches: number;
   ID: number;
   Name: string;
-  Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OTHER';
+  Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
   RankIcon: string;
   Server: string;
 }
@@ -47,8 +47,14 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
         resolve(
           // @ts-ignore
           finalResult.map((r) => {
-            const Rank = r.Rank.toUpperCase();
-            if (['MEMBER', 'RECRUIT', 'VETERAN'].includes(Rank)) {
+            let Rank = r.Rank.toUpperCase();
+            if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER'].includes(Rank)) {
+              Rank = 'OFFICER';
+            }
+            if (Rank === 'DIGNITARY') {
+              Rank = 'MEMBER';
+            }
+            if (['MEMBER', 'RECRUIT', 'VETERAN', 'OFFICER'].includes(Rank)) {
               return {
                 ...r,
                 Rank,
@@ -56,7 +62,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
             }
             return {
               ...r,
-              Rank: 'OTHER',
+              Rank: 'RECRUIT',
             };
           }),
         );
@@ -102,8 +108,12 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         cotMember.character = character;
         cotMember.rank = CotRanks.RECRUIT;
       }
+
       if (cotMember.rank !== CotRanks[lodestoneMember.Rank]) {
         switch (CotRanks[lodestoneMember.Rank]) {
+          case CotRanks.OFFICER:
+            cotMember.rank = CotRanks.OFFICER;
+            break;
           case CotRanks.VETERAN:
             if (![CotRanks.OTHER, CotRanks.OFFICER, CotRanks.DIGNITARY].includes(cotMember.rank)) {
               cotMember.rank = CotRanks.VETERAN;
@@ -114,6 +124,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
               cotMember.rank = CotRanks.MEMBER;
             }
             break;
+          default:
           case CotRanks.RECRUIT:
             if (
               ![CotRanks.OTHER, CotRanks.OFFICER, CotRanks.DIGNITARY, CotRanks.VETERAN, CotRanks.MEMBER].includes(
