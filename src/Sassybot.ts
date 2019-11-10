@@ -8,11 +8,14 @@ import {
   Role,
   TextChannel,
   User,
-  UserResolvable, VoiceChannel
+  UserResolvable,
+  VoiceChannel,
 } from 'discord.js';
 import { EventEmitter } from 'events';
+import * as cron from 'node-cron';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
+import jobs from './cronJobs';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -113,11 +116,11 @@ export class Sassybot extends EventEmitter {
   }
 
   public isVoiceChannel(channel: Channel | null): channel is VoiceChannel {
-    return !!channel && channel.type === 'voice'
+    return !!channel && channel.type === 'voice';
   }
 
   public isTextChannel(channel: Channel | null): channel is TextChannel {
-    return !!channel && channel.type === 'text'
+    return !!channel && channel.type === 'text';
   }
 
   public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
@@ -242,5 +245,8 @@ if (process.env.NODE_ENV !== 'production') {
 dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
+  jobs.forEach(({ job, schedule }) => {
+    cron.schedule(schedule, job.bind(null, sb));
+  });
   await sb.run();
 });

@@ -79,12 +79,10 @@ export default class QuoteCommand extends SassybotCommand {
 
   private async listAllUserQuotes(message: Message, mentionedMember: GuildMember): Promise<void> {
     const dmChannel = await message.author.createDM();
-    const allQuotesForMentioned = await this.sb.dbConnection
-      .getRepository(Quote)
-      .createQueryBuilder()
-      .where('discordUserId = :id', { id: mentionedMember.user.id })
-      .getMany();
-
+    const allQuotesForMentioned = await this.sb.dbConnection.getRepository(Quote).find({
+      relations: ['user'],
+      where: { user: { discordUserId: mentionedMember.user.id } },
+    });
     if (allQuotesForMentioned && allQuotesForMentioned.length) {
       let finalMessage = mentionedMember.displayName + '\n----------------------------\n';
       allQuotesForMentioned.forEach((quote, index) => {
@@ -95,12 +93,11 @@ export default class QuoteCommand extends SassybotCommand {
   }
 
   private async getUserQuote(message: Message, member: GuildMember, quoteNumber: number): Promise<void> {
-    const userQuotes = await this.sb.dbConnection
-      .getRepository(Quote)
-      .createQueryBuilder('quote')
-      .where('quote.discordUserId = :id', { id: member.id })
-      .orderBy('quote.id')
-      .getMany();
+    const userQuotes = await this.sb.dbConnection.getRepository(Quote).find({
+      order: { id: 1 },
+      relations: ['user'],
+      where: { user: { discordUserId: member.id } },
+    });
 
     if (!userQuotes.length) {
       message.channel.send(`${member.displayName} has no saved quotes`);
@@ -127,11 +124,10 @@ export default class QuoteCommand extends SassybotCommand {
   }
 
   private async getRandomMemberQuote(message: Message, member: GuildMember) {
-    const userQuoteCount = await this.sb.dbConnection
-      .getRepository(Quote)
-      .createQueryBuilder()
-      .where('discordUserId = :id', { id: member.id })
-      .getCount();
+    const userQuoteCount = await this.sb.dbConnection.getRepository(Quote).count({
+      relations: ['user'],
+      where: { user: { discordUserId: member.id } },
+    });
     const index = Math.floor(Math.random() * userQuoteCount);
     await this.getUserQuote(message, member, index);
   }

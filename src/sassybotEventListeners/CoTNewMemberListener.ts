@@ -1,8 +1,6 @@
 import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels, UserIds } from '../consts';
 import COTMember from '../entity/COTMember';
-import FFXIVChar from '../entity/FFXIVChar';
-import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
@@ -38,13 +36,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
     const cotMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    const isCotMember = await cotMemberRepo
-      .createQueryBuilder()
-      .innerJoinAndSelect(FFXIVChar, 'player')
-      .innerJoinAndSelect(SbUser, 'user')
-      .where('user.discordUserId = :discordUserId', { discordUserId: member.id })
-      .getOne();
-    if (!!isCotMember) {
+    const isCotMember = await cotMemberRepo.findOne({
+      relations: ['character', 'character.user'],
+      where: { player: { user: { discordUserId: member.id } } },
+    });
+    if (isCotMember) {
       const knownRank = isCotMember.rank;
       const role = await this.sb.getRole(GuildIds.COT_GUILD_ID, knownRank);
       if (role) {

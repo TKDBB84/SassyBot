@@ -7,29 +7,29 @@ import SbUser from './SbUser';
 
 @Entity()
 export default class COTMember {
-  public static async getCotMemberByName(charName: string, discordUserId: string): Promise<COTMember> {
+  public static async getCotMemberByName(
+    charName: string,
+    discordUserId: string,
+    rank: CotRanks = CotRanks.NEW,
+  ): Promise<COTMember> {
     const cotMemberRepo = getManager().getRepository(COTMember);
-    let cotMember = await cotMemberRepo
-      .createQueryBuilder()
-      .where('LOWER(name) = :name', { charName })
-      .getOne();
+    let cotMember = await cotMemberRepo.findOne({
+      relations: ['character', 'character.user'],
+      where: `name COLLATE UTF8_GENERAL_CI LIKE '${charName}'`,
+    });
     if (!cotMember) {
       const sbUserRepo = getManager().getRepository(SbUser);
-      let sbUser = await sbUserRepo
-        .createQueryBuilder()
-        .where('discordUserId = :discordUserId', { discordUserId })
-        .getOne();
+      let sbUser = await sbUserRepo.findOne(discordUserId);
       if (!sbUser) {
         sbUser = new SbUser();
         sbUser.discordUserId = discordUserId;
         await sbUserRepo.save(sbUser);
       }
       const cotPlayerRepo = getManager().getRepository(FFXIVChar);
-      let cotPlayer = await cotPlayerRepo
-        .createQueryBuilder()
-        .innerJoinAndSelect(SbUser, 'user')
-        .where('user.discordUserId = :discordUserId', { discordUserId })
-        .getOne();
+      let cotPlayer = await cotPlayerRepo.findOne({
+        relations: ['user'],
+        where: { user: { discordUserId } },
+      });
       if (!cotPlayer) {
         cotPlayer = new FFXIVChar();
         cotPlayer.user = sbUser;
@@ -39,7 +39,7 @@ export default class COTMember {
 
       cotMember = new COTMember();
       cotMember.character = cotPlayer;
-      cotMember.rank = CotRanks.NEW;
+      cotMember.rank = rank;
       cotMember.firstSeenDiscord = new Date();
     }
     cotMember.character.user.discordUserId = discordUserId;
@@ -63,10 +63,16 @@ export default class COTMember {
   @Column()
   public lastPromotion!: Date;
 
-  @OneToMany(() => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember)
+  @OneToMany(
+    () => PromotionRequest,
+    (promotionRequest: PromotionRequest) => promotionRequest.CotMember,
+  )
   public promotions!: PromotionRequest[];
 
-  @OneToMany(() => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
+  @OneToMany(
+    () => AbsentRequest,
+    (absentRequest: AbsentRequest) => absentRequest.CotMember,
+  )
   public absences!: AbsentRequest[];
 
   @OneToOne(() => FFXIVChar, { eager: true })

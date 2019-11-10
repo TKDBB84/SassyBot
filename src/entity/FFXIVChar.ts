@@ -18,7 +18,7 @@ export default class FFXIVChar {
   @Column()
   public lastSeenApi!: Date;
 
-  @OneToOne(() => SbUser, { eager: true })
+  @OneToOne(() => SbUser, { eager: true, nullable: true })
   @JoinColumn()
   public user!: SbUser;
 }
