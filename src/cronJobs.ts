@@ -45,16 +45,21 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
       }
       client.close(() => {
         resolve(
-          // @ts-ignore
           finalResult.map((r) => {
-            let Rank = r.Rank.toUpperCase();
+            const Rank = r.Rank.toUpperCase().trim();
             if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER'].includes(Rank)) {
-              Rank = 'OFFICER';
+              return {
+                ...r,
+                Rank: 'OFFICER',
+              };
             }
             if (Rank === 'DIGNITARY') {
-              Rank = 'MEMBER';
+              return {
+                ...r,
+                Rank: 'MEMBER',
+              };
             }
-            if (['MEMBER', 'RECRUIT', 'VETERAN', 'OFFICER'].includes(Rank)) {
+            if (Rank === 'MEMBER' || Rank === 'VETERAN') {
               return {
                 ...r,
                 Rank,
@@ -115,22 +120,18 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
             cotMember.rank = CotRanks.OFFICER;
             break;
           case CotRanks.VETERAN:
-            if (![CotRanks.OTHER, CotRanks.OFFICER, CotRanks.DIGNITARY].includes(cotMember.rank)) {
+            if (cotMember.rank !== CotRanks.OFFICER) {
               cotMember.rank = CotRanks.VETERAN;
             }
             break;
           case CotRanks.MEMBER:
-            if (![CotRanks.OTHER, CotRanks.OFFICER, CotRanks.DIGNITARY, CotRanks.VETERAN].includes(cotMember.rank)) {
+            if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
               cotMember.rank = CotRanks.MEMBER;
             }
             break;
           default:
           case CotRanks.RECRUIT:
-            if (
-              ![CotRanks.OTHER, CotRanks.OFFICER, CotRanks.DIGNITARY, CotRanks.VETERAN, CotRanks.MEMBER].includes(
-                cotMember.rank,
-              )
-            ) {
+            if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
               cotMember.rank = CotRanks.RECRUIT;
             }
             break;

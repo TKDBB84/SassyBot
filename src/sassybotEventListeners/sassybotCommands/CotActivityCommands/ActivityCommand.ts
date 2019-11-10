@@ -1,5 +1,5 @@
 import { Message, Snowflake } from 'discord.js';
-import { CotRanks, GuildIds } from '../../../consts';
+import { CotRanks, GuildIds, UserIds } from '../../../consts';
 import COTMember from '../../../entity/COTMember';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
@@ -11,7 +11,10 @@ export default abstract class ActivityCommand extends SassybotCommand {
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-    if (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) {
+    if (
+      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) ||
+      message.author.id === UserIds.SASNER
+    ) {
       await this.listAll(message);
     } else {
       await this.activityListener({ message });
