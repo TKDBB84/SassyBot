@@ -62,6 +62,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
 };
 
 const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
+  const pullTime = new Date();
   const lodestoneMembers = await getLatestMemberList();
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
@@ -85,9 +86,9 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         character.name = lodestoneMember.Name;
       }
       if (!character.firstSeenApi) {
-        character.firstSeenApi = new Date();
+        character.firstSeenApi = pullTime;
       }
-      character.lastSeenApi = new Date();
+      character.lastSeenApi = pullTime;
       character = await characterRepo.save(character);
 
       cotMember = await cotMemberRepo.findOne({ relations: ['character'], where: { character: { id: character.id } } });
@@ -144,8 +145,8 @@ const checkForReminders = async (sb: Sassybot) => {
   return;
 };
 
-const twiceADay = '0 0 11,23 * * *';
-const daily = '0 0 23 * * *';
+const twiceADay = '0 15 8,20 * * *';
+const daily = '0 0 20 * * *';
 
 const jobs: IScheduledJob[] = [
   {
