@@ -274,12 +274,23 @@ const echoFunction: SassyBotCommand = async (message) => {
   await sassybotRespond(message, message.content);
 };
 
+const spookyFunction: SassyBotCommand = async  (message) => {
+  if (message.member.voiceChannel) {
+    const connection = await message.member.voiceChannel.join();
+    const thing = connection.playFile('../shared/music/spooky.mp3');
+    thing.on('end', () => {
+      message.member.voiceChannel.leave();
+    })
+  }
+};
+
 let chatFunctions: ISassyBotCommandList = {
   census: censusFunction,
   echo: echoFunction,
   help: helpFunction,
   ping: pingFunction,
   spam: spamFunction,
+  spooky: spookyFunction,
 };
 
 for (const importedFunction of importedFunctions) {
