@@ -45,9 +45,14 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
       }
       client.close(() => {
         resolve(
+          // @ts-ignore
           finalResult.map((r) => {
-            if (['MEMBER', 'RECRUIT', 'VETERAN'].includes(r.Rank.toUpperCase())) {
-              return r;
+            const Rank = r.Rank.toUpperCase();
+            if (['MEMBER', 'RECRUIT', 'VETERAN'].includes(Rank)) {
+              return {
+                ...r,
+                Rank,
+              };
             }
             return {
               ...r,
@@ -75,7 +80,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       });
       if (!character) {
         character = await characterRepo.findOne({
-          where: `name COLLATE UTF8_GENERAL_CI LIKE '${lodestoneMember.Name}'`,
+          where: `name COLLATE UTF8_GENERAL_CI LIKE '${lodestoneMember.Name.replace(/'/g, "\\'")}'`,
         });
         if (!character) {
           character = new FFXIVChar();
@@ -120,6 +125,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
             break;
         }
       }
+      await cotMemberRepo.save(cotMember);
     }),
   );
 };
