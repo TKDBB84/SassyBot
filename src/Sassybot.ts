@@ -24,12 +24,13 @@ import { ClaimUser } from './CoTMembers';
 import DiceFunctions from './Dice';
 import { newMemberJoinedCallback, newMemberListener } from './NewUserManager';
 import QuoteFunctions from './Quotes';
+import Santa from './Santa';
 
 const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: IPleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser];
+const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser, Santa];
 
 interface IClientSecrets {
   token: string;
