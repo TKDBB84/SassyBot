@@ -4,6 +4,7 @@ import SassyDb from './SassyDb';
 import Users from './Users';
 
 const particpants = [
+  Users.Sasner.id,
   Users.Brigie.id,
   Users.Cait.id,
   Users.Josh.id,
@@ -15,45 +16,8 @@ const particpants = [
 ];
 
 const db = new SassyDb();
-db.connection.exec('CREATE TABLE IF NOT EXISTS santa_matches (giving TEXT, getting TEXT);');
-
-db.connection.exec('CREATE TABLE IF NOT EXISTS questions (id INTEGER PRIMARY KEY AUTOINCREMENT, question TEXT);');
-
-db.connection.exec('CREATE TABLE IF NOT EXISTS user_answers (user TEXT, questionId INTEGER, answer TEXT);');
-
-db.connection.exec('CREATE TABLE IF NOT EXISTS users (id TEXT);');
-
 const insertNewQuestion = db.connection.prepare('INSERT INTO questions (question) VALUES (?)');
-
 const insertAnswer = db.connection.prepare('INSERT INTO user_answers (user, questionId, answer) VALUES (?,?,?)');
-
-function runOnce() {
-  const stmt = db.connection.prepare('SELECT COUNT(1) FROM questions;');
-  const result = stmt.get();
-  if (result && result[0] && parseInt(result[0].count, 10) < 6) {
-    // populate
-    db.connection.exec(
-      "INSERT INTO questions (question) VALUES ('What are your Favorite Hobbies')," +
-        " ('Any Favorite Candy/Snacks'), ('Is there something you collect?'), ('Any Dietry Resitrictions/Allergys?')," +
-        " ('What Size T-Shirt Do you Wear?'), ('Is There Anything Else Your SS Should Know');",
-    );
-  }
-
-  const userStmt = db.connection.prepare('SELECT COUNT(1) FROM users;');
-  const userResult = stmt.get();
-  if (userResult && userResult[0] && parseInt(userResult[0].count, 10) < 6) {
-    db.connection.exec(`INSERT INTO users (id) VALUES
-        ('${Users.Brigie.id}'),
-        ('${Users.Cait.id}'),
-        ('${Users.Josh.id}'),
-        ('${Users.Nil.id}'),
-        ('${Users.Pas.id}'),
-        ('${Users.Uriko.id}'),
-        ('${Users.Vermillion.id}'),
-        ('${Users.Vex.id}');`);
-  }
-}
-runOnce();
 
 const options = { max: 1, time: 5 * 60 * 1000 };
 
@@ -66,10 +30,11 @@ const getAnswer = async (message: Message, questionId: number, question: string)
       return false;
     }
     try {
-      insertNewQuestion.run([message.author.id, questionId, response.content]);
+      insertAnswer.run([message.author.id, questionId, response.content]);
     } catch (e) {
+      console.log({e});
       await dmChannel.send(
-        "Sasner is shit at programming message him and tell him he's stupid and the bot doesn\t save answers",
+        `Sasner is shit at programming message him and tell him he's stupid and the bot doesn\t save answers and give him this:\n\n ${e.toString()}`,
       );
       return false;
     }
@@ -78,7 +43,6 @@ const getAnswer = async (message: Message, questionId: number, question: string)
   } catch {
     return false;
   }
-  return false;
 };
 
 const addQuestion = async (message: Message): Promise<boolean> => {
@@ -102,8 +66,9 @@ const addQuestion = async (message: Message): Promise<boolean> => {
       try {
         insertNewQuestion.run([newQuestion.content]);
       } catch (e) {
+        console.error({ e });
         await dmChannel.send(
-          "Sasner is shit at programming message him and tell him he's stupid and the bot doesn\t save questions",
+          `Sasner is shit at programming message him and tell him he's stupid and the bot doesn\t save questions and give him this:\n\n ${e.toString()}`,
         );
         return false;
       }
@@ -129,20 +94,24 @@ const sendMessage: SassyBotCommand = async (message: Message): Promise<void> => 
   }
 
   try {
-    const unansweredQuestions = db.connection
-      .prepare(
-        `select questions.id as "id", questions.question as "question" from questions left outer join user_answers on questions.id = user_answers.questionID left outer join users WHERE users.id = '${message.author.id}'`,
-      )
-      .all();
-    if (unansweredQuestions && unansweredQuestions.length) {
-      let remainingToAnswer = unansweredQuestions.length;
+    const unansweredQuestions = db.connection.prepare(
+      `select q.id as "id", q.question as "question" from questions as q, users as u left outer join user_answers on u.id = user_answers.user WHERE u.id = '${message.author.id}' and answer is null;`,
+    );
+    const unasnwered = unansweredQuestions.all();
+    if (unasnwered && unasnwered.length) {
+      let remainingToAnswer = unasnwered.length;
       let i = 0;
       while (remainingToAnswer) {
-        if (await getAnswer(message, unansweredQuestions[i].id, unansweredQuestions[i].question)) {
+        if (await getAnswer(message, unasnwered[i].id, unasnwered[i].question)) {
           i++;
           remainingToAnswer--;
         }
       }
+      let addAQuestion = true;
+      while (addAQuestion) {
+        addAQuestion = await addQuestion(message);
+      }
+      return;
     } else {
       let addAQuestion = true;
       while (addAQuestion) {

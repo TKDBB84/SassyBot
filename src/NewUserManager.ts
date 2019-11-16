@@ -199,6 +199,9 @@ const onboardingStep2 = async (message: Message): Promise<boolean> => {
 };
 
 const newMemberListen = async (message: Message) => {
+  if (message.channel.type === 'dm') {
+    return;
+  }
   const cotRoles = fetchCoTRoles(message.member);
   if (message.channel.id !== COT_NEW_USER_CHANNEL || !newMemberList.hasOwnProperty(message.member.id)) {
     return false;
