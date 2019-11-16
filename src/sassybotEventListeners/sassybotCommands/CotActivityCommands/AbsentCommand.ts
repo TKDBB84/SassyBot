@@ -12,7 +12,10 @@ export default class AbsentCommand extends ActivityCommand {
     yesterday.setTime(new Date().getTime() - 36 * (60 * 60 * 1000));
     const allAbsences = await this.sb.dbConnection
       .getRepository(AbsentRequest)
-      .find({ where: { endDate: MoreThan<Date>(yesterday) } });
+      .find({
+        relations: ['CoTMember', 'CoTMember.character'],
+        where: { endDate: MoreThan<Date>(yesterday) }
+      });
     const sortedAbsences = allAbsences.sort((a, b) =>
       a.CotMember.character.name.localeCompare(b.CotMember.character.name, 'en'),
     );
