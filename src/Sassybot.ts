@@ -30,7 +30,7 @@ const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: IPleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser, Santa];
+const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser];
 
 interface IClientSecrets {
   token: string;
@@ -292,6 +292,7 @@ let chatFunctions: ISassyBotCommandList = {
   ping: pingFunction,
   spam: spamFunction,
   spooky: spookyFunction,
+  ss: Santa.functions.ss,
 };
 
 for (const importedFunction of importedFunctions) {
