@@ -25,7 +25,7 @@ const getAnswer = async (message: Message, questionId: number, question: string)
   const dmChannel = await message.author.createDM();
   await dmChannel.send(question);
   try {
-    const response = (await dmChannel.awaitMessages(() => true, options)).first();
+    const response = (await dmChannel.awaitMessages((msg: Message) => msg.author.id === message.author.id, options)).first();
     if (!response) {
       return false;
     }
@@ -49,7 +49,7 @@ const addQuestion = async (message: Message): Promise<boolean> => {
   const dmChannel = await message.author.createDM();
   await dmChannel.send('You have no unanswered questions, would you like to add a question? "yes"/"no" (default: no)');
   try {
-    const response = (await dmChannel.awaitMessages(() => true, options)).first();
+    const response = (await dmChannel.awaitMessages((msg: Message) => msg.author.id === message.author.id, options)).first();
     if (!response) {
       return false;
     }
@@ -59,7 +59,7 @@ const addQuestion = async (message: Message): Promise<boolean> => {
     }
     if (response.content.toLowerCase().trim() === 'yes') {
       await dmChannel.send('please enter your question');
-      const newQuestion = (await dmChannel.awaitMessages(() => true, options)).first();
+      const newQuestion = (await dmChannel.awaitMessages((msg: Message) => msg.author.id === message.author.id, options)).first();
       if (!newQuestion) {
         return false;
       }
@@ -73,7 +73,7 @@ const addQuestion = async (message: Message): Promise<boolean> => {
         return false;
       }
       await dmChannel.send(`${newQuestion} -- saved, would you like to add another?  "yes"/"no" (default: no)`);
-      const secondResponse = (await dmChannel.awaitMessages(() => true, options)).first();
+      const secondResponse = (await dmChannel.awaitMessages((msg: Message) => msg.author.id === message.author.id, options)).first();
       if (!secondResponse) {
         return false;
       }
