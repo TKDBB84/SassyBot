@@ -94,15 +94,19 @@ const sendMessage: SassyBotCommand = async (message: Message): Promise<void> => 
   }
 
   try {
-    const unansweredQuestions = db.connection.prepare(
-      `select q.id as "id", q.question as "question" from questions as q, users as u left outer join user_answers on u.id = user_answers.user WHERE u.id = '${message.author.id}' and answer is null;`,
+    const stmtGetQuestions = db.connection.prepare('SELECT id, question FROM questions');
+    const allQuestions = stmtGetQuestions.all();
+    const stmtAllAnswers = db.connection.prepare('SELECT questionId from user_answers where user = ?');
+    const allAnswers = stmtAllAnswers.all([message.author.id]);
+    const answeredQuestionIds = allAnswers.map(answer => parseInt(answer.questionId, 10));
+    const unansweredQuestions = allQuestions.filter(question =>
+        answeredQuestionIds.includes(parseInt(question.id, 10))
     );
-    const unasnwered = unansweredQuestions.all();
-    if (unasnwered && unasnwered.length) {
-      let remainingToAnswer = unasnwered.length;
+    if (unansweredQuestions && unansweredQuestions.length) {
+      let remainingToAnswer = unansweredQuestions.length;
       let i = 0;
       while (remainingToAnswer) {
-        if (await getAnswer(message, unasnwered[i].id, unasnwered[i].question)) {
+        if (await getAnswer(message, unansweredQuestions[i].id, unansweredQuestions[i].question)) {
           i++;
           remainingToAnswer--;
         }
