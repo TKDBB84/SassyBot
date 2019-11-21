@@ -72,7 +72,8 @@ const addQuestion = async (message: Message): Promise<boolean> => {
         );
         return false;
       }
-      await dmChannel.send(`${newQuestion} -- saved, would you like to add another?  "yes"/"no" (default: no)`);
+      await dmChannel.send(`${newQuestion} -- saved to answer your own question you can do !sb ss again after you finis here\n`);
+      await dmChannel.send(`would you like to add another?  "yes"/"no" (default: no)`);
       const secondResponse = (await dmChannel.awaitMessages((msg: Message) => msg.author.id === message.author.id, options)).first();
       if (!secondResponse) {
         return false;
@@ -100,7 +101,7 @@ const sendMessage: SassyBotCommand = async (message: Message): Promise<void> => 
     const allAnswers = stmtAllAnswers.all([message.author.id]);
     const answeredQuestionIds = allAnswers.map(answer => parseInt(answer.questionId, 10));
     const unansweredQuestions = allQuestions.filter(question =>
-        answeredQuestionIds.includes(parseInt(question.id, 10))
+        !answeredQuestionIds.includes(parseInt(question.id, 10))
     );
     if (unansweredQuestions && unansweredQuestions.length) {
       let remainingToAnswer = unansweredQuestions.length;
@@ -116,13 +117,12 @@ const sendMessage: SassyBotCommand = async (message: Message): Promise<void> => 
         addAQuestion = await addQuestion(message);
       }
       return;
-    } else {
-      let addAQuestion = true;
-      while (addAQuestion) {
-        addAQuestion = await addQuestion(message);
-      }
-      return;
     }
+    let addAQuestion = true;
+    while (addAQuestion) {
+      addAQuestion = await addQuestion(message);
+    }
+    return;
   } catch (e) {
     await message.reply('you have private messages disabled...');
     return;
