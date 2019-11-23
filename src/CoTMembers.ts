@@ -87,6 +87,9 @@ export function fetchCoTRoles(member: GuildMember): IRoleList {
     Verified: null,
     Veteran: null,
   };
+  if (!member.guild) {
+    return cotRoles;
+  }
   const cot = member.guild;
   if (cot) {
     Object.keys(cotRoles).forEach((rank) => {
