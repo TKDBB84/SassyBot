@@ -3,7 +3,7 @@ export interface ISassyBotImport {
   help: { [key: string]: string };
 }
 type SassyBotImportList = ISassyBotImport[];
-export type SassyBotCommand = (message: Message) => Promise<void>;
+export type SassyBotCommand = (message: Message, client?: Client) => Promise<void>;
 interface ISassyBotCommandList {
   [key: string]: SassyBotCommand;
 }
@@ -14,7 +14,7 @@ type SassybotTrollList = Array<{ process: SassybotTrollCommand; chance: number }
 export type SassybotTrollCommand = (message: Message) => Promise<boolean>;
 
 import * as Discord from 'discord.js';
-import { Message, MessageOptions } from 'discord.js';
+import { Client, Message, MessageOptions } from 'discord.js';
 import SassyDb from './SassyDb';
 import Users from './Users';
 import VoiceLogHandler from './VoiceLog';
@@ -30,7 +30,7 @@ const db = new SassyDb();
 const client = new Discord.Client();
 const channelList = db.getSpamChannelMap();
 const pleaseRequiredList: IPleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser];
+const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser, Santa];
 
 interface IClientSecrets {
   token: string;
@@ -292,7 +292,6 @@ let chatFunctions: ISassyBotCommandList = {
   ping: pingFunction,
   spam: spamFunction,
   spooky: spookyFunction,
-  ss: Santa.functions.ss,
 };
 
 for (const importedFunction of importedFunctions) {
@@ -322,7 +321,7 @@ const processSassybotCommand = async (message: Message): Promise<void> => {
 
   const parsed = message.content.toLowerCase().split(' ');
   if (chatFunctions.hasOwnProperty(parsed[1])) {
-    await chatFunctions[parsed[1]](message);
+    await chatFunctions[parsed[1]](message, client);
   } else {
     await sassybotRespond(message, "Sorry I Don't Know That Command");
   }
