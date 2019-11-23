@@ -214,12 +214,12 @@ const getAddresses: SassyBotCommand = async (message: Message, client?: Client) 
 
 const Santa: ISassyBotImport = {
   functions: {
-    ssAddress: getAddresses,
-    ssMatch: makeMatches,
+    ssaddress: getAddresses,
+    ssmatch: makeMatches,
   },
   help: {
-    ssAddress: 'fdsa',
-    ssMatch: 'dfasfd',
+    ssaddress: 'fdsa',
+    ssmatch: 'dfasfd',
   },
 };
 
