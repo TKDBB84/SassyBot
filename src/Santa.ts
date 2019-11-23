@@ -218,7 +218,8 @@ const Santa: ISassyBotImport = {
     ssMatch: makeMatches,
   },
   help: {
-    ss: 'sasner is too lazy to fill this shit out.',
+    ssAddress: 'fdsa',
+    ssMatch: 'dfasfd',
   },
 };
 
