@@ -175,22 +175,22 @@ const getAddresses: SassyBotCommand = async (message: Message, client?: Client) 
   if (message.author.id === Users.Sasner.id) {
     const sasner = await client.fetchUser(Users.Sasner.id, true);
     const sasnerDm = await sasner.createDM();
-    const sentTo = [];
+    const sentTo: string[] = [];
     const neededAddresses = particpants.filter((userId) => userId !== Users.Sasner.id && !allIds.includes(userId));
-    for (const userId of neededAddresses) {
+    neededAddresses.map(async (userId) => {
       const targetUser = await client.fetchUser(userId, true);
       sentTo.push(targetUser.username);
       const dmChannel = await targetUser.createDM();
       await dmChannel.send("Give Me your name & Address, like you'd address a package");
+      await sasnerDm.send('messages sent to: ' + JSON.stringify(sentTo));
       const reply = await dmChannel.awaitMessages((msg) => msg.author.id === userId, { max: 1, time: 30 * 60000 });
-      if (reply) {
-        stmtInsertAddress.run([message.author.id, message.content]);
-        dmChannel.send(`${message.content} --- Saved`);
+      if (reply && reply.size) {
+        stmtInsertAddress.run([reply.first().author.id, reply.first().content]);
+        dmChannel.send(`${reply.first().content} --- Saved`);
       } else {
         dmChannel.send('I gave up waiting for you. You can do `!sb ssAddress` to get this prompt again');
       }
-    }
-    await sasnerDm.send('messages sent to: ' + JSON.stringify(sentTo));
+    });
   } else {
     const targetUser = await client.fetchUser(message.author.id, true);
     const dmChannel = await targetUser.createDM();
@@ -199,13 +199,13 @@ const getAddresses: SassyBotCommand = async (message: Message, client?: Client) 
       max: 1,
       time: 30 * 60000,
     });
-    if (reply) {
-      if (allIds.includes(message.author.id)) {
-        stmtUpdateAddress.run([message.content, message.author.id]);
+    if (reply && reply.size) {
+      if (allIds.includes(reply.first().author.id)) {
+        stmtUpdateAddress.run([reply.first().content, reply.first().author.id]);
       } else {
-        stmtInsertAddress.run([message.author.id, message.content]);
+        stmtInsertAddress.run([reply.first().author.id, reply.first().content]);
       }
-      dmChannel.send(`${message.content} --- Saved`);
+      dmChannel.send(`${reply.first().content} --- Saved`);
     } else {
       dmChannel.send('I gave up waiting for you. You can do `!sb ssAddress` to get this prompt again');
     }
