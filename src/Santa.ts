@@ -212,10 +212,34 @@ const getAddresses: SassyBotCommand = async (message: Message, client?: Client) 
   }
 };
 
+const sendMatch: SassyBotCommand = async (message: Message, client?: Client) => {
+  const giverId = message.author.id;
+  if (!client) {
+    return;
+  }
+  const cot = client.guilds.get('324682549206974473');
+  if (!cot) {
+    return;
+  }
+
+  const stmtGetInfo = db.connection.prepare(`select user as targetId, address, question, answer from santa_addresses join user_answers on user = user_id join questions on id = questionId where user = (SELECT getting FROM santa_matches where giving = ?);`);
+  const results: Array<{targetId: string, address: string, question: string, answer: string}> = stmtGetInfo.all([giverId]);
+  if (results && results[0].targetId) {
+    const getter = await cot.fetchMember(results[0].targetId, true);
+    let buildString = `You're giving to ${getter.nickname} (${getter.user.username})\n`
+    results.forEach((result) => {
+      buildString += `${result.question}\n`;
+      buildString += `> ${result.answer}\n\n`;
+    });
+    buildString += 'Address:\n```' + results[0].address + '```';
+    message.author.send(buildString);
+  }
+};
+
 const Santa: ISassyBotImport = {
   functions: {
     ssaddress: getAddresses,
-    ssmatch: makeMatches,
+    ssmatch: sendMatch,
   },
   help: {
     ssaddress: 'fdsa',
