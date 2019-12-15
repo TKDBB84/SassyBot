@@ -8,7 +8,7 @@ export default class PromoteCommand extends ActivityCommand {
 
   protected async listAll(message: Message): Promise<void> {
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return (reaction.emoji.name === 'no' || reaction.emoji.name === '✅') && user.id === message.author.id;
+      return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, message.member.id);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
@@ -37,7 +37,7 @@ export default class PromoteCommand extends ActivityCommand {
         await Promise.all(
           sentMessages.map(async (sentMessage) => {
             const reactionYes = await sentMessage.react('✅');
-            const reactionNo = await sentMessage.react('344861453146259466');
+            const reactionNo = await sentMessage.react('⛔');
             const collection = await sentMessage.awaitReactions(reactionFilter, {
               max: 1,
               maxEmojis: 1,
