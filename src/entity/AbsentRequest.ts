@@ -18,6 +18,7 @@ export default class AbsentRequest {
   @ManyToOne(
     () => COTMember,
     (cotMember: COTMember) => cotMember.absences,
+    { eager: true }
   )
   public CotMember!: COTMember;
 }
