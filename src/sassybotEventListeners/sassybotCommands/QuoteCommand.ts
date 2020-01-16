@@ -133,14 +133,9 @@ export default class QuoteCommand extends SassybotCommand {
   }
 
   private async getRandomQuote(message: Message) {
-    const randomQuote = await this.sb.dbConnection
-      .getRepository(Quote)
-      .createQueryBuilder()
-      .innerJoinAndSelect(SbUser, 'user')
-      .addOrderBy('RAND()')
-      .limit(1)
-      .getOne();
-    if (randomQuote) {
+    const randomQuotes = await this.sb.dbConnection.getRepository(Quote).find();
+    if (randomQuotes) {
+      const randomQuote = randomQuotes[Math.floor(Math.random() * randomQuotes.length)];
       const member = await this.sb.getMember(message.guild.id, randomQuote.user.discordUserId);
       if (member) {
         await this.getRandomMemberQuote(message, member);
