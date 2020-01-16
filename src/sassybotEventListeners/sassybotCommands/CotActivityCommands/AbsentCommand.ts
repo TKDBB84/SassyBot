@@ -13,7 +13,6 @@ export default class AbsentCommand extends ActivityCommand {
     const allAbsences = await this.sb.dbConnection
       .getRepository(AbsentRequest)
       .find({
-        relations: ['CoTMember', 'CoTMember.character'],
         where: { endDate: MoreThan<Date>(yesterday) }
       });
     const sortedAbsences = allAbsences.sort((a, b) =>

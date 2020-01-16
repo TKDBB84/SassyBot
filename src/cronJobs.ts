@@ -113,7 +113,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       character.lastSeenApi = pullTime;
       character = await characterRepo.save(character);
 
-      cotMember = await cotMemberRepo.findOne({ relations: ['character'], where: { character: { id: character.id } } });
+      cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
       if (!cotMember) {
         cotMember = new COTMember();
         cotMember.character = character;

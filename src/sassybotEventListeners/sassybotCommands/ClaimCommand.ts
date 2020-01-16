@@ -14,7 +14,6 @@ export default class ClaimCommand extends SassybotCommand {
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
     let memberByUserId = await CoTMemberRepo.findOne({
-      relations: ['character', 'character.user'],
       where: { player: { user: { discordUserId: message.member.id } } },
     });
     if (memberByUserId) {

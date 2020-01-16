@@ -14,7 +14,6 @@ export default class COTMember {
   ): Promise<COTMember> {
     const cotMemberRepo = getManager().getRepository(COTMember);
     let cotMember = await cotMemberRepo.findOne({
-      relations: ['character', 'character.user'],
       where: `name COLLATE UTF8_GENERAL_CI LIKE '${charName}'`,
     });
     if (!cotMember) {
@@ -27,7 +26,6 @@ export default class COTMember {
       }
       const cotPlayerRepo = getManager().getRepository(FFXIVChar);
       let cotPlayer = await cotPlayerRepo.findOne({
-        relations: ['user'],
         where: { user: { discordUserId } },
       });
       if (!cotPlayer) {

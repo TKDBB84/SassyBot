@@ -37,7 +37,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
     const cotMemberRepo = this.sb.dbConnection.getRepository(COTMember);
     const isCotMember = await cotMemberRepo.findOne({
-      relations: ['character', 'character.user'],
       where: { player: { user: { discordUserId: member.id } } },
     });
     if (isCotMember) {
