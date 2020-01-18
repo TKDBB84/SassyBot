@@ -7,13 +7,18 @@ export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';
 
   protected async listAll(message: Message): Promise<void> {
+    const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
+    const allPromotions = await promotionsRepo.find({ order: { requested: 'ASC' } });
+    if (allPromotions.length === 0) {
+      await message.channel.sendMessage('No Current Requests');
+      return;
+    }
+
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, message.member.id);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
-    const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
-    const allPromotions = await promotionsRepo.find({ order: { requested: 'ASC' } });
     await message.channel.send('__Current Promotion Requests:__\n');
     await Promise.all(
       allPromotions.map(async (promotion) => {
