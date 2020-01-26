@@ -20,7 +20,7 @@ export default class PromotionRequest {
   @ManyToOne(
     () => COTMember,
     (cotMember: COTMember) => cotMember.promotions,
-    { eager: true }
+    { eager: true },
   )
   public CotMember!: COTMember;
 }

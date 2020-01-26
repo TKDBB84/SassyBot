@@ -1,7 +1,7 @@
 import * as sqliteDb from 'better-sqlite3';
 import { Database } from 'better-sqlite3';
 import * as moment from 'moment';
-import { CotRanks, CoTRankValueToString, GuildIds } from './consts';
+import { CotRanks, GuildIds } from './consts';
 import AbsentRequest from './entity/AbsentRequest';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
@@ -46,35 +46,38 @@ export class Migrate {
   private async moveAbsencesPromotions() {
     const stmtGetAbsentRequests = this.sqlite.prepare('SELECT * FROM user_absent');
     const allAbsents = stmtGetAbsentRequests.all();
-    await Promise.all(allAbsents.map(async (absent) => {
-      const member = await COTMember.getCotMemberByName(absent.name, absent.user_id);
-      const absence = new AbsentRequest();
-      absence.CotMember = member;
-      absence.startDate = new Date(absent.start_date);
-      absence.endDate = new Date(absent.end_date);
+    await Promise.all(
+      allAbsents.map(async (absent) => {
+        const member = await COTMember.getCotMemberByName(absent.name, absent.user_id);
+        const absence = new AbsentRequest();
+        absence.CotMember = member;
+        absence.startDate = new Date(absent.start_date);
+        absence.endDate = new Date(absent.end_date);
 
-      await this.sb.dbConnection.getRepository(AbsentRequest).save(absence);
-    }));
-
+        await this.sb.dbConnection.getRepository(AbsentRequest).save(absence);
+      }),
+    );
 
     const stmtGetPromotionRequests = this.sqlite.prepare('SELECT * FROM user_promote');
     const allPromotions = stmtGetPromotionRequests.all();
-    await Promise.all(allPromotions.map(async (promotion) => {
-      const member = await COTMember.getCotMemberByName(promotion.name, promotion.user_id);
-      const promotionRequest = new PromotionRequest();
-      promotionRequest.CotMember = member;
-      promotionRequest.requested = moment(promotion.timestamp).toDate();
-      switch (member.rank) {
-        case CotRanks.MEMBER:
-          promotionRequest.toRank = CotRanks.VETERAN;
-          break;
-        default:
-        case CotRanks.RECRUIT:
-          promotionRequest.toRank = CotRanks.MEMBER;
-          break;
-      }
-      await this.sb.dbConnection.getRepository(PromotionRequest).save(promotionRequest);
-    }))
+    await Promise.all(
+      allPromotions.map(async (promotion) => {
+        const member = await COTMember.getCotMemberByName(promotion.name, promotion.user_id);
+        const promotionRequest = new PromotionRequest();
+        promotionRequest.CotMember = member;
+        promotionRequest.requested = moment(promotion.timestamp).toDate();
+        switch (member.rank) {
+          case CotRanks.MEMBER:
+            promotionRequest.toRank = CotRanks.VETERAN;
+            break;
+          default:
+          case CotRanks.RECRUIT:
+            promotionRequest.toRank = CotRanks.MEMBER;
+            break;
+        }
+        await this.sb.dbConnection.getRepository(PromotionRequest).save(promotionRequest);
+      }),
+    );
   }
 
   private async moveCotMembers() {
@@ -90,7 +93,11 @@ export class Migrate {
           return;
         }
 
-        const cotMember = await COTMember.getCotMemberByName(member.name.trim(), member.user_id, Migrate.matchRank(member.rank));
+        const cotMember = await COTMember.getCotMemberByName(
+          member.name.trim(),
+          member.user_id,
+          Migrate.matchRank(member.rank),
+        );
         const previousFirstSeen = moment(member.first_seen_api);
         const previousLastSeen = moment(member.last_seen_api);
         const currentFirstSeen = moment(cotMember.character.firstSeenApi);
@@ -107,36 +114,42 @@ export class Migrate {
       }),
     );
 
-    await Promise.all(unknownMembers.map(async (member) => {
-      let ffXIVChar = await this.sb.dbConnection.getRepository(FFXIVChar).findOne({apiId: member.api_id});
-      if (!ffXIVChar) {
-        ffXIVChar = new FFXIVChar();
-        ffXIVChar.apiId = member.api_id;
-        ffXIVChar.name = member.name;
-      }
+    await Promise.all(
+      unknownMembers.map(async (member) => {
+        let ffXIVChar = await this.sb.dbConnection.getRepository(FFXIVChar).findOne({ apiId: member.api_id });
+        if (!ffXIVChar) {
+          ffXIVChar = new FFXIVChar();
+          ffXIVChar.apiId = member.api_id;
+          ffXIVChar.name = member.name;
+        }
 
-      const previousFirstSeen = moment(member.first_seen_api);
-      const previousLastSeen = moment(member.last_seen_api);
-      const currentFirstSeen = moment(ffXIVChar.firstSeenApi);
-      const currentLastSeen = moment(ffXIVChar.lastSeenApi);
+        const previousFirstSeen = moment(member.first_seen_api);
+        const previousLastSeen = moment(member.last_seen_api);
+        const currentFirstSeen = moment(ffXIVChar.firstSeenApi);
+        const currentLastSeen = moment(ffXIVChar.lastSeenApi);
 
-      if (previousFirstSeen.isBefore(currentFirstSeen)) {
-        ffXIVChar.firstSeenApi = previousFirstSeen.toDate();
-      }
+        if (previousFirstSeen.isBefore(currentFirstSeen)) {
+          ffXIVChar.firstSeenApi = previousFirstSeen.toDate();
+        }
 
-      if (previousLastSeen.isBefore(currentLastSeen)) {
-        ffXIVChar.lastSeenApi = previousLastSeen.toDate();
-      }
+        if (previousLastSeen.isBefore(currentLastSeen)) {
+          ffXIVChar.lastSeenApi = previousLastSeen.toDate();
+        }
 
-      ffXIVChar = await this.sb.dbConnection.getRepository(FFXIVChar).save(ffXIVChar)
+        ffXIVChar = await this.sb.dbConnection.getRepository(FFXIVChar).save(ffXIVChar);
 
-      let cotMember = await this.sb.dbConnection.getRepository(COTMember).createQueryBuilder().where('characterId = :id', {id: ffXIVChar.id}).getOne();
-      if (!cotMember) {
-        cotMember = new COTMember();
-      }
-      cotMember.character = ffXIVChar;
-      cotMember.rank = Migrate.matchRank(member.rank);
-      await this.sb.dbConnection.getRepository(COTMember).save(cotMember);
-    }))
+        let cotMember = await this.sb.dbConnection
+          .getRepository(COTMember)
+          .createQueryBuilder()
+          .where('characterId = :id', { id: ffXIVChar.id })
+          .getOne();
+        if (!cotMember) {
+          cotMember = new COTMember();
+        }
+        cotMember.character = ffXIVChar;
+        cotMember.rank = Migrate.matchRank(member.rank);
+        await this.sb.dbConnection.getRepository(COTMember).save(cotMember);
+      }),
+    );
   }
 }

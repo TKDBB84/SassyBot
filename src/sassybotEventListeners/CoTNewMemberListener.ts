@@ -136,7 +136,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private async acceptingTerms(declaredName: string, message: Message): Promise<boolean> {
-    const messageContent = message.cleanContent.replace('"','').replace("'", '').trim().toLowerCase();
+    const messageContent = message.cleanContent
+      .replace('"', '')
+      .replace("'", '')
+      .trim()
+      .toLowerCase();
     if (messageContent === 'i agree') {
       const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
       if (cotMember.rank === CotRanks.NEW) {
@@ -171,8 +175,8 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         return true;
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
-      return true
+      return true;
     }
-    return false
+    return false;
   }
 }

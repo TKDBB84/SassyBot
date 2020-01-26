@@ -62,7 +62,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
             if (Rank === 'STEWARDS') {
               return {
                 ...r,
-                Rank: 'VETERAN'
+                Rank: 'VETERAN',
               };
             }
             if (Rank === 'MEMBER' || Rank === 'VETERAN') {

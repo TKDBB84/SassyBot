@@ -10,11 +10,9 @@ export default class AbsentCommand extends ActivityCommand {
   protected async listAll(message: Message): Promise<void> {
     const yesterday = new Date();
     yesterday.setTime(new Date().getTime() - 36 * (60 * 60 * 1000));
-    const allAbsences = await this.sb.dbConnection
-      .getRepository(AbsentRequest)
-      .find({
-        where: { endDate: MoreThan<Date>(yesterday) }
-      });
+    const allAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).find({
+      where: { endDate: MoreThan<Date>(yesterday) },
+    });
     if (allAbsences.length === 0) {
       await message.channel.send('No Current Absentees');
       return;
