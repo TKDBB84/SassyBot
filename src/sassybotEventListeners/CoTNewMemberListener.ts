@@ -51,11 +51,16 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     let dmSasner = {
       send: console.log,
     };
-    const sasner = await this.sb.getUser(UserIds.SASNER);
-    if (sasner) {
-      dmSasner = await sasner.createDM();
-    } else {
-      console.error('unable to find "New" Rank, unable to communicate with Sasner');
+
+    try {
+      const sasner = await this.sb.getUser(UserIds.SASNER);
+      if (sasner) {
+        dmSasner = await sasner.createDM();
+      } else {
+        console.error('unable to find "New" Rank, unable to communicate with Sasner');
+      }
+    } catch (e) {
+      console.error('unable to find "New" Rank, unable to communicate with Sasner', { e });
     }
 
     const newMemberChannel = (await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID])) as TextChannel;
@@ -72,7 +77,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    newMemberChannel.send(
+    await newMemberChannel.send(
       'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
       {
         reply: member,
@@ -122,7 +127,8 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private async acceptingTerms(declaredName: string, message: Message) {
-    if (message.cleanContent.trim().toLowerCase() === 'i agree') {
+    const messageContent = message.cleanContent.replace('"','').replace("'", '').trim().toLowerCase();
+    if (messageContent === 'i agree') {
       const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
       if (cotMember.rank === CotRanks.NEW) {
         await cotMember.promote();
