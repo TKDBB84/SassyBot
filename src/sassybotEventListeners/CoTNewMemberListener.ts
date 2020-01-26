@@ -84,7 +84,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       },
     );
     const messageFilter = (message: Message) => {
-      return message.author.id === member.user.id;
+      return message.author.id === member.user.id && message.cleanContent.trim().length > 0;
     };
     const messageCollector = new MessageCollector(newMemberChannel, messageFilter);
     let messageCount = 0;
@@ -97,8 +97,12 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           await CoTNewMemberListener.requestRuleAgreement(message);
           break;
         case 1:
-          await this.acceptingTerms(declaredName, message);
-          messageCollector.stop();
+          const agreed = await this.acceptingTerms(declaredName, message);
+          if (agreed) {
+            messageCollector.stop();
+          } else {
+            messageCount = 0;
+          }
           break;
       }
       messageCount++;
@@ -106,7 +110,12 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private async declaringCharacterName(message: Message) {
-    const declaredName = message.cleanContent;
+    const declaredName = message.cleanContent.trim();
+    if (message.member && message.member.nickname) {
+      if (message.member.nickname.trim() === declaredName) {
+        return;
+      }
+    }
     await message.member.setNickname(declaredName, 'Declared Character Name').catch(async (e) => {
       await message.channel.send(
         'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
@@ -126,7 +135,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
   }
 
-  private async acceptingTerms(declaredName: string, message: Message) {
+  private async acceptingTerms(declaredName: string, message: Message): Promise<boolean> {
     const messageContent = message.cleanContent.replace('"','').replace("'", '').trim().toLowerCase();
     if (messageContent === 'i agree') {
       const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
@@ -139,11 +148,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           await message.member.removeRole(newRole);
         } catch (e) {
           await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
-          return;
+          return true;
         }
       } else {
         await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
-        return;
+        return true;
       }
       const roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
       if (roleToAdd) {
@@ -151,7 +160,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           await message.member.addRole(roleToAdd);
         } catch (e) {
           await CoTNewMemberListener.couldNotAddRole(message, roleToAdd, e);
-          return;
+          return true;
         }
       } else {
         await CoTNewMemberListener.couldNotAddRole(
@@ -159,9 +168,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           CoTRankValueToString[cotMember.rank],
           'unable to get role from client',
         );
-        return;
+        return true;
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
+      return true
     }
+    return false
   }
 }
