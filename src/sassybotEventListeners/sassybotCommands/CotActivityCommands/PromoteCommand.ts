@@ -111,17 +111,19 @@ export default class PromoteCommand extends ActivityCommand {
   }
 
   protected async summarizeData(message: Message, promotion: PromotionRequest): Promise<void> {
-    const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion);
     let toRankName;
-    switch (savedPromotion.CotMember.rank) {
+    switch (promotion.CotMember.rank) {
       case CotRanks.MEMBER:
+        promotion.toRank = CotRanks.VETERAN;
         toRankName = CoTRankValueToString[CotRanks.VETERAN];
         break;
       default:
       case CotRanks.RECRUIT:
+        promotion.toRank = CotRanks.MEMBER;
         toRankName = CoTRankValueToString[CotRanks.MEMBER];
         break;
     }
+    const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion);
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.character.name} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
     await message.reply(summary, { reply: message.author, split: true });
   }
