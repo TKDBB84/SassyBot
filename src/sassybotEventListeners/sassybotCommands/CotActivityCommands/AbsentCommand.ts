@@ -15,6 +15,11 @@ export default class AbsentCommand extends ActivityCommand {
       .find({
         where: { endDate: MoreThan<Date>(yesterday) }
       });
+    if (allAbsences.length === 0) {
+      await message.channel.send('No Current Absentees');
+      return;
+    }
+
     const sortedAbsences = allAbsences.sort((a, b) =>
       a.CotMember.character.name.localeCompare(b.CotMember.character.name, 'en'),
     );
