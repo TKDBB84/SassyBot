@@ -51,21 +51,21 @@ export default class QuoteCommand extends SassybotCommand {
   }
 
   private async listAllCounts(message: Message): Promise<void> {
-    const results: Array<{ cnt: string; discordUserId: string }> = await this.sb.dbConnection
+    const results: Array<{ cnt: string; userDiscordUserId: string }> = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder()
-      .select('COUNT(1) as cnt, discordUserId')
+      .select('COUNT(1) as cnt, userDiscordUserId')
       .where('guildId = :guildId', { guildId: message.guild.id })
-      .groupBy('discordUserId')
+      .groupBy('userDiscordUserId')
       .getRawMany();
 
     const allMembers = await Promise.all(
-      results.map((result) => this.sb.getMember(message.guild.id, result.discordUserId)),
+      results.map((result) => this.sb.getMember(message.guild.id, result.userDiscordUserId)),
     );
     let outputString = '';
     allMembers.forEach((member) => {
       if (member) {
-        const foundResult = results.find((result) => result.discordUserId === member.user.id);
+        const foundResult = results.find((result) => result.userDiscordUserId === member.user.id);
         if (foundResult) {
           outputString += `${member.displayName} (${member.user.username}): ${foundResult.cnt} saved quotes\n`;
         }
