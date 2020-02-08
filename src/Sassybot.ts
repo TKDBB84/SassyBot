@@ -18,6 +18,7 @@ import { Connection, createConnection } from 'typeorm';
 import jobs from './cronJobs';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
+import Migrate from './migrate'
 
 export interface ISassybotEventListener {
   event: string;
@@ -242,8 +243,14 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   dbConnection = createConnection();
 }
+
 dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
+  if (process.env.migrateOldDb) {
+    const migrate = new Migrate(sb);
+    await migrate.migrateAll();
+  }
+
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   jobs.forEach(({ job, schedule }) => {
     cron.schedule(schedule, job.bind(null, sb));

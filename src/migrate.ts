@@ -8,7 +8,7 @@ import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 
-export class Migrate {
+export default class Migrate {
   private static matchRank(memberRank: string) {
     switch (memberRank.toUpperCase()) {
       case 'NOTMIA':
