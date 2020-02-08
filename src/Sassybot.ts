@@ -246,7 +246,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
-  if (process.env.MIGRATE_OLD_DB) {
+  if (process.env.MIGRATE_OLD_DB && process.env.MIGRATE_OLD_DB !== 'false') {
     const migrate = new Migrate(sb);
     await migrate.migrateAll();
   }
