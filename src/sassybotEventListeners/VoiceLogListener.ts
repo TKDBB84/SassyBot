@@ -9,7 +9,7 @@ interface IIgnoredVoiceChannelsMap {
 }
 
 export default class VoiceLogListener extends SassybotEventListener {
-  private static readonly TIME_FORMAT = 'HH:MM z';
+  private static readonly TIME_FORMAT = 'HH:mm z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
     [GuildIds.COT_GUILD_ID]: new Set<string>(['333750400861863936']),
