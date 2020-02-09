@@ -83,7 +83,13 @@ export default class VoiceLogListener extends SassybotEventListener {
     return null;
   }
 
-  private async listener(previousMemberState: GuildMember, currentMemberState: GuildMember) {
+  private async listener({
+    oldMember: previousMemberState,
+    newMember: currentMemberState,
+  }: {
+    oldMember: GuildMember;
+    newMember: GuildMember;
+  }) {
     let userLeftChannel = await this.getVoiceChannel(previousMemberState?.voiceChannelID || '').catch(() => {});
     let userJoinedChannel = await this.getVoiceChannel(currentMemberState?.voiceChannelID || '').catch(() => {});
 
@@ -102,8 +108,6 @@ export default class VoiceLogListener extends SassybotEventListener {
       this.getSpamTextChannel(joinedGuild),
       this.getSpamChannelTimezone(joinedGuild),
     ]);
-
-    console.log({previousMemberState, currentMemberState});
 
     if (
       userLeftChannel &&
