@@ -1,9 +1,9 @@
-import {GuildMember, Message, MessageCollector, Snowflake, TextChannel} from 'discord.js';
+import { GuildMember, Message, MessageCollector, Snowflake, TextChannel } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels, UserIds } from '../consts';
 import COTMember from '../entity/COTMember';
+import FFXIVChar from '../entity/FFXIVChar';
+import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
-import SbUser from "../entity/SbUser";
-import FFXIVChar from "../entity/FFXIVChar";
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
@@ -112,6 +112,34 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     });
   }
 
+  protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
+    const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
+    let sbUser = await sbUserRepo.findOne(discordId);
+    if (!sbUser) {
+      sbUser = new SbUser();
+      sbUser.discordUserId = discordId;
+      await sbUserRepo.save(sbUser);
+      return false;
+    }
+    const char = await this.sb.dbConnection
+      .getRepository(FFXIVChar)
+      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
+    if (!char) {
+      return false;
+    }
+
+    const member = await this.sb.dbConnection
+      .getRepository(COTMember)
+      .findOne({ where: { character: { id: char.id } } });
+    char.user = sbUser;
+    console.log({ discordId, member });
+    if (member) {
+      member.character = char;
+      return member;
+    }
+    return false;
+  }
+
   private async declaringCharacterName(message: Message) {
     const declaredName = message.cleanContent.trim();
     if (message.member && message.member.nickname) {
@@ -180,31 +208,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
       return true;
-    }
-    return false;
-  }
-
-
-  protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
-    const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
-    let sbUser = await sbUserRepo.findOne(discordId);
-    if (!sbUser) {
-      sbUser = new SbUser();
-      sbUser.discordUserId = discordId;
-      await sbUserRepo.save(sbUser);
-      return false
-    }
-    const char = await this.sb.dbConnection.getRepository(FFXIVChar).findOne({where: { user: { discordUserId: sbUser.discordUserId }}});
-    if (!char) {
-      return false
-    }
-
-    const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } }});
-    char.user = sbUser;
-    console.log({discordId, member });
-    if (member) {
-      member.character = char;
-      return member;
     }
     return false;
   }

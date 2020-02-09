@@ -24,7 +24,17 @@ export default class AbsentCommand extends ActivityCommand {
 
     let reply = '__Current Absentee List:__\n';
     sortedAbsences.forEach((absence) => {
-      reply += `${absence.CotMember.character.name}\tFrom: ${absence.startDate.toLocaleDateString('en-US', {year: "numeric", month: "short", day: "numeric", timeZone: 'UTC'})}\tTo: ${absence.endDate.toLocaleDateString('en-US', {year: "numeric", month: "short", day: "numeric", timeZone: 'UTC'})}\n`;
+      reply += `${absence.CotMember.character.name}\tFrom: ${absence.startDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      })}\tTo: ${absence.endDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      })}\n`;
     });
     await message.channel.send(reply, { split: true });
     return;
@@ -104,7 +114,17 @@ export default class AbsentCommand extends ActivityCommand {
     const savedAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).save(absentRequest);
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${
       savedAbsences.CotMember.character.name
-    } \n First Day Gone: ${savedAbsences.startDate.toLocaleDateString('en-US', {year: "numeric", month: "short", day: "numeric", timeZone: 'UTC'})} \n Returning: ${savedAbsences.endDate.toLocaleDateString('en-US', {year: "numeric", month: "short", day: "numeric", timeZone: 'UTC'})}`;
+    } \n First Day Gone: ${savedAbsences.startDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })} \n Returning: ${savedAbsences.endDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })}`;
     await message.reply(summary, { reply: message.author, split: true });
   }
 }

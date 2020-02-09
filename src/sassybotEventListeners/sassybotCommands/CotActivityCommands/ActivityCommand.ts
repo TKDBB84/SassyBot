@@ -14,8 +14,8 @@ export default abstract class ActivityCommand extends SassybotCommand {
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0)
-      || message.author.id === UserIds.SASNER
+      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) ||
+      message.author.id === UserIds.SASNER
     ) {
       await this.listAll(message);
     } else {
@@ -26,23 +26,27 @@ export default abstract class ActivityCommand extends SassybotCommand {
   protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
     const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
     let sbUser = await sbUserRepo.findOne(discordId);
-    console.log({sbUser})
+    console.log({ sbUser });
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordId;
       await sbUserRepo.save(sbUser);
-      return false
+      return false;
     }
-    const char = await this.sb.dbConnection.getRepository(FFXIVChar).findOne({where: { user: { discordUserId: sbUser.discordUserId }}});
-    console.log({char})
+    const char = await this.sb.dbConnection
+      .getRepository(FFXIVChar)
+      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
+    console.log({ char });
     if (!char) {
-      return false
+      return false;
     }
 
-    const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } }});
-    console.log({member})
+    const member = await this.sb.dbConnection
+      .getRepository(COTMember)
+      .findOne({ where: { character: { id: char.id } } });
+    console.log({ member });
     char.user = sbUser;
-    console.log({discordId, member });
+    console.log({ discordId, member });
     if (member) {
       member.character = char;
       return member;

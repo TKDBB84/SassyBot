@@ -1,4 +1,4 @@
-import { Channel, GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
+import { GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
 import * as moment from 'moment-timezone';
 import { GuildIds, UserIds } from '../consts';
 import SpamChannel from '../entity/SpamChannel';
@@ -91,7 +91,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     oldMember: GuildMember;
     newMember: GuildMember;
   }) {
-    let [userLeftChannel, userJoinedChannel, spamChannel, timezone] = await Promise.all([
+    const [userLeftChannel, userJoinedChannel, spamChannel, timezone] = await Promise.all([
       this.getVoiceChannel(previousMemberState?.voiceChannelID || ''),
       this.getVoiceChannel(currentMemberState?.voiceChannelID || ''),
       this.getSpamTextChannel(previousMemberState.guild.id),
