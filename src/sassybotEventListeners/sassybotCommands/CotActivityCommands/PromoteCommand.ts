@@ -113,6 +113,10 @@ export default class PromoteCommand extends ActivityCommand {
   protected async summarizeData(message: Message, promotion: PromotionRequest): Promise<void> {
     let toRankName;
     switch (promotion.CotMember.rank) {
+      case CotRanks.VETERAN:
+        promotion.toRank = CotRanks.OFFICER;
+        toRankName = CoTRankValueToString[CotRanks.OFFICER];
+        break;
       case CotRanks.MEMBER:
         promotion.toRank = CotRanks.VETERAN;
         toRankName = CoTRankValueToString[CotRanks.VETERAN];
