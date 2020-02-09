@@ -39,7 +39,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
       return false
     }
 
-    const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character: { characterId: char.id } }});
+    const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } }});
     console.log({member})
     char.user = sbUser;
     console.log({discordId, member });
