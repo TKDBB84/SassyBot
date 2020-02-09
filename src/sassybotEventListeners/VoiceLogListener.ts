@@ -137,6 +137,8 @@ export default class VoiceLogListener extends SassybotEventListener {
     const currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
     const joinedNow: moment.Moment = moment().tz(joinTimezone ? joinTimezone : 'UTC');
 
+    console.log({userLeftChannel, userJoinedChannel })
+
     if (userLeftChannel && userJoinedChannel) {
       const leftAndJoinedSameGuild = userLeftChannel.guild.id === userJoinedChannel.guild.id;
       // user moved
@@ -150,7 +152,7 @@ export default class VoiceLogListener extends SassybotEventListener {
             time = `(${joinedNow.format(VoiceLogListener.TIME_FORMAT)})`;
           }
           if (spamChannel) {
-            spamChannel.send(
+           await spamChannel.send(
               `${time} ${currentMemberName} has moved from: ${userLeftChannel.name} to: ${userJoinedChannel.name}`,
             );
           }
@@ -174,7 +176,7 @@ export default class VoiceLogListener extends SassybotEventListener {
       } else {
         const sasner = await this.sb.getUser(UserIds.SASNER);
         if (sasner) {
-          sasner.send(
+          await sasner.send(
             `weird left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`,
             {
               split: true,
