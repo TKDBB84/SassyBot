@@ -12,8 +12,8 @@ export default abstract class ActivityCommand extends SassybotCommand {
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) ||
-      message.author.id === UserIds.SASNER
+      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0)
+      // || message.author.id === UserIds.SASNER
     ) {
       await this.listAll(message);
     } else {
