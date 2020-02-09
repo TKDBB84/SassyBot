@@ -103,7 +103,7 @@ export default class VoiceLogListener extends SassybotEventListener {
       this.getSpamChannelTimezone(joinedGuild),
     ]);
 
-    console.log({userLeftChannel, userJoinedChannel})
+    console.log({previousMemberState, currentMemberState});
 
     if (
       userLeftChannel &&
