@@ -24,6 +24,9 @@ export default class PromoteCommand extends ActivityCommand {
       allPromotions.map(async (promotion) => {
         let toRankName;
         switch (promotion.CotMember.rank) {
+          case CotRanks.VETERAN:
+            toRankName = CoTRankValueToString[CotRanks.OFFICER];
+            break;
           case CotRanks.MEMBER:
             toRankName = CoTRankValueToString[CotRanks.VETERAN];
             break;
