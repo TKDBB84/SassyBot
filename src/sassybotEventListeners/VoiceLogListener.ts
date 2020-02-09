@@ -9,7 +9,7 @@ interface IIgnoredVoiceChannelsMap {
 }
 
 export default class VoiceLogListener extends SassybotEventListener {
-  private static readonly TIME_FORMAT = 'HH:MM:SS z';
+  private static readonly TIME_FORMAT = 'HH:MM z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
     [GuildIds.COT_GUILD_ID]: new Set<string>(['333750400861863936']),
@@ -41,7 +41,7 @@ export default class VoiceLogListener extends SassybotEventListener {
       const options: MessageOptions = {
         split: false,
       };
-      console.log({ channel, time, charName, channelName });
+
       return await channel.send(`(${time}) ${charName} joined: ${channelName}`, options);
     }
   }
@@ -101,7 +101,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     if (!userLeftChannel && !userJoinedChannel) {
       return;
     }
-    console.log({spamChannel, userLeftChannel, userJoinedChannel});
+
     const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
     const leftNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
@@ -118,7 +118,7 @@ export default class VoiceLogListener extends SassybotEventListener {
         }
         if (spamChannel) {
           await spamChannel.send(
-            `${time} ${currentMemberName} has moved from: ${userLeftChannel.name} to: ${userJoinedChannel.name}`,
+            `${time} ${currentMemberName} has moved from: ${userLeftChannel.name}\tto: ${userJoinedChannel.name}`,
           );
         }
         return;
