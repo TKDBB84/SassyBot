@@ -84,19 +84,17 @@ export default class VoiceLogListener extends SassybotEventListener {
   }
 
   private async listener(previousMemberState: GuildMember, currentMemberState: GuildMember) {
-    const guildId = currentMemberState.guild.id;
-    let [
-      userLeftChannel,
-      leftSpamChannel,
-      leftTimezone,
-      userJoinedChannel,
-      joinedSpamChannel,
-      joinTimezone,
-    ] = await Promise.all([
+
+    let [userLeftChannel, userJoinedChannel] = await Promise.all([
       this.getVoiceChannel(previousMemberState.voiceChannelID),
+      this.getVoiceChannel(currentMemberState.voiceChannelID),
+    ]);
+
+    const guildId = userLeftChannel?.guild.id || userJoinedChannel?.guild.id || '';
+
+    let [leftSpamChannel, leftTimezone, joinedSpamChannel, joinTimezone] = await Promise.all([
       this.getSpamTextChannel(guildId),
       this.getSpamChannelTimezone(guildId),
-      this.getVoiceChannel(currentMemberState.voiceChannelID),
       this.getSpamTextChannel(guildId),
       this.getSpamChannelTimezone(guildId),
     ]);
