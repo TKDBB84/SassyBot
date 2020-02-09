@@ -97,11 +97,13 @@ export default class VoiceLogListener extends SassybotEventListener {
     }
 
     let [leftSpamChannel, leftTimezone, joinedSpamChannel, joinTimezone] = await Promise.all([
+      this.getSpamTextChannel(leftGuild),
+      this.getSpamChannelTimezone(leftGuild),
       this.getSpamTextChannel(joinedGuild),
       this.getSpamChannelTimezone(joinedGuild),
-      this.getSpamTextChannel(joinedGuild),
-      this.getSpamChannelTimezone(leftGuild),
     ]);
+
+    console.log({userLeftChannel, userJoinedChannel})
 
     if (
       userLeftChannel &&
