@@ -13,9 +13,10 @@ export default class COTMember {
     rank: CotRanks = CotRanks.NEW,
   ): Promise<COTMember> {
     const cotMemberRepo = getManager().getRepository(COTMember);
-    let cotMember = await cotMemberRepo.findOne({
-      where: `name COLLATE UTF8_GENERAL_CI LIKE '${charName}'`,
-    });
+    let cotMember = await cotMemberRepo
+      .createQueryBuilder()
+      .where(`LOWER(name) = LOWER(:name)`, { name: charName.toLowerCase() })
+      .getOne();
     if (!cotMember) {
       const sbUserRepo = getManager().getRepository(SbUser);
       let sbUser = await sbUserRepo.findOne(discordUserId);

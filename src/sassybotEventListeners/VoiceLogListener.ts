@@ -84,23 +84,29 @@ export default class VoiceLogListener extends SassybotEventListener {
   }
 
   private async listener(previousMemberState: GuildMember, currentMemberState: GuildMember) {
+    let userLeftChannel = await this.getVoiceChannel(previousMemberState?.voiceChannelID || '').catch(() => {});
+    let userJoinedChannel = await this.getVoiceChannel(currentMemberState?.voiceChannelID || '').catch(() => {});
 
-    let userLeftChannel = await this.getVoiceChannel(previousMemberState?.voiceChannelID);
-    let userJoinedChannel = await this.getVoiceChannel(currentMemberState?.voiceChannelID);
-
-    const guildId = userLeftChannel?.guild.id || userJoinedChannel?.guild.id || '';
+    let leftGuild = '';
+    let joinedGuild = '';
+    if (userJoinedChannel) {
+      joinedGuild = userJoinedChannel.guild.id;
+    }
+    if (userLeftChannel) {
+      leftGuild = userLeftChannel.guild.id;
+    }
 
     let [leftSpamChannel, leftTimezone, joinedSpamChannel, joinTimezone] = await Promise.all([
-      this.getSpamTextChannel(guildId),
-      this.getSpamChannelTimezone(guildId),
-      this.getSpamTextChannel(guildId),
-      this.getSpamChannelTimezone(guildId),
+      this.getSpamTextChannel(joinedGuild),
+      this.getSpamChannelTimezone(joinedGuild),
+      this.getSpamTextChannel(joinedGuild),
+      this.getSpamChannelTimezone(leftGuild),
     ]);
 
     if (
       userLeftChannel &&
       VoiceLogListener.IGNORED_VOICE_CHANNELS[userLeftChannel.guild.id] &&
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[guildId].has(userLeftChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[userLeftChannel.guild.id].has(userLeftChannel.id)
     ) {
       userLeftChannel = null;
       leftSpamChannel = null;
@@ -109,7 +115,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     if (
       userJoinedChannel &&
       VoiceLogListener.IGNORED_VOICE_CHANNELS[userJoinedChannel.guild.id] &&
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[guildId].has(userJoinedChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[userJoinedChannel.guild.id].has(userJoinedChannel.id)
     ) {
       userJoinedChannel = null;
       joinedSpamChannel = null;
