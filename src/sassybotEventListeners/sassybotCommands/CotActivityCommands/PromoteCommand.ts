@@ -34,7 +34,7 @@ export default class PromoteCommand extends ActivityCommand {
         }
         const response = `${promotion.CotMember.character.name} From ${
           CoTRankValueToString[promotion.CotMember.rank]
-        } To ${toRankName} on ${promotion.requested}`;
+        } To ${toRankName} on ${promotion.requested.toLocaleDateString('en-US', {year: "numeric", month: "short", day: "numeric", timeZone: 'UTC'})}`;
         let sentMessages = await message.channel.send(response);
         if (!Array.isArray(sentMessages)) {
           sentMessages = [sentMessages];
