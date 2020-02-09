@@ -15,10 +15,11 @@ import { EventEmitter } from 'events';
 import * as cron from 'node-cron';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
+import { UserIds } from './consts';
 import jobs from './cronJobs';
+import Migrate from './migrate';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import Migrate from './migrate'
 
 export interface ISassybotEventListener {
   event: string;
@@ -72,16 +73,26 @@ export class Sassybot extends EventEmitter {
   }
 
   public async getRole(guildId: string, roleId: string): Promise<Role | undefined> {
-    let role;
-    const guild = this.discordClient.guilds.get(guildId);
-    if (guild) {
-      role = guild.roles.get(roleId);
+    try {
+      let role;
+      const guild = this.discordClient.guilds.get(guildId);
+      if (guild) {
+        role = guild.roles.get(roleId);
+      }
+      return role;
+    } catch (e) {
+      this.sendErrorToSasner(e);
+      throw e;
     }
-    return role;
   }
 
   public getChannel(channelId: string): Channel | null {
-    const channel = this.discordClient.channels.get(channelId);
+    let channel;
+    try {
+      channel = this.discordClient.channels.get(channelId);
+    } catch (e) {
+      this.sendErrorToSasner(e).then(() => {});
+    }
     if (channel) {
       return channel;
     }
@@ -97,23 +108,33 @@ export class Sassybot extends EventEmitter {
   }
 
   public async getUser(userId: string): Promise<User | undefined> {
-    let user = this.discordClient.users.get(userId);
-    if (!user) {
-      user = await this.discordClient.fetchUser(userId);
+    try {
+      let user = this.discordClient.users.get(userId);
+      if (!user) {
+        user = await this.discordClient.fetchUser(userId);
+      }
+      return user;
+    } catch (e) {
+      await this.sendErrorToSasner(e);
+      throw e;
     }
-    return user;
   }
 
   public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {
-    let member;
-    const guild = this.discordClient.guilds.get(guildId);
-    if (guild) {
-      member = guild.member(userResolvable);
-      if (!member) {
-        member = guild.fetchMember(userResolvable);
+    try {
+      let member;
+      const guild = this.discordClient.guilds.get(guildId);
+      if (guild) {
+        member = guild.member(userResolvable);
+        if (!member) {
+          member = guild.fetchMember(userResolvable);
+        }
       }
+      return member;
+    } catch (e) {
+      await this.sendErrorToSasner(e);
+      throw e;
     }
-    return member;
   }
 
   public isVoiceChannel(channel: Channel | null): channel is VoiceChannel {
@@ -126,6 +147,10 @@ export class Sassybot extends EventEmitter {
 
   public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
     return 'command' in sbEvent;
+  }
+
+  public async sendErrorToSasner(e: Error) {
+    await (await (await this.getUser(UserIds.SASNER))?.createDM())?.sendMessage(`Error fetching Role: ${e}`);
   }
 
   public eventNames(): Array<string | symbol> {

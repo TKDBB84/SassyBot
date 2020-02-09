@@ -9,7 +9,7 @@ export default class FFXIVChar {
   @Column()
   public apiId!: number;
 
-  @Column( { charset: "utf8", collation: "utf8_general_ci"})
+  @Column({ charset: 'utf8', collation: 'utf8_general_ci' })
   public name!: string;
 
   @CreateDateColumn()
