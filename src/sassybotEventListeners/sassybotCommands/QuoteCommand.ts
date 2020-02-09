@@ -81,7 +81,7 @@ export default class QuoteCommand extends SassybotCommand {
     const dmChannel = await message.author.createDM();
     const allQuotesForMentioned = await this.sb.dbConnection.getRepository(Quote).find({
       relations: ['user'],
-      where: { user: { discordUserId: mentionedMember.user.id } },
+      where: { user: { discordUserId: mentionedMember.user.id }, guildId: message.guild.id },
     });
     if (allQuotesForMentioned && allQuotesForMentioned.length) {
       let finalMessage = mentionedMember.displayName + '\n----------------------------\n';
@@ -96,7 +96,7 @@ export default class QuoteCommand extends SassybotCommand {
     const userQuotes = await this.sb.dbConnection.getRepository(Quote).find({
       order: { id: 1 },
       relations: ['user'],
-      where: { user: { discordUserId: member.id } },
+      where: { user: { discordUserId: member.id }, guildId: message.guild.id },
     });
 
     if (!userQuotes.length) {
@@ -126,14 +126,14 @@ export default class QuoteCommand extends SassybotCommand {
   private async getRandomMemberQuote(message: Message, member: GuildMember) {
     const userQuoteCount = await this.sb.dbConnection.getRepository(Quote).count({
       relations: ['user'],
-      where: { user: { discordUserId: member.id } },
+      where: { user: { discordUserId: member.id }, guildId: message.guild.id },
     });
     const index = Math.floor(Math.random() * userQuoteCount);
     await this.getUserQuote(message, member, index);
   }
 
   private async getRandomQuote(message: Message) {
-    const randomQuotes = await this.sb.dbConnection.getRepository(Quote).find();
+    const randomQuotes = await this.sb.dbConnection.getRepository(Quote).find({ where: { guildId: message.guild.id } });
     if (randomQuotes) {
       const randomQuote = randomQuotes[Math.floor(Math.random() * randomQuotes.length)];
       const member = await this.sb.getMember(message.guild.id, randomQuote.user.discordUserId);
