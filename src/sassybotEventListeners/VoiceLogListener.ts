@@ -84,6 +84,7 @@ export default class VoiceLogListener extends SassybotEventListener {
   }
 
   private async listener(previousMemberState: GuildMember, currentMemberState: GuildMember) {
+    const guildId = currentMemberState.guild.id;
     let [
       userLeftChannel,
       leftSpamChannel,
@@ -93,17 +94,17 @@ export default class VoiceLogListener extends SassybotEventListener {
       joinTimezone,
     ] = await Promise.all([
       this.getVoiceChannel(previousMemberState.voiceChannelID),
-      this.getSpamTextChannel(previousMemberState.guild.id),
-      this.getSpamChannelTimezone(previousMemberState.guild.id),
+      this.getSpamTextChannel(guildId),
+      this.getSpamChannelTimezone(guildId),
       this.getVoiceChannel(currentMemberState.voiceChannelID),
-      this.getSpamTextChannel(currentMemberState.guild.id),
-      this.getSpamChannelTimezone(currentMemberState.guild.id),
+      this.getSpamTextChannel(guildId),
+      this.getSpamChannelTimezone(guildId),
     ]);
 
     if (
       userLeftChannel &&
       VoiceLogListener.IGNORED_VOICE_CHANNELS[userLeftChannel.guild.id] &&
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userLeftChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[guildId].has(userLeftChannel.id)
     ) {
       userLeftChannel = null;
       leftSpamChannel = null;
@@ -112,7 +113,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     if (
       userJoinedChannel &&
       VoiceLogListener.IGNORED_VOICE_CHANNELS[userJoinedChannel.guild.id] &&
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(userJoinedChannel.id)
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[guildId].has(userJoinedChannel.id)
     ) {
       userJoinedChannel = null;
       joinedSpamChannel = null;

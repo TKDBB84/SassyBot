@@ -23,6 +23,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
 
   protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
     const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { discordUserId: discordId } });
+    console.log({discordId, member });
     if (member) {
       return member;
     }
