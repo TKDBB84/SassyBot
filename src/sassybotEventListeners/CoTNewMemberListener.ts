@@ -1,7 +1,9 @@
-import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
+import {GuildMember, Message, MessageCollector, Snowflake, TextChannel} from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels, UserIds } from '../consts';
 import COTMember from '../entity/COTMember';
 import SassybotEventListener from './SassybotEventListener';
+import SbUser from "../entity/SbUser";
+import FFXIVChar from "../entity/FFXIVChar";
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
@@ -35,15 +37,16 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (member.guild.id !== GuildIds.COT_GUILD_ID) {
       return;
     }
-    const cotMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    const isCotMember = await cotMemberRepo.findOne({
-      where: { player: { user: { discordUserId: member.id } } },
-    });
-    if (isCotMember) {
+
+    const isCotMember = await this.findCoTMemberByDiscordId(member.id);
+    if (isCotMember && isCotMember.firstSeenDiscord) {
       const knownRank = isCotMember.rank;
       const role = await this.sb.getRole(GuildIds.COT_GUILD_ID, knownRank);
       if (role) {
         await member.addRole(role, 'Added Known Rank To User');
+        if (isCotMember.character.name && (knownRank === CotRanks.MEMBER || knownRank === CotRanks.RECRUIT)) {
+          await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
+        }
       }
       return;
     }
@@ -143,6 +146,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .toLowerCase();
     if (messageContent === 'i agree') {
       const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
+      cotMember.firstSeenDiscord = new Date();
       if (cotMember.rank === CotRanks.NEW) {
         await cotMember.promote();
       }
@@ -176,6 +180,31 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
       return true;
+    }
+    return false;
+  }
+
+
+  protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
+    const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
+    let sbUser = await sbUserRepo.findOne(discordId);
+    if (!sbUser) {
+      sbUser = new SbUser();
+      sbUser.discordUserId = discordId;
+      await sbUserRepo.save(sbUser);
+      return false
+    }
+    const char = await this.sb.dbConnection.getRepository(FFXIVChar).findOne({where: { user: { discordUserId: sbUser.discordUserId }}});
+    if (!char) {
+      return false
+    }
+
+    const member = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } }});
+    char.user = sbUser;
+    console.log({discordId, member });
+    if (member) {
+      member.character = char;
+      return member;
     }
     return false;
   }
