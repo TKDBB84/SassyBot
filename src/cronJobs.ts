@@ -158,9 +158,9 @@ const checkForReminders = async (sb: Sassybot) => {
     const officerChat = sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {
       try {
-        await officerChat.send(
-          `Hi Officers, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
-        );
+        // await officerChat.send(
+        //   `Hi Officers, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
+        // );
       } catch (e) {
         console.error("couldn't report to officers channel", { e });
       }
