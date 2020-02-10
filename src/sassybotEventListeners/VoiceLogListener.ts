@@ -91,15 +91,26 @@ export default class VoiceLogListener extends SassybotEventListener {
     oldMember: GuildMember;
     newMember: GuildMember;
   }) {
-    const [userLeftChannel, userJoinedChannel, spamChannel, timezone] = await Promise.all([
+    const promiseResolution = await Promise.all([
       this.getVoiceChannel(previousMemberState?.voiceChannelID || ''),
       this.getVoiceChannel(currentMemberState?.voiceChannelID || ''),
       this.getSpamTextChannel(previousMemberState.guild.id),
       this.getSpamChannelTimezone(previousMemberState.guild.id),
     ]);
 
+    let [userLeftChannel, userJoinedChannel] = promiseResolution;
+    const [, , spamChannel, timezone] = promiseResolution;
+
     if (!userLeftChannel && !userJoinedChannel) {
       return;
+    }
+
+    if (VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(previousMemberState.voiceChannelID)) {
+      userLeftChannel = null;
+    }
+
+    if (VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id].has(currentMemberState.voiceChannelID)) {
+      userJoinedChannel = null;
     }
 
     const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
@@ -119,17 +130,6 @@ export default class VoiceLogListener extends SassybotEventListener {
         if (spamChannel) {
           await spamChannel.send(
             `${time} ${currentMemberName} has moved from: ${userLeftChannel.name}\tto: ${userJoinedChannel.name}`,
-          );
-        }
-        return;
-      } else {
-        const sasner = await this.sb.getUser(UserIds.SASNER);
-        if (sasner) {
-          await sasner.send(
-            `weird left/rejoined same channel: ${JSON.stringify({ previousMemberState, currentMemberState })}`,
-            {
-              split: true,
-            },
           );
         }
         return;
