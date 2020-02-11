@@ -76,7 +76,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (newRole) {
       await member.addRole(newRole, 'User Joined Server');
     } else {
-      dmSasner.send('Unable to find CoT New Rank');
+      dmSasner.send(`Unable to find CoT New Rank ${JSON.stringify(newRole)}`);
       return;
     }
 
