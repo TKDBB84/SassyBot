@@ -39,10 +39,12 @@ export default class PromoteCommand extends ActivityCommand {
 
         const firstSeen = moment(promotion.CotMember.character.firstSeenApi);
         const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
-        let daysInFc: false | number = false;
+        const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
+        let daysInFc: string = '';
         if (firstSeen.isAfter(firstPull)) {
-          const now = moment();
-          daysInFc = now.diff(firstPull, 'd')
+          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstPull, 'd')} days`
+        } else if (firstSeen.isBefore(beginningOfTime)) {
+          daysInFc = '\tand was in the FC before Sassybot';
         }
 
         let response = `${promotion.CotMember.character.name} From ${
@@ -52,10 +54,7 @@ export default class PromoteCommand extends ActivityCommand {
           month: 'short',
           day: 'numeric',
           timeZone: 'UTC',
-        })}`;
-        if (daysInFc) {
-          response += `\tand has been in the FC for approx ${daysInFc} days`;
-        }
+        })}${daysInFc}`;
 
         let sentMessages = await message.channel.send(response);
         if (!Array.isArray(sentMessages)) {
