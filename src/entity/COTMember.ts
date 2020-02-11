@@ -12,11 +12,16 @@ export default class COTMember {
     discordUserId: string,
     rank: CotRanks = CotRanks.NEW,
   ): Promise<COTMember> {
-    const cotMemberRepo = getManager().getRepository(COTMember);
-    let cotMember = await cotMemberRepo
-      .createQueryBuilder()
+    const cotPlayerRepo = getManager().getRepository(FFXIVChar);
+    let nameMatch = await cotPlayerRepo.createQueryBuilder()
       .where(`LOWER(name) = LOWER(:name)`, { name: charName.toLowerCase() })
       .getOne();
+
+    const cotMemberRepo = getManager().getRepository(COTMember);
+    let cotMember;
+    if (nameMatch) {
+      cotMember = await cotMemberRepo.findOne({where: {characterId: nameMatch.id }})
+    }
     if (!cotMember) {
       const sbUserRepo = getManager().getRepository(SbUser);
       let sbUser = await sbUserRepo.findOne(discordUserId);
@@ -25,14 +30,18 @@ export default class COTMember {
         sbUser.discordUserId = discordUserId;
         await sbUserRepo.save(sbUser);
       }
-      const cotPlayerRepo = getManager().getRepository(FFXIVChar);
       let cotPlayer = await cotPlayerRepo.findOne({
-        where: { user: { discordUserId } },
+        where: {user: {discordUserId}},
       });
       if (!cotPlayer) {
-        cotPlayer = new FFXIVChar();
-        cotPlayer.user = sbUser;
+        if (!nameMatch) {
+          cotPlayer = new FFXIVChar();
+        } else {
+          cotPlayer = nameMatch
+        }
       }
+
+      cotPlayer.user = sbUser;
       cotPlayer.name = charName;
       await cotPlayerRepo.save(cotPlayer);
 
