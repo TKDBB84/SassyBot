@@ -15,7 +15,7 @@ export default class QuoteListener extends SassybotEventListener {
     if (quoteStrings.includes(reaction.name)) {
       const quoteRepo = this.sb.dbConnection.getRepository(Quote);
       const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
-      const alreadyQuoted = quoteRepo.findOne({ messageId: messageReaction.message.id });
+      const alreadyQuoted = await quoteRepo.findOne({ messageId: messageReaction.message.id });
       if (alreadyQuoted) {
         return;
       }
