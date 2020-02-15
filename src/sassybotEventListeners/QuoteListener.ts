@@ -13,7 +13,12 @@ export default class QuoteListener extends SassybotEventListener {
     const quoteStrings = ['quote', 'quote-1'];
     const reaction = messageReaction.emoji as ReactionEmoji;
     if (quoteStrings.includes(reaction.name)) {
+      const quoteRepo = this.sb.dbConnection.getRepository(Quote);
       const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
+      const alreadyQuoted = quoteRepo.findOne({where: {messageId: messageReaction.message.id}});
+      if (alreadyQuoted) {
+        return;
+      }
       let sbUser = await sbUserRepo.findOne({ discordUserId: messageReaction.message.author.id });
       if (!sbUser) {
         sbUser = new SbUser();
@@ -26,7 +31,7 @@ export default class QuoteListener extends SassybotEventListener {
       sbQuote.channelId = messageReaction.message.channel.id;
       sbQuote.guildId = messageReaction.message.guild.id;
       sbQuote.messageId = messageReaction.message.id;
-      const savedQuote = await this.sb.dbConnection.getRepository(Quote).save(sbQuote, { reload: true });
+      const savedQuote = await quoteRepo.save(sbQuote, { reload: true });
       const quotedMember = await this.sb.getMember(savedQuote.guildId, savedQuote.user.discordUserId);
       if (quotedMember) {
         messageReaction.message.channel.send(
