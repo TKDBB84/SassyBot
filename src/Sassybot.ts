@@ -91,7 +91,7 @@ export class Sassybot extends EventEmitter {
     try {
       channel = this.discordClient.channels.get(channelId);
     } catch (e) {
-      this.sendErrorToSasner(e).then(() => {});
+      this.sendErrorToSasner(e).catch(console.error);
     }
     if (channel) {
       return channel;
@@ -214,7 +214,7 @@ export class Sassybot extends EventEmitter {
 
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
     if (params.args === '') {
-      message.channel.send(
+      await message.channel.send(
         `Available commands are:\n${[...this.registeredCommands]
           .sort()
           .join(
@@ -225,7 +225,7 @@ export class Sassybot extends EventEmitter {
         },
       );
     } else if (params.args === 'help') {
-      message.channel.send(
+      await message.channel.send(
         'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
         {
           split: true,

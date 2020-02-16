@@ -1,6 +1,6 @@
 import * as http2 from 'http2';
 import { LessThan } from 'typeorm';
-import { CoTOfficerChannelId, CotRanks } from './consts';
+import { CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
@@ -154,13 +154,14 @@ const checkForReminders = async (sb: Sassybot) => {
   const oldPromotionCount = await sb.dbConnection
     .getRepository(PromotionRequest)
     .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
-  if (oldPromotionCount > 0) {
+  if (oldPromotionCount >= 3) {
     const officerChat = sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {
+      const officeRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
       try {
-        // await officerChat.send(
-        //   `Hi Officers, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
-        // );
+        await officerChat.send(
+          `Hi ${officeRole ? officeRole : 'Officers'}, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
+        );
       } catch (e) {
         console.error("couldn't report to officers channel", { e });
       }
