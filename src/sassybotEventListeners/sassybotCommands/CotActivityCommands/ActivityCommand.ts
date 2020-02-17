@@ -26,7 +26,6 @@ export default abstract class ActivityCommand extends SassybotCommand {
   protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
     const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
     let sbUser = await sbUserRepo.findOne(discordId);
-    console.log({ sbUser });
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordId;
@@ -36,7 +35,6 @@ export default abstract class ActivityCommand extends SassybotCommand {
     const char = await this.sb.dbConnection
       .getRepository(FFXIVChar)
       .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
-    console.log({ char });
     if (!char) {
       return false;
     }
@@ -44,9 +42,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
     const member = await this.sb.dbConnection
       .getRepository(COTMember)
       .findOne({ where: { character: { id: char.id } } });
-    console.log({ member });
     char.user = sbUser;
-    console.log({ discordId, member });
     if (member) {
       member.character = char;
       return member;
