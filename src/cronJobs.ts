@@ -96,7 +96,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         where: { apiId: lodestoneMember.ID },
       });
       if (!character) {
-        character = await cotPlayerRepo
+        character = await characterRepo
           .createQueryBuilder()
           .where(`LOWER(name) = LOWER(:name)`, { name: lodestoneMember.Name.toLowerCase() })
           .getOne();
