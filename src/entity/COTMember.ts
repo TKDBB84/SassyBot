@@ -20,7 +20,7 @@ export default class COTMember {
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordUserId;
-      await sbUserRepo.save(sbUser);
+      sbUser = await sbUserRepo.save(sbUser);
     }
     let cotPlayer = await cotPlayerRepo.findOne({
       where: { user: { discordUserId } },
@@ -33,24 +33,26 @@ export default class COTMember {
         .getOne();
       if (!nameMatch) {
         cotPlayer = new FFXIVChar();
+        cotPlayer.user = sbUser;
+        cotPlayer.name = charName;
+        cotPlayer = await cotPlayerRepo.save(cotPlayer);
       } else {
         cotPlayer = nameMatch;
+        await cotPlayerRepo.update(cotPlayer, { user: sbUser });
       }
     }
-
-    cotPlayer.user = sbUser;
-    cotPlayer.name = charName;
-    await cotPlayerRepo.save(cotPlayer);
 
     let cotMember = await cotMemberRepo.findOne({ where: { characterId: cotPlayer.id } });
     if (!cotMember) {
       cotMember = new COTMember();
+      cotMember.character = cotPlayer;
+      cotMember.rank = rank;
+      cotMember.firstSeenDiscord = new Date();
+      cotMember = await cotMemberRepo.save(cotMember);
+    } else {
+      await cotMemberRepo.update(cotMember.id, { rank, firstSeenDiscord: new Date(), character: cotPlayer });
     }
-    cotMember.character = cotPlayer;
-    cotMember.rank = rank;
-    cotMember.firstSeenDiscord = new Date();
 
-    await cotMemberRepo.save(cotMember);
     return cotMember;
   }
 
