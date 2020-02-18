@@ -96,9 +96,10 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         where: { apiId: lodestoneMember.ID },
       });
       if (!character) {
-        character = await characterRepo.findOne({
-          where: `name COLLATE UTF8_GENERAL_CI LIKE '${lodestoneMember.Name.replace(/'/g, "\\'")}'`,
-        });
+        character = await cotPlayerRepo
+          .createQueryBuilder()
+          .where(`LOWER(name) = LOWER(:name)`, { name: lodestoneMember.Name.toLowerCase() })
+          .getOne();
         if (!character) {
           character = new FFXIVChar();
         }
@@ -160,7 +161,9 @@ const checkForReminders = async (sb: Sassybot) => {
       const officeRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
       try {
         await officerChat.send(
-          `Hi ${officeRole ? officeRole : 'Officers'}, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
+          `Hi ${
+            officeRole ? officeRole : 'Officers'
+          }, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
         );
       } catch (e) {
         console.error("couldn't report to officers channel", { e });
