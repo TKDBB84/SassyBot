@@ -38,17 +38,23 @@ export default class COTMember {
         cotPlayer = await cotPlayerRepo.save(cotPlayer);
       } else {
         cotPlayer = nameMatch;
-        await cotPlayerRepo.update(cotPlayer, { user: sbUser });
+        await cotPlayerRepo.update(cotPlayer.id, { user: sbUser });
       }
     }
 
     let cotMember = await cotMemberRepo.findOne({ where: { characterId: cotPlayer.id } });
+    const foundMember = cotMember;
     if (!cotMember) {
       cotMember = new COTMember();
       cotMember.character = cotPlayer;
       cotMember.rank = rank;
       cotMember.firstSeenDiscord = new Date();
-      cotMember = await cotMemberRepo.save(cotMember);
+      try {
+        cotMember = await cotMemberRepo.save(cotMember);
+      } catch (e) {
+        console.error({e, foundMember, cotMember});
+        throw e
+      }
     } else {
       await cotMemberRepo.update(cotMember.id, { rank, firstSeenDiscord: new Date(), character: cotPlayer });
     }
