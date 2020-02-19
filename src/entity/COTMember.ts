@@ -42,7 +42,10 @@ export default class COTMember {
       }
     }
 
-    let cotMember = await cotMemberRepo.findOne({ where: { characterId: cotPlayer.id } });
+    let cotMember = await cotMemberRepo
+      .createQueryBuilder()
+      .where('characterId = :id', { id: cotPlayer.id })
+      .getOne();
     const foundMember = cotMember;
     if (!cotMember) {
       cotMember = new COTMember();
@@ -52,11 +55,12 @@ export default class COTMember {
       try {
         cotMember = await cotMemberRepo.save(cotMember);
       } catch (e) {
-        console.error({e, foundMember, cotMember});
-        throw e
+        console.log({ e, foundMember, cotMember });
+        throw e;
       }
     } else {
-      await cotMemberRepo.update(cotMember.id, { rank, firstSeenDiscord: new Date(), character: cotPlayer });
+      const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();
+      await cotMemberRepo.update(cotMember.id, { firstSeenDiscord, character: cotPlayer });
     }
 
     return cotMember;

@@ -25,15 +25,15 @@ export default class AbsentCommand extends ActivityCommand {
     let reply = '__Current Absentee List:__\n';
     sortedAbsences.forEach((absence) => {
       reply += `${absence.CotMember.character.name}\tFrom: ${absence.startDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
         day: 'numeric',
+        month: 'short',
         timeZone: 'UTC',
+        year: 'numeric',
       })}\tTo: ${absence.endDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
         day: 'numeric',
+        month: 'short',
         timeZone: 'UTC',
+        year: 'numeric',
       })}\n`;
     });
     await message.channel.send(reply, { split: true });
@@ -115,15 +115,15 @@ export default class AbsentCommand extends ActivityCommand {
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${
       savedAbsences.CotMember.character.name
     } \n First Day Gone: ${savedAbsences.startDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
       day: 'numeric',
+      month: 'short',
       timeZone: 'UTC',
+      year: 'numeric',
     })} \n Returning: ${savedAbsences.endDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
       day: 'numeric',
+      month: 'short',
       timeZone: 'UTC',
+      year: 'numeric',
     })}`;
     await message.reply(summary, { reply: message.author, split: true });
   }

@@ -1,8 +1,8 @@
 import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
+import * as moment from 'moment';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
-import * as moment from "moment";
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly command = 'promote';
@@ -42,18 +42,18 @@ export default class PromoteCommand extends ActivityCommand {
         const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
         let daysInFc: string = '';
         if (firstSeen.isAfter(firstPull)) {
-          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstPull, 'd')} days`
+          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstPull, 'd')} days`;
         } else if (firstSeen.isBefore(beginningOfTime)) {
           daysInFc = '\tand was in the FC before Sassybot';
         }
 
-        let response = `${promotion.CotMember.character.name} From ${
+        const response = `${promotion.CotMember.character.name} From ${
           CoTRankValueToString[promotion.CotMember.rank]
         } To ${toRankName} on ${promotion.requested.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
           day: 'numeric',
+          month: 'short',
           timeZone: 'UTC',
+          year: 'numeric',
         })}${daysInFc}`;
 
         let sentMessages = await message.channel.send(response);
