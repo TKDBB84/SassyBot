@@ -17,7 +17,6 @@ import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
 import { UserIds } from './consts';
 import jobs from './cronJobs';
-import Migrate from './migrate';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -271,10 +270,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 dbConnection.then(async (connection: Connection) => {
   const sb = new Sassybot(connection);
-  if (process.env.MIGRATE_OLD_DB && process.env.MIGRATE_OLD_DB !== 'false') {
-    const migrate = new Migrate(sb);
-    await migrate.migrateAll();
-  }
 
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   jobs.forEach(({ job, schedule }) => {
