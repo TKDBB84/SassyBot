@@ -184,7 +184,7 @@ export class Sassybot extends EventEmitter {
       }
       this.registeredCommands.add(sbEvent.command);
     }
-    this.on(sbEvent.event, sbEvent.getEventListener());
+    this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
   }
 
   private async login() {
