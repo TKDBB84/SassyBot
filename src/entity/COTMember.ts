@@ -62,7 +62,8 @@ export default class COTMember {
       const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();
       await cotMemberRepo.update(cotMember.id, { firstSeenDiscord, character: cotPlayer });
     }
-
+    cotPlayer.user = sbUser;
+    cotMember.character = cotPlayer;
     return cotMember;
   }
 
