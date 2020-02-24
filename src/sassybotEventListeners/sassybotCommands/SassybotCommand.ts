@@ -30,9 +30,11 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     if (params.command.toLowerCase() === this.command.toLowerCase()) {
       await this.listener({ message, params });
     }
-    if (params.command.toLowerCase() === 'help' && params.args[0].toLowerCase() === this.command.toLowerCase()) {
-      message.channel.send(this.getHelpText(), {
-        split: true,
+    if (params.command.toLowerCase() === 'help' && params.args.toLowerCase() === this.command.toLowerCase()) {
+      await message.channel.send(this.getHelpText(), {
+        split: {
+          char: ' ',
+        },
       });
     }
   }
