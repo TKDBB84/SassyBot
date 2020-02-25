@@ -1,368 +1,279 @@
-export interface ISassyBotImport {
-  functions: { [key: string]: SassyBotCommand };
-  help: { [key: string]: string };
+import {
+  Channel,
+  Client,
+  GuildMember,
+  Message,
+  MessageMentions,
+  MessageReaction,
+  Role,
+  TextChannel,
+  User,
+  UserResolvable,
+  VoiceChannel,
+} from 'discord.js';
+import { EventEmitter } from 'events';
+import * as cron from 'node-cron';
+import 'reflect-metadata';
+import { Connection, createConnection } from 'typeorm';
+import { UserIds } from './consts';
+import jobs from './cronJobs';
+import SassybotEventsToRegister from './sassybotEventListeners';
+import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
+
+export interface ISassybotEventListener {
+  event: string;
+  getEventListener: () => (...args: any) => Promise<void>;
 }
-type SassyBotImportList = ISassyBotImport[];
-export type SassyBotCommand = (message: Message, client?: Client) => Promise<void>;
-interface ISassyBotCommandList {
-  [key: string]: SassyBotCommand;
+
+export interface ISassybotCommandParams {
+  command: string;
+  args: string;
+  mentions: MessageMentions | false;
 }
-interface IPleaseRequiredList {
-  [key: string]: { id: string; lastMessage: Message | null };
-}
-type SassybotTrollList = Array<{ process: SassybotTrollCommand; chance: number }>;
-export type SassybotTrollCommand = (message: Message) => Promise<boolean>;
 
-import * as Discord from 'discord.js';
-import { Client, Message, MessageOptions } from 'discord.js';
-import SassyDb from './SassyDb';
-import Users from './Users';
-import VoiceLogHandler from './VoiceLog';
-
-import { AbsentOrPromoteFunctions, resumeAbsentOrPromote } from './AbsentPromote';
-import { ClaimUser } from './CoTMembers';
-import DiceFunctions from './Dice';
-import { newMemberJoinedCallback, newMemberListener } from './NewUserManager';
-import QuoteFunctions from './Quotes';
-import Santa from './Santa';
-
-const db = new SassyDb();
-const client = new Discord.Client();
-const channelList = db.getSpamChannelMap();
-const pleaseRequiredList: IPleaseRequiredList = {};
-const importedFunctions: SassyBotImportList = [DiceFunctions, QuoteFunctions, AbsentOrPromoteFunctions, ClaimUser, Santa];
-
-interface IClientSecrets {
-  token: string;
-  xivApiToken: string;
-}
-const getSecrets: () => IClientSecrets = (): IClientSecrets => ({
-  token: process.env.DISCORD_TOKEN as string,
-  xivApiToken: process.env.XIV_API_TOKEN as string,
-});
-
-const sassybotReply = (message: Message, reply: string): Promise<Message | Message[]> => {
-  const options: MessageOptions = {
-    disableEveryone: true,
-    reply: message.author,
-    split: true,
-  };
-  return message.channel.send(reply, options);
-};
-
-const sassybotRespond = (message: Message, text: string): Promise<Message | Message[]> => {
-  const options: MessageOptions = {
-    disableEveryone: true,
-    split: true,
-  };
-  return message.channel.send(text, options);
-};
-
-const getDisplayName = (message: Message): string => {
-  return message.member.nickname ? message.member.nickname : message.author.username;
-};
-
-const shiftyEyes: SassybotTrollCommand = async (message) => {
-  let outMessage = '';
-  const leftEyesExp = /.*<(\s*.\s*)<.*/;
-  const rightEyesExp = /.*>(\s*.\s*)>.*/;
-
-  const messageLeft = message.content.match(leftEyesExp);
-  const messageRight = message.content.match(rightEyesExp);
-  let leftResponse = '';
-  let leftEyes = '';
-  let rightResponse = '';
-  let rightEyes = '';
-  if (messageLeft) {
-    leftEyes = `<${messageLeft[1]}<`;
-    leftResponse = `>${messageLeft[1]}>`;
-  }
-  if (messageRight) {
-    rightEyes = `>${messageRight[1]}>`;
-    rightResponse = `<${messageRight[1]}<`;
+export class Sassybot extends EventEmitter {
+  private static isSassybotCommand(message: Message): boolean {
+    return message.cleanContent.startsWith('!sb ') || message.cleanContent.startsWith('!sassybot ');
   }
 
-  if (messageLeft && messageRight) {
-    if (message.content.indexOf(leftEyes) < message.content.indexOf(rightEyes)) {
-      outMessage = `${leftResponse} ${rightResponse}`;
-    } else {
-      outMessage = `${rightResponse} ${leftResponse}`;
-    }
-  } else if (messageLeft) {
-    outMessage = leftResponse;
-  } else if (messageRight) {
-    outMessage = rightResponse;
-  }
-
-  if (outMessage === '') {
-    const authorNickname = getDisplayName(message);
-    const authorLeft = authorNickname.match(leftEyesExp);
-    const authorRight = authorNickname.match(rightEyesExp);
-    if (authorLeft) {
-      outMessage = `>${authorLeft[1]}> (but only because you named yourself that)`;
-    } else if (authorRight) {
-      outMessage = `<${authorRight[1]}< (but only because you named yourself that)`;
-    }
-  }
-
-  if (outMessage !== '') {
-    await sassybotRespond(message, outMessage);
-    return false;
-  }
-  return true;
-};
-
-const aPingRee: SassybotTrollCommand = async (message) => {
-  if (message.content.toLowerCase().includes(':apingree:') || message.content.toLowerCase().includes(':angeryping:')) {
-    setTimeout(() => {
-      sassybotReply(message, 'oh I hear you like being pinged!');
-    }, Math.floor(Math.random() * 75001) + 15000);
-    return false;
-  }
-  return true;
-};
-
-const moreDots: SassybotTrollCommand = async (message) => {
-  const dotMatch = message.content.match(/(\.)+/);
-  if (!dotMatch || !dotMatch.input) {
-    return true;
-  }
-  if (dotMatch[0].toString() === dotMatch.input.toString()) {
-    await sassybotRespond(message, dotMatch.input.toString() + dotMatch.input.toString());
-    return false;
-  }
-  return true;
-};
-
-const pleaseShutUp: SassybotTrollCommand = async (message) => {
-  await sassybotReply(message, 'will you please shut up?');
-  return false;
-};
-
-const processPleaseStatement: SassybotTrollCommand = async (message) => {
-  const authorId = getAuthorId(message);
-  if (pleaseRequiredList.hasOwnProperty(authorId)) {
-    const pleaseRequired = pleaseRequiredList[authorId];
-    if (message.content.toLowerCase() === 'please') {
-      if (pleaseRequired.lastMessage !== null) {
-        await processSassybotCommand(pleaseRequired.lastMessage);
-        pleaseRequiredList[authorId].lastMessage = null;
-        return false;
+  private static getCommandParameters(message: Message): ISassybotCommandParams {
+    const result: {
+      args: string;
+      command: string;
+      mentions: MessageMentions | false;
+    } = {
+      args: '',
+      command: '',
+      mentions: false,
+    };
+    const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s*(?<args>.*)$/i;
+    const matches = message.cleanContent.match(patternMatch);
+    if (matches && matches.groups) {
+      if (matches.groups.command) {
+        result.command = matches.groups.command.toLowerCase();
+      }
+      if (matches.groups.args) {
+        result.args = matches.groups.args.toLowerCase().trim();
+      }
+      if (message.mentions.members.size > 0) {
+        result.mentions = message.mentions;
       }
     }
+    return result;
   }
-  return true;
-};
+  public dbConnection: Connection;
+  protected discordClient: Client;
+  private registeredCommands = new Set<string>();
 
-const justSayNo: SassybotTrollCommand = async (message) => {
-  if (isSassyBotCall(message)) {
-    await sassybotRespond(message, 'No, Fuck you.');
-    return false;
-  }
-  return true;
-};
-
-const preProcessTrollFunctions: SassybotTrollList = [
-  {
-    chance: 0.0,
-    process: shiftyEyes,
-  },
-  {
-    chance: 1.0,
-    process: aPingRee,
-  },
-  {
-    chance: 0.0,
-    process: moreDots,
-  },
-  {
-    chance: 0.0,
-    process: pleaseShutUp,
-  },
-  {
-    chance: 1.0,
-    process: processPleaseStatement,
-  },
-  {
-    chance: 0.0,
-    process: justSayNo,
-  },
-];
-
-const isSassyBotCall = (message: Message): boolean => {
-  return message.content.toLowerCase().startsWith('!sassybot ') || message.content.toLowerCase().startsWith('!sb ');
-};
-
-const spamFunction: SassyBotCommand = async (message) => {
-  const authorId = getAuthorId(message);
-  if (authorId === Users.Sasner.id || authorId === Users.Verian.id || authorId === Users.Tyr.id) {
-    channelList.set(message.guild.id, message.channel.id);
-    db.removeSpamChannel(message.guild.id);
-    db.addSpamChannel(message.guild.id, message.channel.id);
-    await sassybotRespond(message, "Ok, I'll spam this channel");
-  } else {
-    await sassybotRespond(message, 'This functionality is limited to Sasner & server owners');
-  }
-};
-
-const censusFunction: SassyBotCommand = async (message) => {
-  const wordArray = message.content.split(' ');
-  let firstWord;
-  if (wordArray.length >= 2) {
-    firstWord = wordArray[2];
+  constructor(connection: Connection) {
+    super();
+    this.discordClient = new Client({ disableEveryone: true });
+    this.dbConnection = connection;
   }
 
-  switch (firstWord) {
-    case '2019':
-    default:
-      await sassybotRespond(message, 'https://bit.ly/2IFwzke  -- Thanks to Astra');
-      break;
-  }
-  return;
-};
-
-const helpFunction: SassyBotCommand = async (message) => {
-  const wordArray = message.content.split(' ');
-  let firstWord;
-  if (wordArray.length < 2) {
-    firstWord = 'default';
-  } else {
-    firstWord = wordArray[2];
-  }
-  let commandList: { [p: string]: string };
-  commandList = {
-    echo:
-      'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging',
-    help:
-      'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
-    ping: 'usage: `!{sassybot|sb} ping` -- I reply with "pong" this is a good test to see if i\'m listening at all',
-    spam:
-      'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified',
-  };
-
-  for (const importedFunction of importedFunctions) {
-    if (importedFunction.hasOwnProperty('help')) {
-      commandList = Object.assign({}, importedFunction.help, commandList);
+  public async getRole(guildId: string, roleId: string): Promise<Role | undefined> {
+    try {
+      let role;
+      const guild = this.discordClient.guilds.get(guildId);
+      if (guild) {
+        role = guild.roles.get(roleId);
+      }
+      return role;
+    } catch (e) {
+      this.sendErrorToSasner(e);
+      throw e;
     }
   }
 
-  const orderedList: { [key: string]: string } = {};
-  Object.keys(commandList)
-    .sort()
-    .forEach((key) => {
-      orderedList[key] = commandList[key];
-    });
-
-  const commands = Object.keys(orderedList);
-  let reply = '';
-  if (commands.includes(firstWord)) {
-    reply = commandList[firstWord];
-  } else {
-    reply =
-      `Available commands are:` +
-      '\n' +
-      `${JSON.stringify(commands)}` +
-      '\n' +
-      `for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`;
-  }
-  await sassybotRespond(message, reply);
-};
-
-const pingFunction: SassyBotCommand = async (message) => {
-  await sassybotReply(message, 'pong');
-};
-const echoFunction: SassyBotCommand = async (message) => {
-  await sassybotRespond(message, message.content);
-};
-
-const spookyFunction: SassyBotCommand = async  (message) => {
-  if (message.member.voiceChannel) {
-    const connection = await message.member.voiceChannel.join();
-    const thing = connection.playFile('../shared/music/spooky.mp3');
-    thing.on('end', () => {
-      message.member.voiceChannel.leave();
-    })
-  }
-};
-
-let chatFunctions: ISassyBotCommandList = {
-  census: censusFunction,
-  echo: echoFunction,
-  help: helpFunction,
-  ping: pingFunction,
-  spam: spamFunction,
-  spooky: spookyFunction,
-};
-
-for (const importedFunction of importedFunctions) {
-  chatFunctions = Object.assign({}, importedFunction.functions, chatFunctions);
-}
-
-const getAuthorId = (message: Message): string => {
-  return message.author.id;
-};
-
-const processSassybotCommand = async (message: Message): Promise<void> => {
-  if (!isSassyBotCall(message)) {
-    return;
+  public getChannel(channelId: string): Channel | null {
+    let channel;
+    try {
+      channel = this.discordClient.channels.get(channelId);
+    } catch (e) {
+      this.sendErrorToSasner(e).catch(console.error);
+    }
+    if (channel) {
+      return channel;
+    }
+    return null;
   }
 
-  const authorId = getAuthorId(message);
+  public getTextChannel(channelId: string): TextChannel | null {
+    const channel = this.getChannel(channelId);
+    if (this.isTextChannel(channel)) {
+      return channel;
+    }
+    return null;
+  }
 
-  if (pleaseRequiredList.hasOwnProperty(authorId)) {
-    if (!message.content.endsWith(' please')) {
-      pleaseRequiredList[authorId].lastMessage = message;
-      await sassybotRespond(message, 'only if you say "please"');
-      return;
-    } else {
-      message.content = message.content.slice(0, -1 * ' please'.length);
+  public async getUser(userId: string): Promise<User | undefined> {
+    try {
+      let user = this.discordClient.users.get(userId);
+      if (!user) {
+        user = await this.discordClient.fetchUser(userId);
+      }
+      return user;
+    } catch (e) {
+      await this.sendErrorToSasner(e);
+      throw e;
     }
   }
 
-  const parsed = message.content.toLowerCase().split(' ');
-  if (chatFunctions.hasOwnProperty(parsed[1])) {
-    await chatFunctions[parsed[1]](message, client);
-  } else {
-    await sassybotRespond(message, "Sorry I Don't Know That Command");
-  }
-};
-
-const messageEventHandler: SassyBotCommand = async (message) => {
-  const authorId: string = getAuthorId(message);
-  const isFromSassyBot = authorId === Users.Sassybot.id;
-  if (!isFromSassyBot) {
-    const isAbsentOrPromoteRequest = await resumeAbsentOrPromote(message);
-    if (isAbsentOrPromoteRequest) {
-      return;
-    }
-    const isNewMemberMessage = await newMemberListener(message);
-    if (isNewMemberMessage) {
-      return;
-    }
-    let randomNumber: number;
-    if (authorId !== Users.Sasner.id) {
-      for (let i = 0, iMax = preProcessTrollFunctions.length; i < iMax; i++) {
-        randomNumber = Math.random();
-        if (randomNumber < preProcessTrollFunctions[i].chance) {
-          const continueProcessing = await preProcessTrollFunctions[i].process(message);
-          if (!continueProcessing) {
-            return;
-          }
+  public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {
+    try {
+      let member;
+      const guild = this.discordClient.guilds.get(guildId);
+      if (guild) {
+        member = guild.member(userResolvable);
+        if (!member) {
+          member = guild.fetchMember(userResolvable);
         }
       }
+      return member;
+    } catch (e) {
+      await this.sendErrorToSasner(e);
+      throw e;
     }
-    await processSassybotCommand(message);
   }
-};
 
-client.on('voiceStateUpdate', (oldMember, newMember) => {
-  VoiceLogHandler(client, channelList, oldMember, newMember);
+  public isVoiceChannel(channel: Channel | null): channel is VoiceChannel {
+    return !!channel && channel.type === 'voice';
+  }
+
+  public isTextChannel(channel: Channel | null): channel is TextChannel {
+    return !!channel && channel.type === 'text';
+  }
+
+  public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
+    return 'command' in sbEvent;
+  }
+
+  public async sendErrorToSasner(e: Error) {
+    await (await (await this.getUser(UserIds.SASNER))?.createDM())?.sendMessage(`Error fetching Role: ${e}`);
+  }
+
+  public eventNames(): Array<string | symbol> {
+    return [
+      'preLogin',
+      'postLogin',
+      'messageReceived',
+      'sassybotCommandPreprocess',
+      'sassybotCommand',
+      'sassybotCommandPostprocess',
+      'messageEnd',
+      'messageReactionAdd',
+      'voiceStateUpdate',
+    ];
+  }
+
+  public async run(): Promise<void> {
+    this.discordClient.on('message', this.onMessageHandler.bind(this));
+    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdate.bind(this));
+    this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd.bind(this));
+    this.discordClient.on('guildMemberAdd', this.onGuildMemberAdd.bind(this));
+    this.discordClient.on('disconnect', async () => {
+      setTimeout(async () => await this.login(), 30000);
+    });
+    await this.login();
+  }
+
+  public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
+    if (this.isSassyBotCommand(sbEvent)) {
+      if (this.registeredCommands.has(sbEvent.command)) {
+        throw new Error('Command Already Registered');
+      }
+      this.registeredCommands.add(sbEvent.command);
+    }
+    this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
+  }
+
+  private async login() {
+    this.emit('preLogin');
+    const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
+    console.log({ loginComplete: loginResult });
+    this.emit('postLogin');
+  }
+
+  private async onMessageHandler(message: Message) {
+    if (message.author.bot) {
+      return;
+    }
+    this.emit('messageReceived', { message });
+    if (Sassybot.isSassybotCommand(message)) {
+      this.emit('sassybotCommandPreprocess', { message });
+      const params = Sassybot.getCommandParameters(message);
+      if (params.command === 'help') {
+        this.processHelpCommand(message, params);
+      }
+      this.emit('sassybotCommand', { message, params });
+      this.emit('sassybotCommandPostprocess', { message });
+    }
+    this.emit('messageEnd', { message });
+  }
+
+  private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
+    if (params.args === '') {
+      await message.channel.send(
+        `Available commands are:\n${[...this.registeredCommands]
+          .sort()
+          .join(
+            ', ',
+          )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
+        {
+          split: true,
+        },
+      );
+    } else if (params.args === 'help') {
+      await message.channel.send(
+        'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
+        {
+          split: true,
+        },
+      );
+    }
+  }
+
+  private async onGuildMemberAdd(member: GuildMember) {
+    if (member.user.bot) {
+      return;
+    }
+    this.emit('guildMemberAdd', { member });
+  }
+
+  private async onVoiceStateUpdate(oldMember: GuildMember, newMember: GuildMember) {
+    this.emit('voiceStateUpdate', { oldMember, newMember });
+  }
+  private async onMessageReactionAdd(messageReaction: MessageReaction, user: User) {
+    if (messageReaction.message.author.bot) {
+      return;
+    }
+    this.emit('messageReactionAdd', { messageReaction, user });
+  }
+}
+
+let dbConnection;
+if (process.env.NODE_ENV !== 'production') {
+  dbConnection = createConnection({
+    database: 'sassybot',
+    entities: ['dist/entity/**/*.js', 'src/entity/**/*.ts'],
+    host: 'localhost',
+    logging: true,
+    password: 'sassy123',
+    port: 3306,
+    synchronize: false,
+    type: 'mariadb',
+    username: 'sassybot',
+  });
+} else {
+  dbConnection = createConnection();
+}
+
+dbConnection.then(async (connection: Connection) => {
+  const sb = new Sassybot(connection);
+
+  SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
+  jobs.forEach(({ job, schedule }) => {
+    cron.schedule(schedule, job.bind(null, sb));
+  });
+  await sb.run();
 });
-client.on('message', messageEventHandler);
-client.on('ready', () => console.log('I am ready!'));
-client.on('guildMemberAdd', newMemberJoinedCallback);
-
-client
-  .login(getSecrets().token)
-  .then(console.log)
-  .catch(console.error);
