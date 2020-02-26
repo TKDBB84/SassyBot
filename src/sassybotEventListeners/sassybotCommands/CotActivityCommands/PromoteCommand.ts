@@ -45,6 +45,11 @@ export default class PromoteCommand extends ActivityCommand {
           daysInFc = `\tand has been in the FC for approx ${moment().diff(firstPull, 'd')} days`;
         } else if (firstSeen.isBefore(beginningOfTime)) {
           daysInFc = '\tand was in the FC before Sassybot';
+        } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
+          daysInFc = `\tand has been in the FC somewhere between ${moment().diff(firstPull, 'd')} and ${moment().diff(
+            beginningOfTime,
+            'd',
+          )} days`;
         }
 
         const response = `${promotion.CotMember.character.name} From ${
@@ -92,7 +97,7 @@ export default class PromoteCommand extends ActivityCommand {
                     await member.removeRole(previousRole, reason);
                   }
                 } catch (e) {
-                  console.log('error promoting member, adding/removing rank:', {e})
+                  console.log('error promoting member, adding/removing rank:', { e });
                 }
               }
 
