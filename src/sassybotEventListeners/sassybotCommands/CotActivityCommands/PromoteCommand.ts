@@ -75,9 +75,6 @@ export default class PromoteCommand extends ActivityCommand {
               return Promise.resolve();
             }
             if (collection.first() && collection.first().emoji.name === '✅') {
-              if (promotionChannel) {
-                await promotionChannel.send(`${promotion.CotMember.character.name} your promotion has been approved`);
-              }
               const previousRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, promotion.CotMember.rank);
               const updatedMember = await promotion.CotMember.promote();
               await promotionsRepo.delete(promotion.id);
@@ -89,11 +86,18 @@ export default class PromoteCommand extends ActivityCommand {
                 if (promotingMember) {
                   reason += ` by ${promotingMember.displayName}`;
                 }
-                await member.addRole(newRole, reason);
-
-                if (previousRole) {
-                  await member.removeRole(previousRole, reason);
+                try {
+                  await member.addRole(newRole, reason);
+                  if (previousRole) {
+                    await member.removeRole(previousRole, reason);
+                  }
+                } catch (e) {
+                  console.log('error promoting member, adding/removing rank:', {e})
                 }
+              }
+
+              if (promotionChannel) {
+                await promotionChannel.send(`${promotion.CotMember.character.name} your promotion has been approved`);
               }
               await sentMessage.delete(100);
             } else {
