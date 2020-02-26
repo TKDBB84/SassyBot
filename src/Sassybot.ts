@@ -149,7 +149,7 @@ export class Sassybot extends EventEmitter {
   }
 
   public async sendErrorToSasner(e: Error) {
-    await (await (await this.getUser(UserIds.SASNER))?.createDM())?.sendMessage(`Error fetching Role: ${e}`);
+    await (await (await this.getUser(UserIds.SASNER))?.createDM())?.send(`Error fetching Role: ${e}`);
   }
 
   public eventNames(): Array<string | symbol> {
