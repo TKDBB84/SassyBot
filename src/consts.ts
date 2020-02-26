@@ -39,6 +39,7 @@ export const enum UserIds {
 
 export enum CotRanks {
   DIGNITARY = '331193662748885013',
+  GUEST = '377254599041613836',
   MEMBER = '600338911755239424',
   NEW = '640992255506776124',
   OFFICER = '331191333672845312',
@@ -49,6 +50,7 @@ export enum CotRanks {
 
 export enum CoTRankValueToString {
   '331193662748885013' = 'Dignitary',
+  '377254599041613836' = 'Guest',
   '600338911755239424' = 'Member',
   '640992255506776124' = 'New',
   '331191333672845312' = 'Officer',
@@ -59,6 +61,7 @@ export enum CoTRankValueToString {
 
 export const CoTRankStringToValue = {
   DIGNITARY: '331193662748885013',
+  GUEST: '377254599041613836',
   MEMBER: '600338911755239424',
   NEW: '640992255506776124',
   OFFICER: '331191333672845312',

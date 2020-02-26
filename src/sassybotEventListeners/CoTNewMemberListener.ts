@@ -132,7 +132,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .getRepository(COTMember)
       .findOne({ where: { character: { id: char.id } } });
     char.user = sbUser;
-    console.log({ discordId, member });
     if (member) {
       member.character = char;
       return member;
@@ -154,57 +153,86 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       );
       console.error('unable to update nickname', { e });
     });
-    const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
-    if (cotMember.rank !== CotRanks.NEW) {
+    const nameMatch = await this.sb.dbConnection
+      .getRepository(FFXIVChar)
+      .createQueryBuilder()
+      .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
+      .getOne();
+
+    if (nameMatch) {
       // found in API before
-      message.channel.send(
-        `I've found your FC membership, it looks like you're currently a: ${
-          CoTRankValueToString[cotMember.rank]
-        }, i'll be sure to set that for you when we're done.`,
-        { split: true },
-      );
+      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id, CotRanks.NEW);
+      if (cotMember.rank !== CotRanks.NEW) {
+        await message.channel.send(
+          `I've found your FC membership, it looks like you're currently a: ${
+            CoTRankValueToString[cotMember.rank]
+          }, i'll be sure to set that for you when we're done.`,
+          { split: true },
+        );
+      }
     }
   }
 
   private async acceptingTerms(declaredName: string, message: Message): Promise<boolean> {
     const messageContent = message.cleanContent
-      .replace('"', '')
-      .replace("'", '')
+      .replace(/[^a-z-A-Z ]/g, '')
+      .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
     if (messageContent === 'i agree') {
-      const cotMember = await COTMember.getCotMemberByName(declaredName, message.author.id);
-      cotMember.firstSeenDiscord = new Date();
-      if (cotMember.rank === CotRanks.NEW) {
-        await cotMember.promote();
-      }
-      const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
-      if (newRole) {
-        try {
-          await message.member.removeRole(newRole);
-        } catch (e) {
-          await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
+      const nameMatch = await this.sb.dbConnection
+        .getRepository(FFXIVChar)
+        .createQueryBuilder()
+        .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
+        .getOne();
+
+      if (nameMatch) {
+        const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
+        cotMember.firstSeenDiscord = new Date();
+        if (cotMember.rank === CotRanks.NEW) {
+          await cotMember.promote();
+        }
+        const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
+        if (newRole) {
+          try {
+            await message.member.removeRole(newRole);
+          } catch (e) {
+            await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
+            return true;
+          }
+        } else {
+          await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+          return true;
+        }
+        const roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
+        if (roleToAdd) {
+          try {
+            await message.member.addRole(roleToAdd);
+          } catch (e) {
+            await CoTNewMemberListener.couldNotAddRole(message, roleToAdd, e);
+            return true;
+          }
+        } else {
+          await CoTNewMemberListener.couldNotAddRole(
+            message,
+            CoTRankValueToString[cotMember.rank],
+            'unable to get role from client',
+          );
           return true;
         }
       } else {
-        await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
-        return true;
-      }
-      const roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
-      if (roleToAdd) {
-        try {
-          await message.member.addRole(roleToAdd);
-        } catch (e) {
-          await CoTNewMemberListener.couldNotAddRole(message, roleToAdd, e);
+        const guest = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST);
+        if (guest) {
+          try {
+            await message.member.addRole(guest, 'User not found in COT from API');
+          } catch (e) {
+            await CoTNewMemberListener.couldNotAddRole(message, guest, e);
+            return true;
+          }
+        } else {
+          await CoTNewMemberListener.couldNotAddRole(message, 'Guest', 'unable to get role from client');
           return true;
         }
-      } else {
-        await CoTNewMemberListener.couldNotAddRole(
-          message,
-          CoTRankValueToString[cotMember.rank],
-          'unable to get role from client',
-        );
-        return true;
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
       return true;
