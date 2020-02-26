@@ -95,6 +95,7 @@ export default class PromoteCommand extends ActivityCommand {
                   await member.removeRole(previousRole, reason);
                 }
               }
+              await sentMessage.delete(100);
             } else {
               await message.channel.send(
                 `Please Remember To Follow Up With ${promotion.CotMember.character.name} On Why They Were Denied`,
@@ -107,7 +108,6 @@ export default class PromoteCommand extends ActivityCommand {
         );
       }),
     );
-    await message.channel.send('', { split: true });
     return;
   }
 

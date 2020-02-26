@@ -100,24 +100,32 @@ export default class COTMember {
   public character!: FFXIVChar;
 
   public async promote(): Promise<COTMember> {
+    let newRank;
     switch (this.rank) {
       case CotRanks.NEW:
-        this.rank = CotRanks.RECRUIT;
+        newRank = CotRanks.RECRUIT;
         break;
       case CotRanks.MEMBER:
-        this.rank = CotRanks.VETERAN;
+        newRank = CotRanks.VETERAN;
         break;
       case CotRanks.VETERAN:
-        this.rank = CotRanks.OFFICER;
+        newRank = CotRanks.OFFICER;
         break;
       default:
       case CotRanks.RECRUIT:
-        this.rank = CotRanks.MEMBER;
+        newRank = CotRanks.MEMBER;
         break;
     }
-    this.lastPromotion = new Date();
-    return await getManager()
+    let lastPromotion = new Date();
+    await getManager()
       .getRepository(COTMember)
-      .save(this);
+      .update(this.id, { lastPromotion, rank: newRank });
+    const updatedMember = await getManager()
+      .getRepository(COTMember)
+      .findOne(this.id);
+    if (!updatedMember) {
+      throw new Error('same member not found?');
+    }
+    return updatedMember;
   }
 }
