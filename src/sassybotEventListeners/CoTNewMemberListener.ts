@@ -222,6 +222,18 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         }
       } else {
         const guest = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST);
+        const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
+        if (newRole) {
+          try {
+            await message.member.removeRole(newRole);
+          } catch (e) {
+            await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
+            return true;
+          }
+        } else {
+          await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+          return true;
+        }
         if (guest) {
           try {
             await message.member.addRole(guest, 'User not found in COT from API');
