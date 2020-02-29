@@ -116,7 +116,7 @@ export default class COTMember {
         newRank = CotRanks.MEMBER;
         break;
     }
-    let lastPromotion = new Date();
+    const lastPromotion = new Date();
     await getManager()
       .getRepository(COTMember)
       .update(this.id, { lastPromotion, rank: newRank });

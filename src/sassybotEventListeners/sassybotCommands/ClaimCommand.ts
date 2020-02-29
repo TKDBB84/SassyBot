@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import { CotRanks, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
+import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
@@ -12,10 +13,10 @@ export default class ClaimCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    const charRepository = this.sb.dbConnection.getRepository(FFXIVChar);
+    const character = await charRepository.findOne({ where: { user: message.member.id } });
     const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    let memberByUserId = await CoTMemberRepo.findOne({
-      where: { player: { user: { discordUserId: message.member.id } } },
-    });
+    let memberByUserId = await CoTMemberRepo.findOne({ where: { character } });
     if (memberByUserId) {
       await message.channel.send(
         `I already have you as: ${memberByUserId.character.name}, if this isn't correct, please contact Sasner`,
