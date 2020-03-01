@@ -151,3 +151,4 @@ client_secrets.json
 Users.js
 data/
 /nodebot.sqlite
+/dist/
