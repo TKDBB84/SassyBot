@@ -61,7 +61,7 @@ export default class PromoteCommand extends ActivityCommand {
           year: 'numeric',
         })}${daysInFc}`;
 
-        let sentMessages = await message.channel.send(response);
+        let sentMessages = await message.channel.send(response, { split: true });
         if (!Array.isArray(sentMessages)) {
           sentMessages = [sentMessages];
         }
