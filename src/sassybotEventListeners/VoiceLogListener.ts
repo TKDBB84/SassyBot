@@ -1,6 +1,6 @@
-import { GuildMember, Message, MessageOptions, TextChannel, VoiceChannel } from 'discord.js';
+import { Message, MessageOptions, TextChannel, VoiceState } from 'discord.js';
 import * as moment from 'moment-timezone';
-import { GuildIds, UserIds } from '../consts';
+import { GuildIds } from '../consts';
 import SpamChannel from '../entity/SpamChannel';
 import SassybotEventListener from './SassybotEventListener';
 
@@ -50,17 +50,6 @@ export default class VoiceLogListener extends SassybotEventListener {
     return this.listener.bind(this);
   }
 
-  private async getVoiceChannel(channelId: string): Promise<VoiceChannel | null> {
-    if (!channelId) {
-      return null;
-    }
-    const channel = this.sb.getChannel(channelId);
-    if (this.sb.isVoiceChannel(channel)) {
-      return channel;
-    }
-    return null;
-  }
-
   private async getSpamChannelTimezone(guildId: string): Promise<string> {
     const spamChannelEntity = await this.sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
       guildId,
@@ -76,7 +65,7 @@ export default class VoiceLogListener extends SassybotEventListener {
       guildId,
     });
     if (spamChannelEntity && spamChannelEntity.channelId) {
-      const spamTextChannel = this.sb.getTextChannel(spamChannelEntity.channelId);
+      const spamTextChannel = await this.sb.getTextChannel(spamChannelEntity.channelId);
       if (spamTextChannel) {
         return spamTextChannel;
       }
@@ -88,12 +77,12 @@ export default class VoiceLogListener extends SassybotEventListener {
     oldMember: previousMemberState,
     newMember: currentMemberState,
   }: {
-    oldMember: GuildMember;
-    newMember: GuildMember;
+    oldMember: VoiceState;
+    newMember: VoiceState;
   }) {
     const promiseResolution = await Promise.all([
-      this.getVoiceChannel(previousMemberState?.voiceChannelID || ''),
-      this.getVoiceChannel(currentMemberState?.voiceChannelID || ''),
+      previousMemberState.channel,
+      currentMemberState.channel,
       this.getSpamTextChannel(previousMemberState.guild.id),
       this.getSpamChannelTimezone(previousMemberState.guild.id),
     ]);
@@ -105,18 +94,28 @@ export default class VoiceLogListener extends SassybotEventListener {
       return;
     }
 
-    if (VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(previousMemberState.voiceChannelID)) {
+    if (
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(
+        previousMemberState.channelID || 'not-in-array',
+      )
+    ) {
       userLeftChannel = null;
     }
 
-    if (VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id].has(currentMemberState.voiceChannelID)) {
+    if (
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id].has(
+        currentMemberState.channelID || 'not-in-array',
+      )
+    ) {
       userJoinedChannel = null;
     }
 
-    const previousMemberName: string = `${previousMemberState.displayName} (${previousMemberState.user.username})`;
+    const previousMemberName: string = `${previousMemberState.member?.displayName || ''} (${previousMemberState.member
+      ?.user.username || ''})`;
     const leftNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
-    const currentMemberName: string = `${currentMemberState.displayName} (${currentMemberState.user.username})`;
+    const currentMemberName: string = `${currentMemberState.member?.displayName || ''} (${currentMemberState.member
+      ?.user.username || ''})`;
     const joinedNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
     if (userLeftChannel && userJoinedChannel) {

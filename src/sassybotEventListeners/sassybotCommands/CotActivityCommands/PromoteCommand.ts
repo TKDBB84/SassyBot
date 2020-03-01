@@ -11,14 +11,20 @@ export default class PromoteCommand extends ActivityCommand {
     const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
     const allPromotions = await promotionsRepo.find({ order: { requested: 'ASC' } });
     if (allPromotions.length === 0) {
-      await message.channel.sendMessage('No Current Requests');
+      await message.channel.send('No Current Requests');
       return;
     }
 
     const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
-    const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, message.member.id);
+
+    const promotingMemberId = message.member?.id;
+    if (!promotingMemberId) {
+      await message.channel.send("You must have dm'd me, dont do that");
+      return;
+    }
+    const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
     await message.channel.send('__Current Promotion Requests:__\n');
     await Promise.all(
@@ -61,12 +67,15 @@ export default class PromoteCommand extends ActivityCommand {
           year: 'numeric',
         })}${daysInFc}`;
 
-        let sentMessages = await message.channel.send(response, { split: true });
+        let sentMessageArray: Message[];
+        const sentMessages = await message.channel.send(response, { split: true });
         if (!Array.isArray(sentMessages)) {
-          sentMessages = [sentMessages];
+          sentMessageArray = [sentMessages];
+        } else {
+          sentMessageArray = sentMessages;
         }
         await Promise.all(
-          sentMessages.map(async (sentMessage) => {
+          sentMessageArray.map(async (sentMessage) => {
             const reactionYes = await sentMessage.react('✅');
             const reactionNo = await sentMessage.react('⛔');
             const collection = await sentMessage.awaitReactions(reactionFilter, {
@@ -79,7 +88,8 @@ export default class PromoteCommand extends ActivityCommand {
               await Promise.all([reactionYes.remove(), reactionNo.remove()]);
               return Promise.resolve();
             }
-            if (collection.first() && collection.first().emoji.name === '✅') {
+            const firstItem = collection.first();
+            if (firstItem && firstItem.emoji.name === '✅') {
               const previousRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, promotion.CotMember.rank);
               const updatedMember = await promotion.CotMember.promote();
               await promotionsRepo.delete(promotion.id);
@@ -92,9 +102,9 @@ export default class PromoteCommand extends ActivityCommand {
                   reason += ` by ${promotingMember.displayName}`;
                 }
                 try {
-                  await member.addRole(newRole, reason);
+                  await member.roles.add(newRole, reason);
                   if (previousRole) {
-                    await member.removeRole(previousRole, reason);
+                    await member.roles.remove(previousRole, reason);
                   }
                 } catch (e) {
                   console.log('error promoting member, adding/removing rank:', { e });
@@ -104,13 +114,13 @@ export default class PromoteCommand extends ActivityCommand {
               if (promotionChannel) {
                 await promotionChannel.send(`${promotion.CotMember.character.name} your promotion has been approved`);
               }
-              await sentMessage.delete(100);
+              await sentMessage.delete({ timeout: 100 });
             } else {
               await message.channel.send(
                 `Please Remember To Follow Up With ${promotion.CotMember.character.name} On Why They Were Denied`,
               );
               await promotionsRepo.delete(promotion.id);
-              await sentMessage.delete(100);
+              await sentMessage.delete({ timeout: 100 });
             }
             return Promise.resolve();
           }),

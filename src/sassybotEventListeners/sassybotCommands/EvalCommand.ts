@@ -23,7 +23,7 @@ export default class EvalCommand extends SassybotCommand {
         const sasner = await this.sb.getUser(UserIds.SASNER);
         if (sasner) {
           const sasnerDm = await sasner.createDM();
-          sasnerDm.send(`eval-ing code for ${forUser} \`\`\`js\n${params.args}\n\`\`\``);
+          await sasnerDm.send(`eval-ing code for ${forUser} \`\`\`js\n${params.args}\n\`\`\``);
         }
         console.log(log, { message });
       }
@@ -32,7 +32,7 @@ export default class EvalCommand extends SassybotCommand {
       if (typeof result !== 'string') {
         result = require('util').inspect(result);
       }
-      message.channel.send(result);
+      await message.channel.send(result);
     }
   }
 }

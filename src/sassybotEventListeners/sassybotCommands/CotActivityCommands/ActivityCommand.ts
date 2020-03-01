@@ -1,8 +1,6 @@
-import { Message, Snowflake } from 'discord.js';
+import { Message } from 'discord.js';
 import { CotRanks, GuildIds, UserIds } from '../../../consts';
 import COTMember from '../../../entity/COTMember';
-import FFXIVChar from '../../../entity/FFXIVChar';
-import SbUser from '../../../entity/SbUser';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
 
@@ -12,9 +10,12 @@ export default abstract class ActivityCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.guild || !message.member) {
+      return;
+    }
     const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      (OfficerRole && message.member.highestRole.comparePositionTo(OfficerRole) >= 0) ||
+      (OfficerRole && message.member.roles.highest.comparePositionTo(OfficerRole) >= 0) ||
       message.author.id === UserIds.SASNER
     ) {
       await this.listAll(message);
@@ -23,35 +24,8 @@ export default abstract class ActivityCommand extends SassybotCommand {
     }
   }
 
-  protected async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
-    const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
-    let sbUser = await sbUserRepo.findOne(discordId);
-    if (!sbUser) {
-      sbUser = new SbUser();
-      sbUser.discordUserId = discordId;
-      await sbUserRepo.save(sbUser);
-      return false;
-    }
-    const char = await this.sb.dbConnection
-      .getRepository(FFXIVChar)
-      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
-    if (!char) {
-      return false;
-    }
-
-    const member = await this.sb.dbConnection
-      .getRepository(COTMember)
-      .findOne({ where: { character: { id: char.id } } });
-    char.user = sbUser;
-    if (member) {
-      member.character = char;
-      return member;
-    }
-    return false;
-  }
-
   protected async requestCharacterName(message: Message) {
-    message.channel.send('First, Tell Me Your Full Character Name');
+    await message.channel.send('First, Tell Me Your Full Character Name');
   }
 
   protected async parseCharacterName(message: Message): Promise<COTMember> {

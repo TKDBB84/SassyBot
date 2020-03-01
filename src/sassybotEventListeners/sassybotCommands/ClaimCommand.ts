@@ -13,6 +13,9 @@ export default class ClaimCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.guild || !message.member) {
+      return;
+    }
     const charRepository = this.sb.dbConnection.getRepository(FFXIVChar);
     const character = await charRepository.findOne({ where: { user: message.member.id } });
     const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
@@ -39,7 +42,11 @@ export default class ClaimCommand extends SassybotCommand {
       );
       return;
     }
-    if (!message.member.roles.has(rankRole.id)) {
+    if (message.member.roles.cache.has(CotRanks.GUEST)) {
+      await message.member.roles.remove(CotRanks.GUEST, 'claimed member');
+    }
+    if (!message.member.roles.cache.has(rankRole.id)) {
+      // noinspection FallThroughInSwitchStatementJS
       switch (memberByUserId.rank) {
         case CotRanks.OFFICER:
           await message.channel.send(
@@ -48,13 +55,14 @@ export default class ClaimCommand extends SassybotCommand {
           rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN);
         case CotRanks.VETERAN:
           if (rankRole) {
-            await message.member.addRole(rankRole).catch(console.error);
+            await message.member.roles.add(rankRole, 'user claimed Veteran member').catch(console.error);
           }
           break;
+        case CotRanks.OTHER:
         case CotRanks.MEMBER:
         case CotRanks.RECRUIT:
         default:
-          await message.member.addRole(rankRole).catch(console.error);
+          await message.member.roles.add(rankRole, 'user claimed member').catch(console.error);
           break;
       }
     }

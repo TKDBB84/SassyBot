@@ -6,10 +6,10 @@ import {
   MessageMentions,
   MessageReaction,
   Role,
+  Snowflake,
   TextChannel,
   User,
   UserResolvable,
-  VoiceChannel,
 } from 'discord.js';
 import { EventEmitter } from 'events';
 import * as cron from 'node-cron';
@@ -17,6 +17,9 @@ import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
 import { UserIds } from './consts';
 import jobs from './cronJobs';
+import COTMember from './entity/COTMember';
+import FFXIVChar from './entity/FFXIVChar';
+import SbUser from './entity/SbUser';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -55,7 +58,8 @@ export class Sassybot extends EventEmitter {
       if (matches.groups.args) {
         result.args = matches.groups.args.toLowerCase().trim();
       }
-      if (message.mentions.members.size > 0) {
+
+      if ((message.mentions.members?.size || 0) > 0) {
         result.mentions = message.mentions;
       }
     }
@@ -67,16 +71,19 @@ export class Sassybot extends EventEmitter {
 
   constructor(connection: Connection) {
     super();
-    this.discordClient = new Client({ disableEveryone: true });
+    this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
   }
 
-  public async getRole(guildId: string, roleId: string): Promise<Role | undefined> {
+  public async getRole(guildId: string, roleId: string): Promise<Role | null | undefined> {
     try {
       let role;
-      const guild = this.discordClient.guilds.get(guildId);
+      const guild = this.discordClient.guilds.cache.get(guildId);
       if (guild) {
-        role = guild.roles.get(roleId);
+        role = guild.roles.cache.get(roleId);
+        if (!role) {
+          role = await guild.roles.fetch(roleId);
+        }
       }
       return role;
     } catch (e) {
@@ -85,10 +92,13 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  public getChannel(channelId: string): Channel | null {
+  public async getChannel(channelId: string): Promise<Channel | null> {
     let channel;
     try {
-      channel = this.discordClient.channels.get(channelId);
+      channel = this.discordClient.channels.cache.get(channelId);
+      if (!channel) {
+        channel = await this.discordClient.channels.fetch(channelId);
+      }
     } catch (e) {
       this.sendErrorToSasner(e).catch(console.error);
     }
@@ -98,8 +108,8 @@ export class Sassybot extends EventEmitter {
     return null;
   }
 
-  public getTextChannel(channelId: string): TextChannel | null {
-    const channel = this.getChannel(channelId);
+  public async getTextChannel(channelId: string): Promise<TextChannel | null> {
+    const channel = await this.getChannel(channelId);
     if (this.isTextChannel(channel)) {
       return channel;
     }
@@ -108,9 +118,9 @@ export class Sassybot extends EventEmitter {
 
   public async getUser(userId: string): Promise<User | undefined> {
     try {
-      let user = this.discordClient.users.get(userId);
+      let user = this.discordClient.users.cache.get(userId);
       if (!user) {
-        user = await this.discordClient.fetchUser(userId);
+        user = await this.discordClient.users.fetch(userId);
       }
       return user;
     } catch (e) {
@@ -118,15 +128,39 @@ export class Sassybot extends EventEmitter {
       throw e;
     }
   }
+  public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
+    const sbUserRepo = this.dbConnection.getRepository(SbUser);
+    let sbUser = await sbUserRepo.findOne(discordId);
+    if (!sbUser) {
+      sbUser = new SbUser();
+      sbUser.discordUserId = discordId;
+      await sbUserRepo.save(sbUser);
+      return false;
+    }
+    const char = await this.dbConnection
+      .getRepository(FFXIVChar)
+      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
+    if (!char) {
+      return false;
+    }
+
+    const member = await this.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } } });
+    char.user = sbUser;
+    if (member) {
+      member.character = char;
+      return member;
+    }
+    return false;
+  }
 
   public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {
     try {
       let member;
-      const guild = this.discordClient.guilds.get(guildId);
+      const guild = this.discordClient.guilds.cache.get(guildId);
       if (guild) {
         member = guild.member(userResolvable);
         if (!member) {
-          member = guild.fetchMember(userResolvable);
+          member = await guild.members.fetch(userResolvable);
         }
       }
       return member;
@@ -136,11 +170,7 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  public isVoiceChannel(channel: Channel | null): channel is VoiceChannel {
-    return !!channel && channel.type === 'voice';
-  }
-
-  public isTextChannel(channel: Channel | null): channel is TextChannel {
+  public isTextChannel(channel: Channel | null | undefined): channel is TextChannel {
     return !!channel && channel.type === 'text';
   }
 

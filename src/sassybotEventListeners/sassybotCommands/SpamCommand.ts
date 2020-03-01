@@ -12,8 +12,11 @@ export default class SpamCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.guild) {
+      return;
+    }
     const authorId = message.author.id;
-    if (message.member.hasPermission('ADMINISTRATOR') || authorId === UserIds.SASNER) {
+    if (message.member?.hasPermission('ADMINISTRATOR') || authorId === UserIds.SASNER) {
       const spamChannelRepo = this.sb.dbConnection.getRepository(SpamChannel);
       let spamChannel = await spamChannelRepo.findOne({ guildId: message.guild.id });
       if (!spamChannel) {
