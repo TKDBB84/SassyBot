@@ -43,7 +43,7 @@ export default class AbsentCommand extends ActivityCommand {
   protected async activityListener({ message }: { message: Message }): Promise<void> {
     const absent = new AbsentRequest();
     absent.requested = new Date();
-    let foundMember = await this.findCoTMemberByDiscordId(message.author.id);
+    let foundMember = await this.sb.findCoTMemberByDiscordId(message.author.id);
     let messageCount = 0;
     if (!foundMember) {
       await this.requestCharacterName(message);

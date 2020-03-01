@@ -134,7 +134,7 @@ export default class PromoteCommand extends ActivityCommand {
     const promotion = new PromotionRequest();
     promotion.requested = new Date();
 
-    const foundMember = await this.findCoTMemberByDiscordId(message.author.id);
+    const foundMember = await this.sb.findCoTMemberByDiscordId(message.author.id);
     if (!foundMember) {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;

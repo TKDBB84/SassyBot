@@ -96,6 +96,13 @@
   resolved "https://registry.yarnpkg.com/@types/tz-offset/-/tz-offset-0.0.0.tgz#d58f1cebd794148d245420f8f0660305d320e565"
   integrity sha512-XLD/llTSB6EBe3thkN+/I0L+yCTB6sjrcVovQdx2Cnl6N6bTzHmwe/J8mWnsXFgxLrj/emzdv8IR4evKYG2qxQ==
 
+"@types/ws@^7.2.2":
+  version "7.2.2"
+  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-7.2.2.tgz#1bd2038bc80aea60f8a20b2dcf08602a72e65063"
+  integrity sha512-oqnI3DbGCVI9zJ/WHdFo3CUE8jQ8CVQDUIKaDtlTcNeT4zs6UCg9Gvk5QrFx2QPkRszpM6yc8o0p4aGjCsTi+w==
+  dependencies:
+    "@types/node" "*"
+
 abbrev@1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
@@ -732,9 +739,10 @@ dir-glob@^2.2.2:
   dependencies:
     path-type "^3.0.0"
 
-discord.js@discordjs/discord.js:
-  version "12.0.0"
-  resolved "https://codeload.github.com/discordjs/discord.js/tar.gz/66e625c4c0c8c35f6d0891543af2ae68f0839a7b"
+discord.js@^12.0.0:
+  version "12.0.1"
+  resolved "https://registry.yarnpkg.com/discord.js/-/discord.js-12.0.1.tgz#58574c0c9acc598095f943d6b14da4725d37b8b9"
+  integrity sha512-lUlrkAWSb5YTB1WpSZHjeUXxGlHK8VDjrlHLEP4lJj+etFAellURpmRYl29OPJ/7arQWB879pP4rvhhzpdOF7w==
   dependencies:
     "@discordjs/collection" "^0.1.5"
     abort-controller "^3.0.0"
