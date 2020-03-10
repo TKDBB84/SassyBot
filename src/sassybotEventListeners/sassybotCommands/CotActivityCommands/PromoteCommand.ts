@@ -48,7 +48,7 @@ export default class PromoteCommand extends ActivityCommand {
         const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
         let daysInFc: string = '';
         if (firstSeen.isAfter(firstPull)) {
-          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstPull, 'd')} days`;
+          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
         } else if (firstSeen.isBefore(beginningOfTime)) {
           daysInFc = '\tand was in the FC before Sassybot';
         } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
