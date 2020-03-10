@@ -27,10 +27,10 @@ export default class DaysCommand extends SassybotCommand {
     if (firstSeen.isAfter(firstPull)) {
       daysInFc = `You've been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
     } else if (firstSeen.isBefore(beginningOfTime)) {
-      daysInFc = `'Sorry you've been in the FC for longer than Sassybot has been tracking memberships, so more than ${moment().diff(
+      daysInFc = `Sorry you've been in the FC for longer than Sassybot has been tracking memberships, so more than ${moment().diff(
         beginningOfTime,
         'd',
-      )} days'`;
+      )} days`;
     } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
       daysInFc = `I lost track at one point, but you've been in the FC somewhere between ${moment().diff(
         firstPull,
