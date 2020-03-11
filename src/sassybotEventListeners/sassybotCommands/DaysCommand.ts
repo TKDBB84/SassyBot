@@ -15,7 +15,7 @@ export default class DaysCommand extends SassybotCommand {
     const cotMember = await this.sb.findCoTMemberByDiscordId(authorId);
     if (!cotMember) {
       await message.channel.send(
-        `'I'm  not sure who you are, you can use \`!sb claim [your_char_name]\` to claim your character`,
+        `'I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: !sb claim Sasner Rensas) to claim your character`,
       );
       return;
     }

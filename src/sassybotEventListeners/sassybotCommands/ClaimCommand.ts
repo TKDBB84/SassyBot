@@ -9,7 +9,7 @@ export default class ClaimCommand extends SassybotCommand {
   public readonly command = 'claim';
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} claim ${YOUR+CHAR+NAME}` ---- ex: `!sb claim Sasner Rensas`';
+    return 'usage: `!{sassybot|sb} claim YOUR CHARNAME` ---- ex: `!sb claim Sasner Rensas`';
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
