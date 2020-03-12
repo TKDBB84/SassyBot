@@ -89,64 +89,63 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
 
-  await Promise.all(
-    lodestoneMembers.map(async (lodestoneMember) => {
-      let cotMember;
-      let character = await characterRepo.findOne({
-        where: { apiId: lodestoneMember.ID },
-      });
+  for (let i = 0, iMax = lodestoneMembers.length; i < iMax; i++) {
+    const lodestoneMember = lodestoneMembers[i];
+    let cotMember;
+    let character = await characterRepo.findOne({
+      where: { apiId: lodestoneMember.ID },
+    });
+    if (!character) {
+      character = await characterRepo
+        .createQueryBuilder()
+        .where(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
+        .getOne();
       if (!character) {
-        character = await characterRepo
-          .createQueryBuilder()
-          .where(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
-          .getOne();
-        if (!character) {
-          character = new FFXIVChar();
-        }
-        character.apiId = lodestoneMember.ID;
+        character = new FFXIVChar();
       }
-      if (character.name !== lodestoneMember.Name) {
-        character.name = lodestoneMember.Name.trim();
-      }
-      if (!character.firstSeenApi) {
-        character.firstSeenApi = pullTime;
-      }
-      character.lastSeenApi = pullTime;
-      character = await characterRepo.save(character);
+      character.apiId = lodestoneMember.ID;
+    }
+    if (character.name !== lodestoneMember.Name) {
+      character.name = lodestoneMember.Name.trim();
+    }
+    if (!character.firstSeenApi) {
+      character.firstSeenApi = pullTime;
+    }
+    character.lastSeenApi = pullTime;
+    character = await characterRepo.save(character);
 
-      cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
-      if (!cotMember) {
-        cotMember = new COTMember();
-        cotMember.character = character;
-        cotMember.rank = CotRanks.RECRUIT;
-      }
+    cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
+    if (!cotMember) {
+      cotMember = new COTMember();
+      cotMember.character = character;
+      cotMember.rank = CotRanks.RECRUIT;
+    }
 
-      if (cotMember.rank !== CotRanks[lodestoneMember.Rank]) {
-        switch (CotRanks[lodestoneMember.Rank]) {
-          case CotRanks.OFFICER:
-            cotMember.rank = CotRanks.OFFICER;
-            break;
-          case CotRanks.VETERAN:
-            if (cotMember.rank !== CotRanks.OFFICER) {
-              cotMember.rank = CotRanks.VETERAN;
-            }
-            break;
-          case CotRanks.MEMBER:
-            if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
-              cotMember.rank = CotRanks.MEMBER;
-            }
-            break;
-          default:
-          case CotRanks.RECRUIT:
-            if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
-              cotMember.rank = CotRanks.RECRUIT;
-            }
-            break;
-        }
+    if (cotMember.rank !== CotRanks[lodestoneMember.Rank]) {
+      switch (CotRanks[lodestoneMember.Rank]) {
+        case CotRanks.OFFICER:
+          cotMember.rank = CotRanks.OFFICER;
+          break;
+        case CotRanks.VETERAN:
+          if (cotMember.rank !== CotRanks.OFFICER) {
+            cotMember.rank = CotRanks.VETERAN;
+          }
+          break;
+        case CotRanks.MEMBER:
+          if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
+            cotMember.rank = CotRanks.MEMBER;
+          }
+          break;
+        default:
+        case CotRanks.RECRUIT:
+          if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
+            cotMember.rank = CotRanks.RECRUIT;
+          }
+          break;
       }
-      await cotMemberRepo.save(cotMember);
-    }),
-  );
+    }
+    await cotMemberRepo.save(cotMember);
+  }
 };
 
 const checkForReminders = async (sb: Sassybot) => {
