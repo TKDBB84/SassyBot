@@ -5,7 +5,6 @@ import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
-import * as moment from 'moment'
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -94,7 +93,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     const lodestoneMember = lodestoneMembers[i];
     let cotMember;
     let character = await characterRepo.findOne({
-      where: { apiId: lodestoneMember.ID },
+      where: { apiId: +lodestoneMember.ID },
     });
     if (!character) {
       character = await characterRepo
@@ -104,16 +103,14 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       if (!character) {
         character = new FFXIVChar();
       }
-      character.apiId = lodestoneMember.ID;
+      character.apiId = +lodestoneMember.ID;
       character.firstSeenApi = pullTime;
+    } else {
+      if (!character.firstSeenApi) {
+        character.firstSeenApi = pullTime;
+      }
     }
-    if (character.name !== lodestoneMember.Name) {
-      character.name = lodestoneMember.Name.trim();
-    }
-
-    if (!character.firstSeenApi) {
-      character.firstSeenApi = pullTime;
-    }
+    character.name = lodestoneMember.Name.trim();
     character.lastSeenApi = pullTime;
     character = await characterRepo.save(character);
 
