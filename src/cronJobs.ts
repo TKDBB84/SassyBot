@@ -5,6 +5,7 @@ import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
+import * as moment from 'moment'
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -104,10 +105,12 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         character = new FFXIVChar();
       }
       character.apiId = lodestoneMember.ID;
+      character.firstSeenApi = pullTime;
     }
     if (character.name !== lodestoneMember.Name) {
       character.name = lodestoneMember.Name.trim();
     }
+
     if (!character.firstSeenApi) {
       character.firstSeenApi = pullTime;
     }
