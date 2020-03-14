@@ -12,7 +12,7 @@ export default class FFXIVChar {
   @Column({ charset: 'utf8', collation: 'utf8_general_ci' })
   public name!: string;
 
-  @CreateDateColumn()
+  @Column()
   public firstSeenApi!: Date;
 
   @Column()
