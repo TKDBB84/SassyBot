@@ -96,12 +96,16 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       where: { apiId: +lodestoneMember.ID },
     });
     if (!character) {
-      character = await characterRepo
+      character = new FFXIVChar();
+      const characterData = await characterRepo
         .createQueryBuilder()
         .where(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
         .getOne();
-      if (!character) {
-        character = new FFXIVChar();
+      if (characterData) {
+        let foundChar = await characterRepo.findOne(characterData.id);
+        if (foundChar) {
+          character = foundChar
+        }
       }
       character.apiId = +lodestoneMember.ID;
       character.firstSeenApi = pullTime;
