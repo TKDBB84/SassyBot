@@ -96,27 +96,34 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       where: { apiId: +lodestoneMember.ID },
     });
     if (!character) {
-      character = new FFXIVChar();
       const characterData = await characterRepo
         .createQueryBuilder()
         .where(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
         .getOne();
       if (characterData) {
-        let foundChar = await characterRepo.findOne(characterData.id);
-        if (foundChar) {
-          character = foundChar
+        const charUpdates = {
+          apiId: +lodestoneMember.ID,
+          firstSeenApi: pullTime,
+          lastSeenApi: pullTime,
+          name: lodestoneMember.Name.trim(),
+        };
+        if (characterData.firstSeenApi) {
+          delete charUpdates.firstSeenApi;
         }
-      }
-      character.apiId = +lodestoneMember.ID;
-      character.firstSeenApi = pullTime;
-    } else {
-      if (!character.firstSeenApi) {
+        await characterRepo.update(characterData.id, charUpdates);
+        character = await characterRepo.findOneOrFail(characterData.id);
+      } else {
+        character = new FFXIVChar();
+        character.apiId = +lodestoneMember.ID;
         character.firstSeenApi = pullTime;
+        character.lastSeenApi = pullTime;
+        character.name = lodestoneMember.Name.trim();
+        character = await characterRepo.save(character);
       }
+    } else {
+      await characterRepo.update(character.id, { lastSeenApi: pullTime });
+      character = await characterRepo.findOneOrFail(character.id);
     }
-    character.name = lodestoneMember.Name.trim();
-    character.lastSeenApi = pullTime;
-    character = await characterRepo.save(character);
 
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
     if (!cotMember) {
