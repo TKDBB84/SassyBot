@@ -15,28 +15,26 @@ export default class TzCommand extends SassybotCommand {
     );
   }
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (params.args.length === 0) {
-      // return current timezone
-      return;
-    }
-
-    const newTz = params.args[0].trim().toLowerCase();
-    if (!moment.tz.zone(newTz)) {
-      await message.channel.send(
-        "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
-          TzCommand.wikiLink,
-      );
-      return;
-    }
-
     const userRepository = this.sb.dbConnection.getRepository(SbUser);
     let currentUser = await userRepository.findOne(message.author.id);
     if (!currentUser) {
       currentUser = new SbUser();
+      currentUser.discordUserId = message.author.id;
     }
-    currentUser.discordUserId = message.author.id;
-    currentUser.timezone = newTz;
-    currentUser = await userRepository.save(currentUser);
+
+    if (params.args.length === 1) {
+      // return current timezone
+      const newTz = params.args[0].trim().toLowerCase();
+      if (!moment.tz.zone(newTz)) {
+        await message.channel.send(
+          "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
+            TzCommand.wikiLink,
+        );
+        return;
+      }
+      currentUser.timezone = newTz;
+      currentUser = await userRepository.save(currentUser);
+    }
     await message.channel.send(
       `I now have your timezone as ${currentUser.timezone} your local time should be: ${moment()
         .tz(currentUser.timezone)
