@@ -43,7 +43,7 @@ export default class EventCommand extends SassybotCommand {
     const eventRepository = this.sb.dbConnection.getRepository(Event);
     try {
       const event = await eventRepository.findOneOrFail({ where: { eventName } });
-      const eventMoment = moment(event.eventTime, 'UTC');
+      const eventMoment = moment.tz(event.eventTime, 'UTC');
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT');
       await message.channel.send(`${eventName} is happening on ${formattedDate}`);
     } catch (e) {
@@ -69,11 +69,11 @@ export default class EventCommand extends SassybotCommand {
         return false;
       }
       const possibleTime = filterMessage.cleanContent.toLowerCase();
-      const matches = validDateFormats.some((format) => moment(possibleTime, format, userTz).isValid());
+      const matches = validDateFormats.some((format) => moment.tz(possibleTime, format, userTz).isValid());
       if (!matches) {
         filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
       }
-      return matches
+      return matches;
     };
 
     const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
@@ -81,17 +81,22 @@ export default class EventCommand extends SassybotCommand {
       const collectedMessage = collected.first();
       if (collectedMessage) {
         const timeString = collectedMessage.cleanContent.toLowerCase();
-        const matchingFormat = validDateFormats.filter((format) => moment(timeString, format, userTz).isValid());
+        const matchingFormat = validDateFormats.filter((format) => moment.tz(timeString, format, userTz).isValid());
 
         const eventRepo = this.sb.dbConnection.getRepository(Event);
         const event = new Event();
         event.eventName = eventName.toLowerCase().trim();
-        event.eventTime = moment(timeString, matchingFormat, userTz).utc().toDate();
+        event.eventTime = moment
+          .tz(timeString, matchingFormat, userTz)
+          .utc()
+          .toDate();
         const savedEvent = await eventRepo.save(event);
 
-        const eventMoment = moment(savedEvent.eventTime.toISOString(), 'UTC');
+        const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
         await message.channel.send(
-          `I have an event name ${savedEvent.eventName} happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
+          `I have an event name ${savedEvent.eventName} happening on ${eventMoment
+            .tz(userTz)
+            .format('D, MMM [at] LT')}`,
         );
       }
     });
