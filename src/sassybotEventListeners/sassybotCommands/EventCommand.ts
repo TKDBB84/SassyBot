@@ -26,9 +26,9 @@ export default class EventCommand extends SassybotCommand {
       );
       return;
     }
-
-    const isCreating = params?.args?.[0].trim().toLowerCase() === 'create';
-    const eventName = isCreating ? params?.args?.[1].trim().toLowerCase() : params?.args?.[0].trim().toLowerCase();
+    const args = params.args.replace(/\s\s+/g, ' ').split(' ');
+    const isCreating = args?.[0].trim().toLowerCase() === 'create';
+    const eventName = isCreating ? args?.[1].trim().toLowerCase() : args?.[0].trim().toLowerCase();
     if (!eventName || eventName === '') {
       await message.channel.send('Sorry, you must specify an event name');
       return;

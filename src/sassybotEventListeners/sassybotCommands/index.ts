@@ -4,7 +4,7 @@ import PromoteCommand from './CotActivityCommands/PromoteCommand';
 import DaysCommand from './DaysCommand';
 import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
-// import EventCommand from './EventCommand';
+import EventCommand from './EventCommand';
 import PingCommand from './PingCommand';
 import QuoteCommand from './QuoteCommand';
 import RollCommand from './RollCommand';
@@ -17,7 +17,7 @@ export default [
   DaysCommand,
   EchoCommand,
   EvalCommand,
-  // EventCommand,
+  EventCommand,
   PingCommand,
   PromoteCommand,
   QuoteCommand,
