@@ -26,9 +26,10 @@ export default class EventCommand extends SassybotCommand {
       );
       return;
     }
-    const args = params.args.replace(/\s\s+/g, ' ').split(' ');
-    const isCreating = args?.[0].trim().toLowerCase() === 'create';
-    const eventName = isCreating ? args?.[1].trim().toLowerCase() : args?.[0].trim().toLowerCase();
+    const compressedArgs = params.args.replace(/\s\s+/g, ' ').trim();
+    const matches = compressedArgs.match(/^(create)?\s?(.*)/);
+    const isCreating = matches?.[1] === 'create';
+    const eventName = matches?.[2];
     if (!eventName || eventName === '') {
       await message.channel.send('Sorry, you must specify an event name');
       return;
@@ -52,83 +53,49 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {
-    const event = new Event();
-    const eventRepo = this.sb.dbConnection.getRepository(Event);
-    event.eventName = eventName.toLowerCase().trim();
     await message.channel.send(
-      "What day will the event happen on? please use YYYY-MM-DD format because I'm a dumb bot",
+      'When will the event happen? please use YYYY-MM-DD hh:mm(am/pm) for times i can accept formats like: 3:27pm, 15:27, 03:27pm',
     );
-    const eventDate = await this.getEventDate(message, userTz);
-    await message.channel.send(
-      'What time (local to you) will the event happen? i can accept things like 3:27pm, 15:27, 03:27pm',
-    );
-    event.eventTime = await this.getEventTime(message, eventDate, userTz);
+    const validDateFormats = [
+      'YYYY-MM-DD h:mma',
+      'YYYY-MM-DD hh:mma',
+      'YYYY-MM-DD h:mm a',
+      'YYYY-MM-DD hh:mm a',
+      'YYYY-MM-DD hh:mm',
+    ];
 
-    const savedEvent = await eventRepo.save(event);
-    const eventMoment = moment(savedEvent.eventTime).tz(userTz);
-    await message.channel.send(
-      `I have an event name ${savedEvent.eventName} happening on ${eventMoment.format('D, MMM [at] LT')}`,
-    );
-  }
+    const filter = (filterMessage: Message) => {
+      if (filterMessage.author.id !== message.author.id) {
+        return false;
+      }
+      const possibleTime = message.cleanContent.toLowerCase();
+      return validDateFormats.some((format) => moment(possibleTime, format, userTz).isValid());
+    };
 
-  private async getEventDate(message: Message, userTz: string): Promise<Date> {
-    return new Promise((resolve, reject) => {
-      const filter = (filterMessage: Message) => {
-        if (filterMessage.author.id !== message.author.id) {
-          return false;
-        }
-
-        const possibleDate = message.cleanContent.toLowerCase().trim();
-        return moment(possibleDate, 'YYYY-MM-DD', userTz).isValid();
-      };
-      const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
-      messageCollector.on('dispose', async (discardedMessage: Message) => {
-        if (discardedMessage.author.id === discardedMessage.author.id) {
-          await discardedMessage.channel.send(
-            'Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format: YYYY-MM-DD',
-          );
-        }
-      });
-      messageCollector.on('end', (collected: Collection<string, Message>) => {
-        const collectedMessage = collected.first();
-        if (collectedMessage) {
-          resolve(moment(collectedMessage.cleanContent.trim().toLowerCase(), 'YYYY-MM-DD', userTz).toDate());
-        } else {
-          reject('no valid date given');
-        }
-      });
+    const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
+    messageCollector.on('dispose', async (discardedMessage: Message) => {
+      if (discardedMessage.author.id === discardedMessage.author.id) {
+        await discardedMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
+      }
     });
-  }
 
-  private async getEventTime(message: Message, eventDate: Date, userTz: string): Promise<Date> {
-    return new Promise((resolve, reject) => {
-      const validDateFormats = ['YYYY-MM-DD h:mma', 'YYYY-MM-DD hh:mma', 'YYYY-MM-DD hh:mm'];
-      const dateString = moment(eventDate).format('YYYY-MM-DD');
+    messageCollector.on('end', async (collected: Collection<string, Message>) => {
+      const collectedMessage = collected.first();
+      if (collectedMessage) {
+        const timeString = collectedMessage.cleanContent.toLowerCase();
+        const matchingFormat = validDateFormats.filter((format) => moment(timeString, format, userTz).isValid());
 
-      const filter = (filterMessage: Message) => {
-        if (filterMessage.author.id !== message.author.id) {
-          return false;
-        }
-        const possibleTime = message.cleanContent.toLowerCase().replace(/\s/g, '');
-        return validDateFormats.some((format) => moment(`${dateString} ${possibleTime}`, format, userTz).isValid());
-      };
-      const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
-      messageCollector.on('dispose', async (discardedMessage: Message) => {
-        if (discardedMessage.author.id === discardedMessage.author.id) {
-          await discardedMessage.channel.send('Time Does Not Appear to be valid, please try again');
-        }
-      });
-      messageCollector.on('end', (collected: Collection<string, Message>) => {
-        const collectedMessage = collected.first();
-        if (collectedMessage) {
-          const timeString = collectedMessage.cleanContent.toLowerCase().replace(/\s/g, '');
-          const fullDateString = `${dateString} ${timeString}`;
-          const matchingFormat = validDateFormats.filter((format) => moment(fullDateString, format, userTz).isValid());
-          resolve(moment(fullDateString, matchingFormat, userTz).toDate());
-        } else {
-          reject('no valid date given');
-        }
-      });
+        const eventRepo = this.sb.dbConnection.getRepository(Event);
+        const event = new Event();
+        event.eventName = eventName.toLowerCase().trim();
+        event.eventTime = moment(timeString, matchingFormat, userTz).toDate();
+        const savedEvent = await eventRepo.save(event);
+
+        const eventMoment = moment(savedEvent.eventTime).tz(userTz);
+        await message.channel.send(
+          `I have an event name ${savedEvent.eventName} happening on ${eventMoment.format('D, MMM [at] LT')}`,
+        );
+      }
     });
   }
 }
