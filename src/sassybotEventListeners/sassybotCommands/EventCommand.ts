@@ -43,8 +43,8 @@ export default class EventCommand extends SassybotCommand {
     const eventRepository = this.sb.dbConnection.getRepository(Event);
     try {
       const event = await eventRepository.findOneOrFail({ where: { eventName } });
-      const eventMoment = moment(event.eventTime).tz(currentUser.timezone);
-      const formattedDate = eventMoment.format('D, MMM [at] LT');
+      const eventMoment = moment(event.eventTime, 'UTC');
+      const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT');
       await message.channel.send(`${eventName} is happening on ${formattedDate}`);
     } catch (e) {
       await message.channel.send('Sorry, I was unable to find an event by that name');
@@ -86,12 +86,12 @@ export default class EventCommand extends SassybotCommand {
         const eventRepo = this.sb.dbConnection.getRepository(Event);
         const event = new Event();
         event.eventName = eventName.toLowerCase().trim();
-        event.eventTime = moment(timeString, matchingFormat, userTz).toDate();
+        event.eventTime = moment(timeString, matchingFormat, userTz).utc().toDate();
         const savedEvent = await eventRepo.save(event);
 
-        const eventMoment = moment(savedEvent.eventTime).tz(userTz);
+        const eventMoment = moment(savedEvent.eventTime.toISOString(), 'UTC');
         await message.channel.send(
-          `I have an event name ${savedEvent.eventName} happening on ${eventMoment.format('D, MMM [at] LT')}`,
+          `I have an event name ${savedEvent.eventName} happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
         );
       }
     });
