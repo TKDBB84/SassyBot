@@ -68,17 +68,15 @@ export default class EventCommand extends SassybotCommand {
       if (filterMessage.author.id !== message.author.id) {
         return false;
       }
-      const possibleTime = message.cleanContent.toLowerCase();
-      return validDateFormats.some((format) => moment(possibleTime, format, userTz).isValid());
+      const possibleTime = filterMessage.cleanContent.toLowerCase();
+      const matches = validDateFormats.some((format) => moment(possibleTime, format, userTz).isValid());
+      if (!matches) {
+        filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
+      }
+      return matches
     };
 
     const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
-    messageCollector.on('dispose', async (discardedMessage: Message) => {
-      if (discardedMessage.author.id === discardedMessage.author.id) {
-        await discardedMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
-      }
-    });
-
     messageCollector.on('end', async (collected: Collection<string, Message>) => {
       const collectedMessage = collected.first();
       if (collectedMessage) {
