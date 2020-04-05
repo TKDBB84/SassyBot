@@ -1,5 +1,6 @@
 import { Collection, Message, MessageCollector } from 'discord.js';
 import moment = require('moment-timezone');
+import { MoreThanOrEqual } from 'typeorm';
 import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';
 import { ISassybotCommandParams } from '../../Sassybot';
@@ -26,6 +27,12 @@ export default class EventCommand extends SassybotCommand {
       );
       return;
     }
+
+    if (params.args.trim().toLowerCase() === 'list' || params.args.trim().toLowerCase() === 'all') {
+      await this.listAll(message, currentUser.timezone);
+      return;
+    }
+
     const compressedArgs = params.args.replace(/\s\s+/g, ' ').trim();
     const matches = compressedArgs.match(/^(create)?\s?(.*)/);
     const isCreating = matches?.[1] === 'create';
@@ -42,10 +49,12 @@ export default class EventCommand extends SassybotCommand {
 
     const eventRepository = this.sb.dbConnection.getRepository(Event);
     try {
-      const event = await eventRepository.findOneOrFail({ where: { eventName } });
+      const event = await eventRepository.findOneOrFail({
+        where: { eventName, eventTime: MoreThanOrEqual<Date>(new Date()) },
+      });
       const eventMoment = moment.tz(event.eventTime, 'UTC');
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT');
-      await message.channel.send(`${eventName} is happening on ${formattedDate}`);
+      await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
     } catch (e) {
       await message.channel.send('Sorry, I was unable to find an event by that name');
       return;
@@ -94,11 +103,26 @@ export default class EventCommand extends SassybotCommand {
 
         const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
         await message.channel.send(
-          `I have an event name ${savedEvent.eventName} happening on ${eventMoment
-            .tz(userTz)
-            .format('D, MMM [at] LT')}`,
+          `I have an event: "${savedEvent.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
         );
       }
     });
+  }
+
+  private async listAll(message: Message, userTz: string): Promise<void> {
+    const eventRepo = this.sb.dbConnection.getRepository(Event);
+    const allEvents = await eventRepo.find({ where: { eventTime: MoreThanOrEqual<Date>(new Date()) } });
+    if (allEvents && allEvents.length) {
+      await Promise.all(
+        allEvents.map(async (event: Event) => {
+          const eventMoment = moment.tz(event.eventTime, 'UTC');
+          await message.channel.send(
+            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
+          );
+        }),
+      );
+      return;
+    }
+    await message.channel.send('No Future Events Scheduled');
   }
 }
