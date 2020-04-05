@@ -22,9 +22,9 @@ export default class TzCommand extends SassybotCommand {
       currentUser.discordUserId = message.author.id;
     }
 
-    if (params.args.length === 1) {
+    if (params.args.trim()) {
       // return current timezone
-      const newTz = params.args[0].trim().toLowerCase();
+      const newTz = params.args.trim().toLowerCase();
       if (!moment.tz.zone(newTz)) {
         await message.channel.send(
           "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
@@ -36,7 +36,7 @@ export default class TzCommand extends SassybotCommand {
       currentUser = await userRepository.save(currentUser);
     }
     await message.channel.send(
-      `I now have your timezone as ${currentUser.timezone} your local time should be: ${moment()
+      `I have your timezone as: \`${currentUser.timezone}\` your local time should be: ${moment()
         .tz(currentUser.timezone)
         .format('LT')}`,
     );
