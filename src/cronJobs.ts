@@ -128,7 +128,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
     if (!cotMember) {
       cotMember = new COTMember();
-      cotMember.character.id = character.id;
+      cotMember.character = character;
       cotMember.rank = CotRanks.RECRUIT;
     }
 
