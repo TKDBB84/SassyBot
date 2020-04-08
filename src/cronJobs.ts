@@ -130,32 +130,35 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       cotMember = new COTMember();
       cotMember.character = character;
       cotMember.rank = CotRanks.RECRUIT;
+      cotMember = await cotMemberRepo.save(cotMember);
+      cotMember = await cotMemberRepo.findOneOrFail(cotMember.id);
     }
 
-    if (cotMember.rank !== CotRanks[lodestoneMember.Rank]) {
+    let targetRank = cotMember.rank;
+    if (targetRank !== CotRanks[lodestoneMember.Rank]) {
       switch (CotRanks[lodestoneMember.Rank]) {
         case CotRanks.OFFICER:
-          cotMember.rank = CotRanks.OFFICER;
+          targetRank = CotRanks.OFFICER;
           break;
         case CotRanks.VETERAN:
           if (cotMember.rank !== CotRanks.OFFICER) {
-            cotMember.rank = CotRanks.VETERAN;
+            targetRank = CotRanks.VETERAN;
           }
           break;
         case CotRanks.MEMBER:
           if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
-            cotMember.rank = CotRanks.MEMBER;
+            targetRank = CotRanks.MEMBER;
           }
           break;
         default:
         case CotRanks.RECRUIT:
           if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
-            cotMember.rank = CotRanks.RECRUIT;
+            targetRank = CotRanks.RECRUIT;
           }
           break;
       }
+      await cotMemberRepo.update(cotMember.id, { rank: targetRank });
     }
-    await cotMemberRepo.save(cotMember);
   }
 };
 
