@@ -167,7 +167,7 @@ export default class PromoteCommand extends ActivityCommand {
         toRankName = CoTRankValueToString[CotRanks.MEMBER];
         break;
     }
-    const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion);
+    const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion, { reload: true });
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.character.name} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
     await message.reply(summary, { reply: message.author, split: true });
   }

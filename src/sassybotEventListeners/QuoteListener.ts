@@ -23,7 +23,7 @@ export default class QuoteListener extends SassybotEventListener {
       if (!sbUser) {
         sbUser = new SbUser();
         sbUser.discordUserId = messageReaction.message.author.id;
-        await sbUserRepo.save(sbUser);
+        sbUser = await sbUserRepo.save(sbUser, { reload: true });
       }
       const sbQuote = new Quote();
       sbQuote.user = sbUser;

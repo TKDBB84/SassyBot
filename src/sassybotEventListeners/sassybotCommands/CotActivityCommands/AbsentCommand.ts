@@ -111,7 +111,7 @@ export default class AbsentCommand extends ActivityCommand {
   }
 
   protected async summarizeData(message: Message, absentRequest: AbsentRequest): Promise<void> {
-    const savedAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).save(absentRequest);
+    const savedAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).save(absentRequest, { reload: true });
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${
       savedAbsences.CotMember.character.name
     } \n First Day Gone: ${savedAbsences.startDate.toLocaleDateString('en-US', {

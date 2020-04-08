@@ -33,7 +33,7 @@ export default class TzCommand extends SassybotCommand {
         return;
       }
       currentUser.timezone = newTz;
-      currentUser = await userRepository.save(currentUser);
+      currentUser = await userRepository.save(currentUser, { reload: true });
     }
     await message.channel.send(
       `I have your timezone as: \`${currentUser.timezone}\` your local time should be: ${moment()

@@ -19,7 +19,7 @@ export default class EventCommand extends SassybotCommand {
     if (!currentUser) {
       currentUser = new SbUser();
       currentUser.discordUserId = message.author.id;
-      currentUser = await userRepository.save(currentUser);
+      currentUser = await userRepository.save(currentUser, { reload: true });
     }
     if (!currentUser.timezone || currentUser.timezone.trim() === 'UTC') {
       await message.channel.send(
@@ -99,7 +99,7 @@ export default class EventCommand extends SassybotCommand {
           .tz(timeString, matchingFormat, userTz)
           .utc()
           .toDate();
-        const savedEvent = await eventRepo.save(event);
+        const savedEvent = await eventRepo.save(event, { reload: true });
 
         const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
         await message.channel.send(

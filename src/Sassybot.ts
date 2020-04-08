@@ -134,7 +134,7 @@ export class Sassybot extends EventEmitter {
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordId;
-      await sbUserRepo.save(sbUser);
+      await sbUserRepo.save(sbUser, { reload: true });
       return false;
     }
     const char = await this.dbConnection

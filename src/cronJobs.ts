@@ -118,7 +118,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         character.firstSeenApi = pullTime;
         character.lastSeenApi = pullTime;
         character.name = lodestoneMember.Name.trim();
-        character = await characterRepo.save(character);
+        character = await characterRepo.save(character, { reload: true });
       }
     } else {
       await characterRepo.update(character.id, { lastSeenApi: pullTime });
@@ -130,8 +130,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       cotMember = new COTMember();
       cotMember.character = character;
       cotMember.rank = CotRanks.RECRUIT;
-      cotMember = await cotMemberRepo.save(cotMember);
-      cotMember = await cotMemberRepo.findOneOrFail(cotMember.id);
+      cotMember = await cotMemberRepo.save(cotMember, { reload: true });
     }
 
     let targetRank = cotMember.rank;

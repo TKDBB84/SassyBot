@@ -20,7 +20,7 @@ export default class COTMember {
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordUserId;
-      sbUser = await sbUserRepo.save(sbUser);
+      sbUser = await sbUserRepo.save(sbUser, { reload: true });
     }
     let cotPlayer = await cotPlayerRepo.findOne({
       where: { user: { discordUserId } },
@@ -35,7 +35,7 @@ export default class COTMember {
         cotPlayer = new FFXIVChar();
         cotPlayer.user = sbUser;
         cotPlayer.name = charName;
-        cotPlayer = await cotPlayerRepo.save(cotPlayer);
+        cotPlayer = await cotPlayerRepo.save(cotPlayer, { reload: true });
       } else {
         cotPlayer = nameMatch;
         await cotPlayerRepo.update(cotPlayer.id, { user: sbUser });
@@ -53,7 +53,7 @@ export default class COTMember {
       cotMember.rank = rank;
       cotMember.firstSeenDiscord = new Date();
       try {
-        cotMember = await cotMemberRepo.save(cotMember);
+        cotMember = await cotMemberRepo.save(cotMember, { reload: true });
       } catch (e) {
         console.log({ e, foundMember, cotMember });
         throw e;
