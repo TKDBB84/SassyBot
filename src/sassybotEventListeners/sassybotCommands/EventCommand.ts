@@ -14,6 +14,11 @@ export default class EventCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.guild || !message.guild.id) {
+      await message.reply('cannot create events in private messages!');
+      return;
+    }
+    const guildId = message.guild.id;
     const userRepository = this.sb.dbConnection.getRepository(SbUser);
     let currentUser = await userRepository.findOne(message.author.id);
     if (!currentUser) {
@@ -50,7 +55,7 @@ export default class EventCommand extends SassybotCommand {
     const eventRepository = this.sb.dbConnection.getRepository(Event);
     try {
       const event = await eventRepository.findOneOrFail({
-        where: { eventName, eventTime: MoreThanOrEqual<Date>(new Date()) },
+        where: { eventName, eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
       });
       const eventMoment = moment.tz(event.eventTime, 'UTC');
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT z');
@@ -62,6 +67,11 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {
+    if (!message.guild || !message.guild.id) {
+      await message.reply('cannot create events in private messages!');
+      return;
+    }
+    const guildId = message.guild.id;
     await message.channel.send(
       'When will the event happen? please use YYYY-MM-DD hh:mm(am/pm) for times i can accept formats like: 3:27pm, 15:27, 03:27pm',
     );
@@ -99,6 +109,7 @@ export default class EventCommand extends SassybotCommand {
           .tz(timeString, matchingFormat, userTz)
           .utc()
           .toDate();
+        event.guildId = guildId;
         const savedEvent = await eventRepo.save(event, { reload: true });
 
         const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
@@ -112,8 +123,15 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async listAll(message: Message, userTz: string): Promise<void> {
+    if (!message.guild || !message.guild.id) {
+      await message.reply('cannot create events in private messages!');
+      return;
+    }
+    const guildId = message.guild.id;
     const eventRepo = this.sb.dbConnection.getRepository(Event);
-    const allEvents = await eventRepo.find({ where: { eventTime: MoreThanOrEqual<Date>(new Date()) } });
+    const allEvents = await eventRepo.find({
+      where: { eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
+    });
     if (allEvents && allEvents.length) {
       await Promise.all(
         allEvents.map(async (event: Event) => {

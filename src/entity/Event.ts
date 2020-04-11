@@ -6,6 +6,9 @@ export default class Event {
   public id!: number;
 
   @Column()
+  public guildId!: string;
+
+  @Column()
   public eventName!: string;
 
   @Column()
