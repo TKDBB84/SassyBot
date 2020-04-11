@@ -53,7 +53,7 @@ export default class EventCommand extends SassybotCommand {
         where: { eventName, eventTime: MoreThanOrEqual<Date>(new Date()) },
       });
       const eventMoment = moment.tz(event.eventTime, 'UTC');
-      const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT');
+      const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT z');
       await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
     } catch (e) {
       await message.channel.send('Sorry, I was unable to find an event by that name');
@@ -103,7 +103,7 @@ export default class EventCommand extends SassybotCommand {
 
         const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
         await message.channel.send(
-          `I have an event: "${savedEvent.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
+          `I have an event: "${savedEvent.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT z')}`,
         );
       }
     });
@@ -117,7 +117,7 @@ export default class EventCommand extends SassybotCommand {
         allEvents.map(async (event: Event) => {
           const eventMoment = moment.tz(event.eventTime, 'UTC');
           await message.channel.send(
-            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT')}`,
+            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT z')}`,
           );
         }),
       );
