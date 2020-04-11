@@ -2,6 +2,7 @@ import * as http2 from 'http2';
 import { LessThan } from 'typeorm';
 import { CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
+import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
@@ -185,6 +186,11 @@ const checkForReminders = async (sb: Sassybot) => {
   return;
 };
 
+const deletePastEvents = async (sb: Sassybot) => {
+  const eventRepo = sb.dbConnection.getRepository(Event);
+  await eventRepo.delete({ eventTime: LessThan<Date>(new Date()) });
+};
+
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
 
@@ -196,6 +202,10 @@ const jobs: IScheduledJob[] = [
   {
     job: checkForReminders,
     schedule: daily,
+  },
+  {
+    job: deletePastEvents,
+    schedule: twiceADay,
   },
 ];
 
