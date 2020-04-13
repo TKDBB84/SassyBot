@@ -93,71 +93,61 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   for (let i = 0, iMax = lodestoneMembers.length; i < iMax; i++) {
     const lodestoneMember = lodestoneMembers[i];
     let cotMember;
-    let character = await characterRepo.findOne({
-      where: { apiId: +lodestoneMember.ID },
-    });
-    if (!character) {
-      const characterData = await characterRepo
-        .createQueryBuilder()
-        .where(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
-        .getOne();
-      if (characterData) {
-        const charUpdates = {
-          apiId: +lodestoneMember.ID,
-          firstSeenApi: pullTime,
-          lastSeenApi: pullTime,
-          name: lodestoneMember.Name.trim(),
-        };
-        if (characterData.firstSeenApi) {
-          delete charUpdates.firstSeenApi;
-        }
-        await characterRepo.update(characterData.id, charUpdates);
-        character = await characterRepo.findOneOrFail(characterData.id);
-      } else {
-        character = new FFXIVChar();
-        character.apiId = +lodestoneMember.ID;
-        character.firstSeenApi = pullTime;
-        character.lastSeenApi = pullTime;
-        character.name = lodestoneMember.Name.trim();
-        character = await characterRepo.save(character, { reload: true });
+    let character;
+
+    const charUpdates = {
+      apiId: +lodestoneMember.ID,
+      firstSeenApi: pullTime,
+      lastSeenApi: pullTime,
+      name: lodestoneMember.Name.trim(),
+    };
+
+    const characterData = await characterRepo
+      .createQueryBuilder()
+      .where({ apiId: +lodestoneMember.ID })
+      .orWhere(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
+      .getOne();
+    if (characterData && characterData.id) {
+      character = await characterRepo.findOneOrFail(characterData.id);
+      if (characterData.firstSeenApi) {
+        delete charUpdates.firstSeenApi;
       }
+      await characterRepo.update(characterData.id, charUpdates);
     } else {
-      await characterRepo.update(character.id, { lastSeenApi: pullTime });
-      character = await characterRepo.findOneOrFail(character.id);
+      character = characterRepo.create(charUpdates);
+      character = await characterRepo.save(character, { reload: true });
     }
 
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
     if (!cotMember) {
-      cotMember = new COTMember();
-      cotMember.character = character;
-      cotMember.rank = CotRanks.RECRUIT;
+      cotMember = cotMemberRepo.create({ rank: CotRanks.RECRUIT, character: { id: character.id } });
       cotMember = await cotMemberRepo.save(cotMember, { reload: true });
-    }
-
-    let targetRank = cotMember.rank;
-    if (targetRank !== CotRanks[lodestoneMember.Rank]) {
-      switch (CotRanks[lodestoneMember.Rank]) {
-        case CotRanks.OFFICER:
-          targetRank = CotRanks.OFFICER;
-          break;
-        case CotRanks.VETERAN:
-          if (cotMember.rank !== CotRanks.OFFICER) {
-            targetRank = CotRanks.VETERAN;
-          }
-          break;
-        case CotRanks.MEMBER:
-          if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
-            targetRank = CotRanks.MEMBER;
-          }
-          break;
-        default:
-        case CotRanks.RECRUIT:
-          if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
-            targetRank = CotRanks.RECRUIT;
-          }
-          break;
+    } else {
+      let targetRank = cotMember.rank;
+      if (targetRank !== CotRanks[lodestoneMember.Rank]) {
+        switch (CotRanks[lodestoneMember.Rank]) {
+          case CotRanks.OFFICER:
+            targetRank = CotRanks.OFFICER;
+            break;
+          case CotRanks.VETERAN:
+            if (cotMember.rank !== CotRanks.OFFICER) {
+              targetRank = CotRanks.VETERAN;
+            }
+            break;
+          case CotRanks.MEMBER:
+            if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
+              targetRank = CotRanks.MEMBER;
+            }
+            break;
+          default:
+          case CotRanks.RECRUIT:
+            if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
+              targetRank = CotRanks.RECRUIT;
+            }
+            break;
+        }
+        await cotMemberRepo.update(cotMember.id, { rank: targetRank });
       }
-      await cotMemberRepo.update(cotMember.id, { rank: targetRank });
     }
   }
 };
