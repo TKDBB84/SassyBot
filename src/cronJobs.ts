@@ -119,35 +119,32 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     }
 
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
+
+    let targetRank;
+    switch (CotRanks[lodestoneMember.Rank]) {
+      case CotRanks.OFFICER:
+        targetRank = CotRanks.OFFICER;
+        break;
+      case CotRanks.VETERAN:
+        targetRank = CotRanks.VETERAN;
+        break;
+      case CotRanks.MEMBER:
+        targetRank = CotRanks.MEMBER;
+        break;
+      default:
+      case CotRanks.RECRUIT:
+        targetRank = CotRanks.RECRUIT;
+        break;
+    }
+
     if (!cotMember) {
-      cotMember = cotMemberRepo.create({ rank: CotRanks.RECRUIT, character: { id: character.id } });
-      cotMember = await cotMemberRepo.save(cotMember, { reload: true });
+      await cotMemberRepo.query('INSERT INTO `cot_member` (`rank`, `characterId`) VALUES ($1, $2)', [
+        targetRank,
+        character.id,
+      ]);
+      cotMember = await cotMemberRepo.findOneOrFail({ where: { character: { id: character.id } } });
     } else {
-      let targetRank = cotMember.rank;
-      if (targetRank !== CotRanks[lodestoneMember.Rank]) {
-        switch (CotRanks[lodestoneMember.Rank]) {
-          case CotRanks.OFFICER:
-            targetRank = CotRanks.OFFICER;
-            break;
-          case CotRanks.VETERAN:
-            if (cotMember.rank !== CotRanks.OFFICER) {
-              targetRank = CotRanks.VETERAN;
-            }
-            break;
-          case CotRanks.MEMBER:
-            if (![CotRanks.OFFICER, CotRanks.VETERAN].includes(cotMember.rank)) {
-              targetRank = CotRanks.MEMBER;
-            }
-            break;
-          default:
-          case CotRanks.RECRUIT:
-            if (![CotRanks.OFFICER, CotRanks.VETERAN, CotRanks.MEMBER].includes(cotMember.rank)) {
-              targetRank = CotRanks.RECRUIT;
-            }
-            break;
-        }
-        await cotMemberRepo.update(cotMember.id, { rank: targetRank });
-      }
+      await cotMemberRepo.update(cotMember.id, { rank: targetRank });
     }
   }
 };
