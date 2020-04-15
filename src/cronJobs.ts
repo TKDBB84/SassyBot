@@ -144,7 +144,9 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       ]);
       cotMember = await cotMemberRepo.findOneOrFail({ where: { character: { id: character.id } } });
     } else {
-      await cotMemberRepo.update(cotMember.id, { rank: targetRank });
+      if (targetRank !== cotMember.rank) {
+        await cotMemberRepo.update(cotMember.id, { rank: targetRank });
+      }
     }
   }
 };
