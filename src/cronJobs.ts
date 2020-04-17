@@ -90,8 +90,19 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
 
-  for (let i = 0, iMax = lodestoneMembers.length; i < iMax; i++) {
-    const lodestoneMember = lodestoneMembers[i];
+  const membersByApiId = lodestoneMembers.reduce((carry: { [key: string]: IFreeCompanyMember }, member) => {
+    if (!carry[member.ID]) {
+      carry[member.ID] = member;
+    } else {
+      console.log('skipping: ', { duplicate: member });
+    }
+    return carry;
+  }, {});
+
+  const deDupedMembers = Object.values(membersByApiId);
+
+  for (let i = 0, iMax = deDupedMembers.length; i < iMax; i++) {
+    const lodestoneMember = deDupedMembers[i];
     let cotMember;
     let character;
 
