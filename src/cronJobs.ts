@@ -138,7 +138,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     }
 
     if (!cotMember) {
-      await cotMemberRepo.query('INSERT INTO `cot_member` (`rank`, `characterId`) VALUES ($1, $2)', [
+      await cotMemberRepo.query('INSERT INTO `cot_member` (`rank`, `characterId`) VALUES (?, ?)', [
         targetRank,
         character.id,
       ]);
