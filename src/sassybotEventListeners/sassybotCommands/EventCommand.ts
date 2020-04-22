@@ -137,7 +137,7 @@ export default class EventCommand extends SassybotCommand {
         allEvents.map(async (event: Event) => {
           const eventMoment = moment.tz(event.eventTime, 'UTC');
           await message.channel.send(
-            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('D, MMM [at] LT z')}`,
+            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
           );
         }),
       );
