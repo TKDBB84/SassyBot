@@ -1,6 +1,5 @@
-import { Collection, Message, MessageCollector } from 'discord.js';
+import { Collection, CollectorFilter, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
 import moment = require('moment-timezone');
-import { MoreThanOrEqual } from 'typeorm';
 import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';
 import { ISassybotCommandParams } from '../../Sassybot';
@@ -10,7 +9,12 @@ export default class EventCommand extends SassybotCommand {
   public readonly command = 'event';
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} event [create] {event_name}`';
+    return (
+      'usage:\n' +
+      '`!{sassybot|sb} event Some Event` To view the time for "Some Event"\n' +
+      '`!{sassybot|sb} event list` to see all scheduled events\n' +
+      '`!{sassybot|sb} event create My New Event Name` to create an event, you will be prompted for a Date & Time'
+    );
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
@@ -34,7 +38,7 @@ export default class EventCommand extends SassybotCommand {
     }
 
     if (params.args.trim().toLowerCase() === 'list' || params.args.trim().toLowerCase() === 'all') {
-      await this.listAll(message, currentUser.timezone);
+      await EventCommand.listAll(message, currentUser.timezone);
       return;
     }
 
@@ -52,15 +56,15 @@ export default class EventCommand extends SassybotCommand {
       return;
     }
 
-    const eventRepository = this.sb.dbConnection.getRepository(Event);
-    try {
-      const event = await eventRepository.findOneOrFail({
-        where: { eventName, eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
-      });
+    const event = await Event.findByName(eventName, guildId);
+    if (event) {
       const eventMoment = moment.tz(event.eventTime, 'UTC');
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT z');
-      await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
-    } catch (e) {
+      const sentMessage = await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
+      if (event.user.discordUserId === message.author.id) {
+        EventCommand.listenForDelete(sentMessage, message.author.id, event.id);
+      }
+    } else {
       await message.channel.send('Sorry, I was unable to find an event by that name');
       return;
     }
@@ -124,27 +128,46 @@ export default class EventCommand extends SassybotCommand {
     });
   }
 
-  private async listAll(message: Message, userTz: string): Promise<void> {
+  private static async listAll(message: Message, userTz: string): Promise<void> {
     if (!message.guild || !message.guild.id) {
       await message.reply('cannot create events in private messages!');
       return;
     }
     const guildId = message.guild.id;
-    const eventRepo = this.sb.dbConnection.getRepository(Event);
-    const allEvents = await eventRepo.find({
-      where: { eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
-    });
+    const allEvents = await Event.getAll(guildId);
     if (allEvents && allEvents.length) {
-      await Promise.all(
-        allEvents.map(async (event: Event) => {
-          const eventMoment = moment.tz(event.eventTime, 'UTC');
-          await message.channel.send(
-            `"${event.eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
-          );
-        }),
-      );
-      return;
+      for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
+        const eventMoment = moment.tz(allEvents[i].eventTime, 'UTC');
+        const sentMessage = await message.channel.send(
+          `"${allEvents[i].eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
+        );
+        if (allEvents[i].user.discordUserId === message.author.id) {
+          EventCommand.listenForDelete(sentMessage, message.author.id, allEvents[i].id);
+        }
+      }
+    } else {
+      await message.channel.send('No Future Events Scheduled');
     }
-    await message.channel.send('No Future Events Scheduled');
+  }
+
+  private static listenForDelete(sentMessage: Message, authorId: string, eventIdToDelete: number) {
+    const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
+      return reaction.emoji.name === '⛔' && user.id === authorId;
+    };
+    const reactionCollectorOptions = {
+      max: 1,
+      maxEmojis: 1,
+      maxUsers: 1,
+      time: 300000, // 5 min
+    };
+    sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
+      const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
+      reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
+        await reactionNo.remove();
+        if (collected && collected.size > 0) {
+          await Event.delete(eventIdToDelete);
+        }
+      });
+    });
   }
 }

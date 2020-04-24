@@ -10,7 +10,7 @@ export default class TzCommand extends SassybotCommand {
 
   public getHelpText(): string {
     return (
-      'usage: `!{sassybot|sb} tz {iana timezone name} --- a complete list of timezones can be found here\n' +
+      'usage: `!{sassybot|sb} tz {iana timezone name}` --- a complete list of timezones can be found here\n' +
       TzCommand.wikiLink
     );
   }
