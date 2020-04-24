@@ -41,10 +41,11 @@ export default class EventCommand extends SassybotCommand {
     sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
       const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
       reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
-        await reactionNo.remove();
+        const toResolve: Array<Promise<any>> = [reactionNo.remove()];
         if (collected && collected.size > 0) {
-          await Event.delete(eventIdToDelete);
+          toResolve.push(Event.delete(eventIdToDelete), sentMessage.delete());
         }
+        await Promise.all(toResolve);
       });
     });
   }
