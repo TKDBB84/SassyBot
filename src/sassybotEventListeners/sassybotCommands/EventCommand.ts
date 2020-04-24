@@ -71,6 +71,7 @@ export default class EventCommand extends SassybotCommand {
       await message.reply('cannot create events in private messages!');
       return;
     }
+    const userRepo = this.sb.dbConnection.getRepository<SbUser>(SbUser);
     const guildId = message.guild.id;
     await message.channel.send(
       'When will the event happen? please use YYYY-MM-DD hh:mm(am/pm) for times i can accept formats like: 3:27pm, 15:27, 03:27pm',
@@ -110,6 +111,7 @@ export default class EventCommand extends SassybotCommand {
           .utc()
           .toDate();
         event.guildId = guildId;
+        event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
         const savedEvent = await eventRepo.save(event, { reload: true });
 
         const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
