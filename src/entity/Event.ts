@@ -6,8 +6,8 @@ export default class Event {
   public static async getAll(guildId: string): Promise<Event[]> {
     const eventRepo = getManager().getRepository<Event>(Event);
     return eventRepo.find({
-      where: { eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
       order: { eventTime: 'ASC' },
+      where: { eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
     });
   }
 

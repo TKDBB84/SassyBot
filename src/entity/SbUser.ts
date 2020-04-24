@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
-import Quote from './Quote';
 import Event from './Event';
+import Quote from './Quote';
 
 @Entity()
 export default class SbUser {
