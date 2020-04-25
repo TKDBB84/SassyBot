@@ -188,7 +188,9 @@ const checkForReminders = async (sb: Sassybot) => {
 
 const deletePastEvents = async (sb: Sassybot) => {
   const eventRepo = sb.dbConnection.getRepository(Event);
-  await eventRepo.delete({ eventTime: LessThan<Date>(new Date()) });
+  const YESTERDAY = new Date();
+  YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
+  await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
 const twiceADay = '0 15 8,20 * * *';

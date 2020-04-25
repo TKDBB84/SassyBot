@@ -4,17 +4,21 @@ import SbUser from './SbUser';
 @Entity()
 export default class Event {
   public static async getAll(guildId: string): Promise<Event[]> {
+    const FOUR_HOURS_AGO = new Date();
+    FOUR_HOURS_AGO.setTime(new Date().getTime() - 4 * (60 * 60 * 1000));
     const eventRepo = getManager().getRepository<Event>(Event);
     return eventRepo.find({
       order: { eventTime: 'ASC' },
-      where: { eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
+      where: { eventTime: MoreThanOrEqual<Date>(FOUR_HOURS_AGO), guildId },
     });
   }
 
   public static async findByName(name: string, guildId: string): Promise<Event | undefined> {
+    const FOUR_HOURS_AGO = new Date();
+    FOUR_HOURS_AGO.setTime(new Date().getTime() - 4 * (60 * 60 * 1000));
     const eventRepo = getManager().getRepository<Event>(Event);
     return eventRepo.findOne({
-      where: { eventName: name, eventTime: MoreThanOrEqual<Date>(new Date()), guildId },
+      where: { eventName: name, eventTime: MoreThanOrEqual<Date>(FOUR_HOURS_AGO), guildId },
     });
   }
 
