@@ -4,7 +4,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class DaysCommand extends SassybotCommand {
-  public readonly commands = ['days'];
+  public readonly commands = ['days', 'day'];
 
   public getHelpText(): string {
     return 'usage: `!{sassybot|sb} echo {message}` -- I tell you the number of days  you\'ve been in the fc, as best i know';
