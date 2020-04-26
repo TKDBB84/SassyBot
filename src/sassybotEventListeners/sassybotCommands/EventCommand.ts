@@ -6,50 +6,6 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class EventCommand extends SassybotCommand {
-  private static async listAll(message: Message, userTz: string): Promise<void> {
-    if (!message.guild || !message.guild.id) {
-      await message.reply('cannot create events in private messages!');
-      return;
-    }
-    const guildId = message.guild.id;
-    const allEvents = await Event.getAll(guildId);
-    if (allEvents && allEvents.length) {
-      for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
-        const eventMoment = moment.tz(allEvents[i].eventTime, 'UTC');
-        const sentMessage = await message.channel.send(
-          `"${allEvents[i].eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
-        );
-        if (allEvents[i].user.discordUserId === message.author.id) {
-          EventCommand.listenForDelete(sentMessage, message.author.id, allEvents[i].id);
-        }
-      }
-    } else {
-      await message.channel.send('No Future Events Scheduled');
-    }
-  }
-
-  private static listenForDelete(sentMessage: Message, authorId: string, eventIdToDelete: number) {
-    const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return reaction.emoji.name === '⛔' && user.id === authorId;
-    };
-    const reactionCollectorOptions = {
-      max: 1,
-      maxEmojis: 1,
-      maxUsers: 1,
-      time: 300000, // 5 min
-    };
-    sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
-      const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
-      reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
-        const toResolve: Array<Promise<any>> = [reactionNo.remove()];
-        if (collected && collected.size > 0) {
-          toResolve.push(Event.delete(eventIdToDelete), sentMessage.delete());
-        }
-        await Promise.all(toResolve);
-      });
-    });
-  }
-
   public readonly command = 'event';
 
   public getHelpText(): string {
@@ -82,7 +38,7 @@ export default class EventCommand extends SassybotCommand {
     }
 
     if (params.args.trim().toLowerCase() === 'list' || params.args.trim().toLowerCase() === 'all') {
-      await EventCommand.listAll(message, currentUser.timezone);
+      await this.listAll(message, currentUser.timezone);
       return;
     }
 
@@ -106,12 +62,59 @@ export default class EventCommand extends SassybotCommand {
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT z');
       const sentMessage = await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
       if (event.user.discordUserId === message.author.id) {
-        EventCommand.listenForDelete(sentMessage, message.author.id, event.id);
+        this.listenForDelete(sentMessage, message.author.id, event.id);
       }
     } else {
       await message.channel.send('Sorry, I was unable to find an event by that name');
       return;
     }
+  }
+  private async listAll(message: Message, userTz: string): Promise<void> {
+    if (!message.guild || !message.guild.id) {
+      await message.reply('cannot create events in private messages!');
+      return;
+    }
+    const guildId = message.guild.id;
+    const allEvents = await Event.getAll(guildId);
+    if (allEvents && allEvents.length) {
+      for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
+        const eventMoment = moment.tz(allEvents[i].eventTime, 'UTC');
+        const sentMessage = await message.channel.send(
+          `"${allEvents[i].eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
+        );
+        if (allEvents[i].user.discordUserId === message.author.id) {
+          this.listenForDelete(sentMessage, message.author.id, allEvents[i].id);
+        }
+      }
+    } else {
+      await message.channel.send('No Future Events Scheduled');
+    }
+  }
+
+  private listenForDelete(sentMessage: Message, authorId: string, eventIdToDelete: number) {
+    const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
+      return reaction.emoji.name === '⛔' && user.id === authorId;
+    };
+    const reactionCollectorOptions = {
+      max: 1,
+      maxEmojis: 1,
+      maxUsers: 1,
+      time: 300000, // 5 min
+    };
+    sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
+      const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
+      reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
+        const toResolve: Array<Promise<any>> = [reactionNo.remove()];
+        if (collected && collected.size > 0) {
+          const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
+          if (canDelete) {
+            toResolve.push(sentMessage.delete());
+          }
+          toResolve.push(Event.delete(eventIdToDelete));
+        }
+        await Promise.all(toResolve);
+      });
+    });
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {

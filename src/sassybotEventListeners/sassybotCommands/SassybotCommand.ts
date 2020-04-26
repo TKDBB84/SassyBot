@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { logger } from '../../log';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotEventListener from '../SassybotEventListener';
 
@@ -28,7 +29,11 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     params: ISassybotCommandParams;
   }): Promise<void> {
     if (params.command.toLowerCase() === this.command.toLowerCase()) {
-      await this.listener({ message, params });
+      try {
+        await this.listener({ message, params });
+      } catch (e) {
+        logger.warn(`Error Processing ${this.command}`, message, params);
+      }
     }
     if (params.command.toLowerCase() === 'help' && params.args.toLowerCase() === this.command.toLowerCase()) {
       await message.channel.send(this.getHelpText(), {

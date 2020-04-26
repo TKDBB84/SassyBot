@@ -152,3 +152,4 @@ Users.js
 data/
 /nodebot.sqlite
 /dist/
+/.yarnclean

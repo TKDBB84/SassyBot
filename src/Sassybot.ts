@@ -5,6 +5,7 @@ import {
   Message,
   MessageMentions,
   MessageReaction,
+  PermissionResolvable,
   Role,
   Snowflake,
   TextChannel,
@@ -15,11 +16,11 @@ import { EventEmitter } from 'events';
 import * as cron from 'node-cron';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
-import { UserIds } from './consts';
 import jobs from './cronJobs';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
+import { logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -87,7 +88,7 @@ export class Sassybot extends EventEmitter {
       }
       return role;
     } catch (e) {
-      this.sendErrorToSasner(e);
+      logger.warn('could not fetch role', roleId, guildId, e);
       throw e;
     }
   }
@@ -100,12 +101,9 @@ export class Sassybot extends EventEmitter {
         channel = await this.discordClient.channels.fetch(channelId);
       }
     } catch (e) {
-      this.sendErrorToSasner(e).catch(console.error);
+      logger.warn('could not fetch channel', channelId, e);
     }
-    if (channel) {
-      return channel;
-    }
-    return null;
+    return channel || null;
   }
 
   public async getTextChannel(channelId: string): Promise<TextChannel | null> {
@@ -124,7 +122,7 @@ export class Sassybot extends EventEmitter {
       }
       return user;
     } catch (e) {
-      await this.sendErrorToSasner(e);
+      logger.warn('could not fetch user', userId, e);
       throw e;
     }
   }
@@ -165,7 +163,7 @@ export class Sassybot extends EventEmitter {
       }
       return member;
     } catch (e) {
-      await this.sendErrorToSasner(e);
+      logger.warn('could not fetch member', userResolvable, guildId, e);
       throw e;
     }
   }
@@ -178,8 +176,15 @@ export class Sassybot extends EventEmitter {
     return 'command' in sbEvent;
   }
 
-  public async sendErrorToSasner(e: Error) {
-    await (await (await this.getUser(UserIds.SASNER))?.createDM())?.send(`Error fetching Role: ${e}`);
+  public async botHasPermission(permissionString: PermissionResolvable, guildId: Snowflake): Promise<boolean> {
+    const sassybot = this.discordClient.user;
+    if (sassybot && guildId) {
+      const sbUser = await this.getMember(guildId, sassybot);
+      if (sbUser) {
+        return sbUser.hasPermission(permissionString);
+      }
+    }
+    return false;
   }
 
   public eventNames(): Array<string | symbol> {
@@ -233,7 +238,7 @@ export class Sassybot extends EventEmitter {
       this.emit('sassybotCommandPreprocess', { message });
       const params = Sassybot.getCommandParameters(message);
       if (params.command === 'help') {
-        this.processHelpCommand(message, params);
+        await this.processHelpCommand(message, params);
       }
       this.emit('sassybotCommand', { message, params });
       this.emit('sassybotCommandPostprocess', { message });
