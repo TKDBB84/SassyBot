@@ -229,7 +229,7 @@ const jobs: IScheduledJob[] = [
   {
     job: cleanDups,
     schedule: daily,
-  }
+  },
 ];
 
 export default jobs;
