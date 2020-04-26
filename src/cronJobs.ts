@@ -5,6 +5,7 @@ import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
+import { logger } from './log';
 import { Sassybot } from './Sassybot';
 
 export interface IScheduledJob {
@@ -183,7 +184,6 @@ const checkForReminders = async (sb: Sassybot) => {
       }
     }
   }
-  return;
 };
 
 const deletePastEvents = async (sb: Sassybot) => {
@@ -191,6 +191,23 @@ const deletePastEvents = async (sb: Sassybot) => {
   const YESTERDAY = new Date();
   YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
+};
+
+const cleanDups = async (sb: Sassybot) => {
+  const memberRepo = sb.dbConnection.getRepository<COTMember>(COTMember);
+  const charRepo = sb.dbConnection.getRepository<FFXIVChar>(FFXIVChar);
+
+  const results: FFXIVChar[] = await charRepo.query('SELECT * FROM ffxiv_char WHERE firstSeenApi is null');
+  await Promise.all(
+    results.map(async (result) => {
+      const { id, name } = result;
+      if (id) {
+        logger.info('deleting dup char ', id, name);
+        await memberRepo.delete({ character: { id } });
+        await charRepo.delete(id);
+      }
+    }),
+  );
 };
 
 const twiceADay = '0 15 8,20 * * *';
@@ -209,6 +226,10 @@ const jobs: IScheduledJob[] = [
     job: deletePastEvents,
     schedule: twiceADay,
   },
+  {
+    job: cleanDups,
+    schedule: daily,
+  }
 ];
 
 export default jobs;

@@ -19,7 +19,7 @@ const config = {
 };
 if (process.env.NODE_ENV === 'production') {
   winLogger = winston.createLogger({
-    level: 'warn',
+    level: 'info',
     ...config,
   });
 } else {
