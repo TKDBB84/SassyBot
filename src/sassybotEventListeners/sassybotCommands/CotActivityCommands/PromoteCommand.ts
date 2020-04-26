@@ -5,7 +5,7 @@ import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 
 export default class PromoteCommand extends ActivityCommand {
-  public readonly command = 'promote';
+  public readonly commands = ['promote', 'promotion'];
 
   protected async listAll(message: Message): Promise<void> {
     const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);

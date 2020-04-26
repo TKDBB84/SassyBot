@@ -41,11 +41,7 @@ export class Sassybot extends EventEmitter {
   }
 
   private static getCommandParameters(message: Message): ISassybotCommandParams {
-    const result: {
-      args: string;
-      command: string;
-      mentions: MessageMentions | false;
-    } = {
+    const result: ISassybotCommandParams = {
       args: '',
       command: '',
       mentions: false,
@@ -213,11 +209,17 @@ export class Sassybot extends EventEmitter {
   }
 
   public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
+    const uniqueCommands = new Set();
     if (this.isSassyBotCommand(sbEvent)) {
-      if (this.registeredCommands.has(sbEvent.command)) {
-        throw new Error('Command Already Registered');
-      }
-      this.registeredCommands.add(sbEvent.command);
+      sbEvent.commands.forEach((eachCommand) => {
+        const thisCommand = eachCommand.toLowerCase();
+        if (uniqueCommands.has(thisCommand)) {
+          throw new Error('Command Already Registered');
+        }
+        uniqueCommands.add(thisCommand);
+      });
+      const command = sbEvent.commands[0].toLowerCase();
+      this.registeredCommands.add(command);
     }
     this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
   }
@@ -253,14 +255,14 @@ export class Sassybot extends EventEmitter {
           .sort()
           .join(
             ', ',
-          )}\n for more information, you can specify \`!{sassybot|sb} help [command]\` to get more information about that command`,
+          )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
         {
           split: true,
         },
       );
     } else if (params.args === 'help') {
       await message.channel.send(
-        'usage: `!{sassybot|sb} help [command]` -- I displays a list of commands, and can take a 2nd argument for more details of a command',
+        'usage: `!{sassybot|sb} help [commands]` -- I displays a list of commands, and can take a 2nd argument for more details of a commands',
         {
           split: true,
         },

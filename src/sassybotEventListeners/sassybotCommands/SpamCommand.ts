@@ -5,10 +5,10 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class SpamCommand extends SassybotCommand {
-  public readonly command = 'spam';
+  public readonly commands = ['spam'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this command was specified';
+    return 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this commands was specified';
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {

@@ -6,7 +6,7 @@ import SassybotCommand from '../SassybotCommand';
 
 export default abstract class ActivityCommand extends SassybotCommand {
   public getHelpText(): string {
-    return `usage: \`!{sassybot|sb} ${this.command}\` -- something something something`;
+    return `usage: \`!{sassybot|sb} ${this.commands}\` -- something something something`;
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {

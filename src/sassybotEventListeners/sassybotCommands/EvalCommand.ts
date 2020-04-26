@@ -4,7 +4,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class EvalCommand extends SassybotCommand {
-  public readonly command = 'eval';
+  public readonly commands = ['eval'];
 
   public getHelpText(): string {
     return 'usage: `!{sassybot|sb} eval [your valid JS string here]`';

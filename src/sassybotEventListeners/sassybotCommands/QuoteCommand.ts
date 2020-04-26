@@ -4,7 +4,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class QuoteCommand extends SassybotCommand {
-  public readonly command = 'quote';
+  public readonly commands = ['quote', 'quotes'];
 
   public getHelpText(): string {
     return 'usage: `!{sassybot|sb} quote [list|int: quote number] {@User}` -- I retrieve a random quote from the tagged users.\n if you specify "list" I will pm you a full list of quotes \n if you specify a number, I will return that exact quote, rather than a random one.';

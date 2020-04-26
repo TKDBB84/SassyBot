@@ -6,7 +6,7 @@ import SassybotCommand from './SassybotCommand';
 
 export default class TzCommand extends SassybotCommand {
   private static wikiLink = 'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones';
-  public readonly command = 'tz';
+  public readonly commands = ['tz', 'timezone'];
 
   public getHelpText(): string {
     return (

@@ -6,7 +6,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class EventCommand extends SassybotCommand {
-  public readonly command = 'event';
+  public readonly commands = ['event', 'events'];
 
   public getHelpText(): string {
     return (

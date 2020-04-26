@@ -5,7 +5,7 @@ import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
 
 export default class AbsentCommand extends ActivityCommand {
-  public readonly command = 'absent';
+  public readonly commands = ['absent', 'absence'];
 
   protected async listAll(message: Message): Promise<void> {
     const yesterday = new Date();
