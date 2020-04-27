@@ -4,7 +4,12 @@ let winLogger;
 const config = {
   exceptionHandlers: [
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.timestamp(), winston.format.colorize(), winston.format.simple()),
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.colorize(),
+        winston.format.splat(),
+        winston.format.simple(),
+      ),
       level: 'error',
       stderrLevels: ['error'],
     }),
@@ -12,7 +17,12 @@ const config = {
   format: winston.format.combine(winston.format.timestamp(), winston.format.simple()),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(winston.format.timestamp(), winston.format.colorize(), winston.format.simple()),
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.colorize(),
+        winston.format.splat(),
+        winston.format.simple(),
+      ),
       stderrLevels: ['error'],
     }),
   ],
