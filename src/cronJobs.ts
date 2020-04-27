@@ -193,23 +193,6 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
-const cleanDups = async (sb: Sassybot) => {
-  const memberRepo = sb.dbConnection.getRepository<COTMember>(COTMember);
-  const charRepo = sb.dbConnection.getRepository<FFXIVChar>(FFXIVChar);
-
-  const results: FFXIVChar[] = await charRepo.query('SELECT * FROM ffxiv_char WHERE firstSeenApi is null');
-  await Promise.all(
-    results.map(async (result) => {
-      const { id, name } = result;
-      if (id) {
-        logger.info('deleting dup char ', id, name);
-        await memberRepo.delete({ character: { id } });
-        await charRepo.delete(id);
-      }
-    }),
-  );
-};
-
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
 
@@ -225,10 +208,6 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastEvents,
     schedule: twiceADay,
-  },
-  {
-    job: cleanDups,
-    schedule: daily,
   },
 ];
 
