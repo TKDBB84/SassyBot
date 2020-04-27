@@ -55,9 +55,9 @@ export default class COTMember {
       cotMember.firstSeenDiscord = new Date();
       try {
         cotMember = await cotMemberRepo.save(cotMember, { reload: true });
-      } catch (e) {
-        logger.warn('error saving member', e, foundMember, cotMember);
-        throw e;
+      } catch (error) {
+        logger.warn('error saving member', { error, foundMember, cotMember });
+        throw error;
       }
     } else {
       const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();

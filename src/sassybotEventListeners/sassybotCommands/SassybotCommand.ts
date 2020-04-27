@@ -34,7 +34,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
       try {
         await this.listener({ message, params });
       } catch (e) {
-        logger.warn(`Error Processing ${invoked}`, message, params);
+        logger.warn(`Error Processing ${invoked}`, { message, params });
       }
     }
     if (invoked === 'help' && commands.includes(params.args.toLowerCase())) {

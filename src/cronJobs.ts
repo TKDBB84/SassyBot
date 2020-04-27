@@ -42,7 +42,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
           finalResult = parsedBody.FreeCompanyMembers;
         }
       } catch (err) {
-        logger.error('Error From XIVAPI', err);
+        logger.error('Error From XIVAPI', { err });
         finalResult = [];
       }
       client.close(() => {
@@ -179,8 +179,8 @@ const checkForReminders = async (sb: Sassybot) => {
             officeRole ? officeRole : 'Officers'
           }, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
         );
-      } catch (e) {
-        logger.warn("couldn't report to officers channel", e, CoTOfficerChannelId);
+      } catch (error) {
+        logger.warn("couldn't report to officers channel", { error, CoTOfficerChannelId });
       }
     }
   }

@@ -37,7 +37,7 @@ export default class ClaimCommand extends SassybotCommand {
     await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
     let rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, memberByUserId.rank);
     if (!rankRole) {
-      logger.warn('unable to fetch rank', memberByUserId.rank);
+      logger.warn('unable to fetch rank', { rank: memberByUserId.rank });
       await message.channel.send(
         'However, I was unable to check your discord rank, one of the officers can help if needed.',
       );

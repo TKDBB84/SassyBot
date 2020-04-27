@@ -15,14 +15,14 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private static async couldNotRemoveRole(message: Message, role: any, error: any) {
-    logger.warn('could not remove role', role, error);
+    logger.warn('could not remove role', { role, error });
     await message.channel.send(
       "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
       { reply: message.author },
     );
   }
   private static async couldNotAddRole(message: Message, role: any, error: any) {
-    logger.warn('could not add role', role, error);
+    logger.warn('could not add role', { role, error });
     await message.channel.send(
       `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
       { reply: message.author },
@@ -61,7 +61,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (newRole) {
       await member.roles.add(newRole, 'User Joined Server');
     } else {
-      logger.warn(`Unable to find CoT New Rank`, newRole);
+      logger.warn(`Unable to find CoT New Rank`, { newRole });
       return;
     }
 
@@ -107,12 +107,12 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         return;
       }
     }
-    await message.member.setNickname(declaredName, 'Declared Character Name').catch(async (e) => {
+    await message.member.setNickname(declaredName, 'Declared Character Name').catch(async (error) => {
       await message.channel.send(
         'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
         { reply: message.author },
       );
-      logger.warn('unable to update nickname', e);
+      logger.warn('unable to update nickname', { error });
     });
     const nameMatch = await this.sb.dbConnection
       .getRepository(FFXIVChar)

@@ -83,9 +83,9 @@ export class Sassybot extends EventEmitter {
         }
       }
       return role;
-    } catch (e) {
-      logger.warn('could not fetch role', roleId, guildId, e);
-      throw e;
+    } catch (error) {
+      logger.warn('could not fetch role', { roleId, guildId, error });
+      throw error;
     }
   }
 
@@ -96,8 +96,8 @@ export class Sassybot extends EventEmitter {
       if (!channel) {
         channel = await this.discordClient.channels.fetch(channelId);
       }
-    } catch (e) {
-      logger.warn('could not fetch channel', channelId, e);
+    } catch (error) {
+      logger.warn('could not fetch channel', { channelId, error });
     }
     return channel || null;
   }
@@ -117,9 +117,9 @@ export class Sassybot extends EventEmitter {
         user = await this.discordClient.users.fetch(userId);
       }
       return user;
-    } catch (e) {
-      logger.warn('could not fetch user', userId, e);
-      throw e;
+    } catch (error) {
+      logger.warn('could not fetch user', { userId, error });
+      throw error;
     }
   }
   public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
@@ -227,7 +227,7 @@ export class Sassybot extends EventEmitter {
   private async login() {
     this.emit('preLogin');
     const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
-    logger.info('login Complete', loginResult);
+    logger.info('login Complete', { loginResult });
     this.emit('postLogin');
   }
 
