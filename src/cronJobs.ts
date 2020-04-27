@@ -25,7 +25,7 @@ interface IFreeCompanyMember {
 const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
   return new Promise((resolve) => {
     const client = http2.connect('https://xivapi.com:443');
-    client.on('error', console.error);
+    client.on('error', logger.error);
     const req = client.request({
       ':path': `/freecompany/9229001536389012456?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
     });
@@ -42,7 +42,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
           finalResult = parsedBody.FreeCompanyMembers;
         }
       } catch (err) {
-        console.error({ context: 'Error From XIVAPI', err });
+        logger.error('Error From XIVAPI', err);
         finalResult = [];
       }
       client.close(() => {
@@ -95,7 +95,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     if (!carry[member.ID]) {
       carry[member.ID] = member;
     } else {
-      console.log('skipping: ', { duplicate: member });
+      logger.info('skipping: ', { duplicate: member });
     }
     return carry;
   }, {});
@@ -180,7 +180,7 @@ const checkForReminders = async (sb: Sassybot) => {
           }, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
         );
       } catch (e) {
-        console.error("couldn't report to officers channel", { e });
+        logger.warn("couldn't report to officers channel", e, CoTOfficerChannelId);
       }
     }
   }

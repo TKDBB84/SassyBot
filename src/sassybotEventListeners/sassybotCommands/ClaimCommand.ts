@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import { CotRanks, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
+import { logger } from '../../log';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
@@ -36,7 +37,7 @@ export default class ClaimCommand extends SassybotCommand {
     await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
     let rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, memberByUserId.rank);
     if (!rankRole) {
-      console.error('unable to fetch rank');
+      logger.warn('unable to fetch rank', memberByUserId.rank);
       await message.channel.send(
         'However, I was unable to check your discord rank, one of the officers can help if needed.',
       );
@@ -55,14 +56,22 @@ export default class ClaimCommand extends SassybotCommand {
           rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN);
         case CotRanks.VETERAN:
           if (rankRole) {
-            await message.member.roles.add(rankRole, 'user claimed Veteran member').catch(console.error);
+            await message.member.roles.add(rankRole, 'user claimed Veteran member').catch((error) => {
+              logger.warn('unable to add role', {
+                error,
+                member: message.member,
+                rankRole,
+              });
+            });
           }
           break;
         case CotRanks.OTHER:
         case CotRanks.MEMBER:
         case CotRanks.RECRUIT:
         default:
-          await message.member.roles.add(rankRole, 'user claimed member').catch(console.error);
+          await message.member.roles.add(rankRole, 'user claimed member').catch((error) => {
+            logger.warn('unable to add role (2)', { error, member: message.member, rankRole });
+          });
           break;
       }
     }

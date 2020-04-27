@@ -227,7 +227,7 @@ export class Sassybot extends EventEmitter {
   private async login() {
     this.emit('preLogin');
     const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
-    console.log({ loginComplete: loginResult });
+    logger.info('login Complete', loginResult);
     this.emit('postLogin');
   }
 

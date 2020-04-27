@@ -2,6 +2,7 @@ import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
 import * as moment from 'moment';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
+import { logger } from '../../../log';
 import ActivityCommand from './ActivityCommand';
 
 export default class PromoteCommand extends ActivityCommand {
@@ -106,8 +107,13 @@ export default class PromoteCommand extends ActivityCommand {
                   if (previousRole) {
                     await member.roles.remove(previousRole, reason);
                   }
-                } catch (e) {
-                  console.log('error promoting member, adding/removing rank:', { e });
+                } catch (error) {
+                  logger.warn('error promoting member, adding/removing rank:', {
+                    error,
+                    member,
+                    newRole,
+                    previousRole,
+                  });
                 }
               }
 

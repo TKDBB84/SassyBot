@@ -1,5 +1,6 @@
 import { Column, Entity, getManager, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CotRanks } from '../consts';
+import { logger } from '../log';
 import AbsentRequest from './AbsentRequest';
 import FFXIVChar from './FFXIVChar';
 import PromotionRequest from './PromotionRequest';
@@ -55,7 +56,7 @@ export default class COTMember {
       try {
         cotMember = await cotMemberRepo.save(cotMember, { reload: true });
       } catch (e) {
-        console.log({ e, foundMember, cotMember });
+        logger.warn('error saving member', e, foundMember, cotMember);
         throw e;
       }
     } else {

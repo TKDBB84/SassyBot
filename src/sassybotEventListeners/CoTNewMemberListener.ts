@@ -1,12 +1,13 @@
 import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
-import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels, UserIds } from '../consts';
+import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../consts';
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
+import { logger } from '../log';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
-    message.channel.send(
+    await message.channel.send(
       'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
         'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃',
       { split: true, reply: message.author },
@@ -14,14 +15,14 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private static async couldNotRemoveRole(message: Message, role: any, error: any) {
-    console.error('could not remove role', { role, error });
+    logger.warn('could not remove role', role, error);
     await message.channel.send(
       "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
       { reply: message.author },
     );
   }
   private static async couldNotAddRole(message: Message, role: any, error: any) {
-    console.error('could not add role', { role, error });
+    logger.warn('could not add role', role, error);
     await message.channel.send(
       `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
       { reply: message.author },
@@ -50,24 +51,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    let dmSasner = {
-      send: console.log,
-    };
-
-    try {
-      const sasner = await this.sb.getUser(UserIds.SASNER);
-      if (sasner) {
-        dmSasner = await sasner.createDM();
-      } else {
-        console.error('unable to find "New" Rank, unable to communicate with Sasner');
-      }
-    } catch (e) {
-      console.error('unable to find "New" Rank, unable to communicate with Sasner', { e });
-    }
-
     const newMemberChannel = (await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID])) as TextChannel;
     if (!newMemberChannel) {
-      dmSasner.send('unable to fetch new user channel');
+      logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
       return;
     }
 
@@ -75,7 +61,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (newRole) {
       await member.roles.add(newRole, 'User Joined Server');
     } else {
-      dmSasner.send(`Unable to find CoT New Rank ${JSON.stringify(newRole)}`);
+      logger.warn(`Unable to find CoT New Rank`, newRole);
       return;
     }
 
@@ -126,7 +112,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
         { reply: message.author },
       );
-      console.error('unable to update nickname', { e });
+      logger.warn('unable to update nickname', e);
     });
     const nameMatch = await this.sb.dbConnection
       .getRepository(FFXIVChar)
