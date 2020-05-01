@@ -150,11 +150,10 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     }
 
     if (!cotMember) {
-      await cotMemberRepo.query('INSERT INTO `cot_member` (`rank`, `characterId`) VALUES (?, ?)', [
-        targetRank,
-        character.id,
-      ]);
-      cotMember = await cotMemberRepo.findOneOrFail({ where: { character: { id: character.id } } });
+      const newMember = cotMemberRepo.create();
+      newMember.rank = targetRank;
+      newMember.character = character;
+      cotMember = await cotMemberRepo.save(newMember, { reload: true });
     } else {
       if (targetRank !== cotMember.rank) {
         await cotMemberRepo.update(cotMember.id, { rank: targetRank });
