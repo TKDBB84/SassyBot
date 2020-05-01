@@ -14,6 +14,9 @@ export default class EchoCommand extends SassybotCommand {
     if (Math.random() > 0.5) {
       resp = '10/10, that thing really turns my circuits on.'
     }
+    if (message.author.id === '125025069402554368') {
+      resp = '10/10, i want it to rub on my soft furry programming!`'
+    }
     if (message.author.id === '153364394443669507') {
       resp = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.'
     }
