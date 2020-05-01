@@ -45,4 +45,11 @@ export default class Event {
 
   @Column()
   public eventTime!: Date;
+  //
+  // @Column({
+  //   type: 'enum',
+  //   enum:
+  //   default:
+  // })
+  // public reoccuring!:
 }

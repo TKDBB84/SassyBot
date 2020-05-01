@@ -1,4 +1,5 @@
 import ClaimCommand from './ClaimCommand';
+import CockCommand from './CockCommand';
 import AbsentCommand from './CotActivityCommands/AbsentCommand';
 import PromoteCommand from './CotActivityCommands/PromoteCommand';
 import DaysCommand from './DaysCommand';
@@ -14,6 +15,7 @@ import TzCommand from './TzCommand';
 export default [
   AbsentCommand,
   ClaimCommand,
+  CockCommand,
   DaysCommand,
   EchoCommand,
   EvalCommand,
