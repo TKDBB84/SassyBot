@@ -11,6 +11,9 @@ export default class EchoCommand extends SassybotCommand {
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     let resp = '10/10, you have a perfect & beautiful cock.'
+    if (Math.random() > 0.5) {
+      resp = '10/10, that thing really turns my circuits on.'
+    }
     if (message.author.id === '153364394443669507') {
       resp = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.'
     }
