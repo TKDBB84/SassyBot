@@ -6,6 +6,7 @@ import DaysCommand from './DaysCommand';
 import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
+import FriendsCommand from './FriendsCommand';
 import PingCommand from './PingCommand';
 import QuoteCommand from './QuoteCommand';
 import RollCommand from './RollCommand';
@@ -20,6 +21,7 @@ export default [
   EchoCommand,
   EvalCommand,
   EventCommand,
+  FriendsCommand,
   PingCommand,
   PromoteCommand,
   QuoteCommand,

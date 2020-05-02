@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
-export default class EchoCommand extends SassybotCommand {
+export default class CockCommand extends SassybotCommand {
   public readonly commands = ['cock'];
 
   public getHelpText(): string {
