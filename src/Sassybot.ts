@@ -21,7 +21,6 @@ import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
 import { logger } from './log';
-import populateQuotes from './populate-quotes';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -323,10 +322,6 @@ dbConnection.then(async (connection: Connection) => {
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   jobs.forEach(({ job, schedule }) => {
     cron.schedule(schedule, job.bind(null, sb));
-  });
-  logger.info('starting quote population...');
-  populateQuotes(sb).then(() => {
-    logger.info('done populating quotes');
   });
   await sb.run();
 });
