@@ -21,6 +21,7 @@ import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
 import { logger } from './log';
+import populateQuotes from './populate-quotes';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 
@@ -106,6 +107,17 @@ export class Sassybot extends EventEmitter {
     const channel = await this.getChannel(channelId);
     if (this.isTextChannel(channel)) {
       return channel;
+    }
+    return null;
+  }
+
+  public async getMessage(channelId: string, messageId: string): Promise<Message | null> {
+    const channel = await this.getTextChannel(channelId);
+    if (channel) {
+      const message = await channel.messages.fetch(messageId);
+      if (message) {
+        return message;
+      }
     }
     return null;
   }
@@ -311,6 +323,10 @@ dbConnection.then(async (connection: Connection) => {
   SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
   jobs.forEach(({ job, schedule }) => {
     cron.schedule(schedule, job.bind(null, sb));
+  });
+  logger.info('starting quote population...');
+  populateQuotes(sb).then(() => {
+    logger.info('done populating quotes');
   });
   await sb.run();
 });
