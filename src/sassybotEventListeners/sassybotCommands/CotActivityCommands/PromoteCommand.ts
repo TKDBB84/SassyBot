@@ -1,5 +1,6 @@
 import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
 import * as moment from 'moment';
+import 'moment-timezone';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import { logger } from '../../../log';
@@ -144,12 +145,14 @@ export default class PromoteCommand extends ActivityCommand {
     if (!foundMember) {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-      const messageCollector = new MessageCollector(message.channel, filter);
-      messageCollector.on('collect', async (collectedMessage: Message) => {
-        promotion.CotMember = await this.parseCharacterName(collectedMessage);
-        await this.summarizeData(collectedMessage, promotion);
-        messageCollector.stop();
-      });
+      if (this.sb.isTextChannel(message.channel)) {
+        const messageCollector = new MessageCollector(message.channel, filter);
+        messageCollector.on('collect', async (collectedMessage: Message) => {
+          promotion.CotMember = await this.parseCharacterName(collectedMessage);
+          await this.summarizeData(collectedMessage, promotion);
+          messageCollector.stop();
+        });
+      }
     } else {
       promotion.CotMember = foundMember;
       await this.summarizeData(message, promotion);

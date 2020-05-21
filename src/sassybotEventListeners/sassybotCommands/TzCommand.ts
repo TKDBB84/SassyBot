@@ -1,5 +1,6 @@
 import { Message } from 'discord.js';
-import * as moment from 'moment-timezone';
+import * as moment from 'moment';
+import 'moment-timezone';
 import SbUser from '../../entity/SbUser';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';

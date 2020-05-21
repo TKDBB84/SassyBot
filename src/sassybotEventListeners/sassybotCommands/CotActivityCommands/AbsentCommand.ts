@@ -1,5 +1,6 @@
 import { Message, MessageCollector } from 'discord.js';
 import * as moment from 'moment';
+import 'moment-timezone';
 import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
@@ -53,38 +54,40 @@ export default class AbsentCommand extends ActivityCommand {
       messageCount = 1;
     }
     const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-    const messageCollector = new MessageCollector(message.channel, filter);
-    messageCollector.on('collect', async (collectedMessage: Message) => {
-      switch (messageCount) {
-        case 0:
-          foundMember = await this.parseCharacterName(collectedMessage);
-          absent.CotMember = foundMember;
-          await this.requestStartDate(collectedMessage, absent);
-          break;
-        case 1:
-          const startDate = await this.parseDate(collectedMessage);
-          if (!startDate) {
+    if (this.sb.isTextChannel(message.channel)) {
+      const messageCollector = new MessageCollector(message.channel, filter);
+      messageCollector.on('collect', async (collectedMessage: Message) => {
+        switch (messageCount) {
+          case 0:
+            foundMember = await this.parseCharacterName(collectedMessage);
+            absent.CotMember = foundMember;
             await this.requestStartDate(collectedMessage, absent);
-            messageCount--;
-          } else {
-            absent.startDate = startDate;
-            this.requestEndDate(collectedMessage, absent);
-          }
-          break;
-        case 2:
-          const endDate = await this.parseDate(collectedMessage);
-          if (!endDate) {
-            await this.requestEndDate(collectedMessage, absent);
-            messageCount--;
-          } else {
-            absent.endDate = endDate;
-            await this.summarizeData(collectedMessage, absent);
-            messageCollector.stop();
-          }
-          break;
-      }
-      messageCount++;
-    });
+            break;
+          case 1:
+            const startDate = await this.parseDate(collectedMessage);
+            if (!startDate) {
+              await this.requestStartDate(collectedMessage, absent);
+              messageCount--;
+            } else {
+              absent.startDate = startDate;
+              this.requestEndDate(collectedMessage, absent);
+            }
+            break;
+          case 2:
+            const endDate = await this.parseDate(collectedMessage);
+            if (!endDate) {
+              await this.requestEndDate(collectedMessage, absent);
+              messageCount--;
+            } else {
+              absent.endDate = endDate;
+              await this.summarizeData(collectedMessage, absent);
+              messageCollector.stop();
+            }
+            break;
+        }
+        messageCount++;
+      });
+    }
   }
 
   protected async requestStartDate(message: Message, absentRequest: AbsentRequest) {

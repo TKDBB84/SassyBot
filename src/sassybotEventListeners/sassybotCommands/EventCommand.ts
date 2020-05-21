@@ -1,5 +1,6 @@
 import { Collection, CollectorFilter, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
-import moment = require('moment-timezone');
+import * as moment from 'moment';
+import 'moment-timezone';
 import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';
 import { ISassybotCommandParams } from '../../Sassybot';
@@ -147,31 +148,33 @@ export default class EventCommand extends SassybotCommand {
       return matches;
     };
 
-    const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
-    messageCollector.on('end', async (collected: Collection<string, Message>) => {
-      const collectedMessage = collected.first();
-      if (collectedMessage) {
-        const timeString = collectedMessage.cleanContent.toLowerCase();
-        const matchingFormat = validDateFormats.filter((format) => moment.tz(timeString, format, userTz).isValid());
+    if (this.sb.isTextChannel(message.channel)) {
+      const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
+      messageCollector.on('end', async (collected: Collection<string, Message>) => {
+        const collectedMessage = collected.first();
+        if (collectedMessage) {
+          const timeString = collectedMessage.cleanContent.toLowerCase();
+          const matchingFormat = validDateFormats.filter((format) => moment.tz(timeString, format, userTz).isValid());
 
-        const eventRepo = this.sb.dbConnection.getRepository(Event);
-        const event = new Event();
-        event.eventName = eventName.toLowerCase().trim();
-        event.eventTime = moment
-          .tz(timeString, matchingFormat, userTz)
-          .utc()
-          .toDate();
-        event.guildId = guildId;
-        event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
-        const savedEvent = await eventRepo.save(event, { reload: true });
+          const eventRepo = this.sb.dbConnection.getRepository(Event);
+          const event = new Event();
+          event.eventName = eventName.toLowerCase().trim();
+          event.eventTime = moment
+            .tz(timeString, matchingFormat, userTz)
+            .utc()
+            .toDate();
+          event.guildId = guildId;
+          event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
+          const savedEvent = await eventRepo.save(event, { reload: true });
 
-        const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
-        await message.channel.send(
-          `I have an event: "${savedEvent.eventName}" happening on ${eventMoment
-            .tz(userTz)
-            .format('D, MMM [at] LT z')}`,
-        );
-      }
-    });
+          const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
+          await message.channel.send(
+            `I have an event: "${savedEvent.eventName}" happening on ${eventMoment
+              .tz(userTz)
+              .format('D, MMM [at] LT z')}`,
+          );
+        }
+      });
+    }
   }
 }

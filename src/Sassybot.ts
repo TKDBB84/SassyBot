@@ -5,12 +5,15 @@ import {
   Message,
   MessageMentions,
   MessageReaction,
+  PartialGuildMember,
+  PartialUser,
   PermissionResolvable,
   Role,
   Snowflake,
   TextChannel,
   User,
   UserResolvable,
+  VoiceState,
 } from 'discord.js';
 import { EventEmitter } from 'events';
 import * as cron from 'node-cron';
@@ -281,17 +284,17 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  private async onGuildMemberAdd(member: GuildMember) {
-    if (member.user.bot) {
+  private async onGuildMemberAdd(member: GuildMember | PartialGuildMember) {
+    if (member && member.user && member.user.bot) {
       return;
     }
     this.emit('guildMemberAdd', { member });
   }
 
-  private async onVoiceStateUpdate(oldMember: GuildMember, newMember: GuildMember) {
+  private async onVoiceStateUpdate(oldMember: VoiceState, newMember: VoiceState) {
     this.emit('voiceStateUpdate', { oldMember, newMember });
   }
-  private async onMessageReactionAdd(messageReaction: MessageReaction, user: User) {
+  private async onMessageReactionAdd(messageReaction: MessageReaction, user: User | PartialUser) {
     if (messageReaction.message.author.bot) {
       return;
     }
