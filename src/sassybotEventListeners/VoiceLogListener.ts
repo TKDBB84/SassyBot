@@ -75,11 +75,11 @@ export default class VoiceLogListener extends SassybotEventListener {
   }
 
   private async listener({
-    oldMember: previousMemberState,
-    newMember: currentMemberState,
+    previousMemberState,
+    currentMemberState,
   }: {
-    oldMember: VoiceState;
-    newMember: VoiceState;
+    previousMemberState: VoiceState;
+    currentMemberState: VoiceState;
   }) {
     const promiseResolution = await Promise.all([
       previousMemberState.channel,

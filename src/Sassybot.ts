@@ -291,11 +291,14 @@ export class Sassybot extends EventEmitter {
     this.emit('guildMemberAdd', { member });
   }
 
-  private async onVoiceStateUpdate(oldMember: VoiceState, newMember: VoiceState) {
-    this.emit('voiceStateUpdate', { oldMember, newMember });
+  private async onVoiceStateUpdate(previousMemberState: VoiceState, currentMemberState: VoiceState) {
+    if (previousMemberState.member?.user.bot || currentMemberState.member?.user.bot) {
+      return;
+    }
+    this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
   private async onMessageReactionAdd(messageReaction: MessageReaction, user: User | PartialUser) {
-    if (messageReaction.message.author.bot) {
+    if (messageReaction.message.author.bot || user.bot) {
       return;
     }
     this.emit('messageReactionAdd', { messageReaction, user });
