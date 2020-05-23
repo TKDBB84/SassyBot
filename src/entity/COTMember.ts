@@ -43,10 +43,7 @@ export default class COTMember {
       }
     }
 
-    let cotMember = await cotMemberRepo
-      .createQueryBuilder()
-      .where('characterId = :id', { id: cotPlayer.id })
-      .getOne();
+    let cotMember = await cotMemberRepo.createQueryBuilder().where('characterId = :id', { id: cotPlayer.id }).getOne();
     const foundMember = cotMember;
     if (!cotMember) {
       cotMember = new COTMember();
@@ -84,16 +81,10 @@ export default class COTMember {
   @Column()
   public lastPromotion!: Date;
 
-  @OneToMany(
-    () => PromotionRequest,
-    (promotionRequest: PromotionRequest) => promotionRequest.CotMember,
-  )
+  @OneToMany(() => PromotionRequest, (promotionRequest: PromotionRequest) => promotionRequest.CotMember)
   public promotions!: PromotionRequest[];
 
-  @OneToMany(
-    () => AbsentRequest,
-    (absentRequest: AbsentRequest) => absentRequest.CotMember,
-  )
+  @OneToMany(() => AbsentRequest, (absentRequest: AbsentRequest) => absentRequest.CotMember)
   public absences!: AbsentRequest[];
 
   @OneToOne(() => FFXIVChar, { eager: true })
@@ -118,12 +109,8 @@ export default class COTMember {
         break;
     }
     const lastPromotion = new Date();
-    await getManager()
-      .getRepository(COTMember)
-      .update(this.id, { lastPromotion, rank: newRank });
-    const updatedMember = await getManager()
-      .getRepository(COTMember)
-      .findOne(this.id);
+    await getManager().getRepository(COTMember).update(this.id, { lastPromotion, rank: newRank });
+    const updatedMember = await getManager().getRepository(COTMember).findOne(this.id);
     if (!updatedMember) {
       throw new Error('same member not found?');
     }

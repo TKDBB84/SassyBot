@@ -36,11 +36,7 @@ export default class Event {
   @Column()
   public eventName!: string;
 
-  @ManyToOne(
-    () => SbUser,
-    (user) => user.events,
-    { eager: true },
-  )
+  @ManyToOne(() => SbUser, (user) => user.events, { eager: true })
   public user!: SbUser;
 
   @Column()

@@ -105,7 +105,7 @@ export default class EventCommand extends SassybotCommand {
     sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
       const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
       reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
-        const toResolve: Array<Promise<any>> = [reactionNo.remove()];
+        const toResolve: Promise<any>[] = [reactionNo.remove()];
         if (collected && collected.size > 0) {
           const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
           if (canDelete) {
@@ -159,10 +159,7 @@ export default class EventCommand extends SassybotCommand {
           const eventRepo = this.sb.dbConnection.getRepository(Event);
           const event = new Event();
           event.eventName = eventName.toLowerCase().trim();
-          event.eventTime = moment
-            .tz(timeString, matchingFormat, userTz)
-            .utc()
-            .toDate();
+          event.eventTime = moment.tz(timeString, matchingFormat, userTz).utc().toDate();
           event.guildId = guildId;
           event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
           const savedEvent = await eventRepo.save(event, { reload: true });

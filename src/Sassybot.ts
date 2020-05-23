@@ -197,7 +197,7 @@ export class Sassybot extends EventEmitter {
     return false;
   }
 
-  public eventNames(): Array<string | symbol> {
+  public eventNames(): (string | symbol)[] {
     return [
       'preLogin',
       'postLogin',

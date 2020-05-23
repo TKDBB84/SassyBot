@@ -111,12 +111,14 @@ export default class VoiceLogListener extends SassybotEventListener {
       userJoinedChannel = null;
     }
 
-    const previousMemberName: string = `${previousMemberState.member?.displayName || ''} (${previousMemberState.member
-      ?.user.username || ''})`;
+    const previousMemberName: string = `${previousMemberState.member?.displayName || ''} (${
+      previousMemberState.member?.user.username || ''
+    })`;
     const leftNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
-    const currentMemberName: string = `${currentMemberState.member?.displayName || ''} (${currentMemberState.member
-      ?.user.username || ''})`;
+    const currentMemberName: string = `${currentMemberState.member?.displayName || ''} (${
+      currentMemberState.member?.user.username || ''
+    })`;
     const joinedNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
     if (userLeftChannel && userJoinedChannel) {

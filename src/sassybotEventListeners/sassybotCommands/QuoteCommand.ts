@@ -61,7 +61,7 @@ export default class QuoteCommand extends SassybotCommand {
     }
     const guildId = message.guild.id;
 
-    const results: Array<{ cnt: string; userDiscordUserId: string }> = await this.sb.dbConnection
+    const results: { cnt: string; userDiscordUserId: string }[] = await this.sb.dbConnection
       .getRepository(Quote)
       .createQueryBuilder()
       .select('COUNT(1) as cnt, userDiscordUserId')

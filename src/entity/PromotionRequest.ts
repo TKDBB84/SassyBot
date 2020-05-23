@@ -17,10 +17,6 @@ export default class PromotionRequest {
   })
   public toRank!: CotRanks;
 
-  @ManyToOne(
-    () => COTMember,
-    (cotMember: COTMember) => cotMember.promotions,
-    { eager: true },
-  )
+  @ManyToOne(() => COTMember, (cotMember: COTMember) => cotMember.promotions, { eager: true })
   public CotMember!: COTMember;
 }
