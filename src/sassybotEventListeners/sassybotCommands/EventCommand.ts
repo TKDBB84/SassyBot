@@ -94,7 +94,7 @@ export default class EventCommand extends SassybotCommand {
 
   private listenForDelete(sentMessage: Message, authorId: string, eventIdToDelete: number) {
     const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
-      return reaction.emoji.name === '⛔' && user.id === authorId;
+      return (reaction.emoji.name === '⛔' || reaction.emoji.name === '🔁') && user.id === authorId;
     };
     const reactionCollectorOptions = {
       max: 1,
@@ -102,20 +102,37 @@ export default class EventCommand extends SassybotCommand {
       maxUsers: 1,
       time: 300000, // 5 min
     };
-    sentMessage.react('⛔').then((reactionNo: MessageReaction) => {
-      const reactionCollector = sentMessage.createReactionCollector(reactionCollectorFilter, reactionCollectorOptions);
-      reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
-        const toResolve: Promise<any>[] = [reactionNo.remove()];
-        if (collected && collected.size > 0) {
-          const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
-          if (canDelete) {
-            toResolve.push(sentMessage.delete());
+    Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
+      ([reactionRepeat, reactionNo]: Array<MessageReaction>) => {
+        const reactionCollector = sentMessage.createReactionCollector(
+          reactionCollectorFilter,
+          reactionCollectorOptions,
+        );
+        reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
+          if (collected && collected.size > 0) {
+            const reaction = collected.first();
+            if (reaction) {
+              const toResolve: Array<Promise<any>> = [reactionRepeat.remove(), reactionNo.remove()];
+              if (reaction.emoji.name === '⛔') {
+                const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
+                if (canDelete) {
+                  toResolve.push(sentMessage.delete());
+                }
+                toResolve.push(Event.delete(eventIdToDelete));
+              } else if (reaction.emoji.name === '🔁') {
+                // do repeating things
+                toResolve.push(
+                  sentMessage.channel.send(
+                    "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
+                  ),
+                );
+              }
+              await Promise.all(toResolve);
+            }
           }
-          toResolve.push(Event.delete(eventIdToDelete));
-        }
-        await Promise.all(toResolve);
-      });
-    });
+        });
+      },
+    );
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {
