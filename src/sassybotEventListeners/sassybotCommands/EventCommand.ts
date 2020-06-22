@@ -63,7 +63,7 @@ export default class EventCommand extends SassybotCommand {
       const formattedDate = eventMoment.tz(currentUser.timezone).format('D, MMM [at] LT z');
       const sentMessage = await message.channel.send(`"${eventName}" is happening on ${formattedDate}`);
       if (event.user.discordUserId === message.author.id) {
-        this.listenForDelete(sentMessage, message.author.id, event.id);
+        this.listenForReaction(sentMessage, message.author.id, event.id);
       }
     } else {
       await message.channel.send('Sorry, I was unable to find an event by that name');
@@ -84,7 +84,7 @@ export default class EventCommand extends SassybotCommand {
           `"${allEvents[i].eventName}" happening on ${eventMoment.tz(userTz).format('dddd, MMM Do [at] LT z')}`,
         );
         if (allEvents[i].user.discordUserId === message.author.id) {
-          this.listenForDelete(sentMessage, message.author.id, allEvents[i].id);
+          this.listenForReaction(sentMessage, message.author.id, allEvents[i].id);
         }
       }
     } else {
@@ -92,7 +92,7 @@ export default class EventCommand extends SassybotCommand {
     }
   }
 
-  private listenForDelete(sentMessage: Message, authorId: string, eventIdToDelete: number) {
+  private listenForReaction(sentMessage: Message, authorId: string, eventIdToDelete: number) {
     const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '🔁') && user.id === authorId;
     };
@@ -109,30 +109,35 @@ export default class EventCommand extends SassybotCommand {
           reactionCollectorOptions,
         );
         reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
+          await EventCommand.removeReactions([reactionRepeat, reactionNo]);
           if (collected && collected.size > 0) {
             const reaction = collected.first();
-            if (reaction) {
-              const toResolve: Array<Promise<any>> = [reactionRepeat.remove(), reactionNo.remove()];
-              if (reaction.emoji.name === '⛔') {
-                const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
-                if (canDelete) {
-                  toResolve.push(sentMessage.delete());
-                }
-                toResolve.push(Event.delete(eventIdToDelete));
-              } else if (reaction.emoji.name === '🔁') {
-                // do repeating things
-                toResolve.push(
-                  sentMessage.channel.send(
-                    "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
-                  ),
-                );
-              }
-              await Promise.all(toResolve);
+            if (reaction?.emoji.name === '⛔') {
+              await this.deleteEvent(sentMessage, eventIdToDelete);
+            } else if (reaction?.emoji.name === '🔁') {
+              // do repeating things
+              await sentMessage.channel.send(
+                "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
+              );
             }
           }
         });
       },
     );
+  }
+
+  private static async removeReactions(reactionsToRemove: MessageReaction[]): Promise<boolean> {
+    return !!(await Promise.all(reactionsToRemove.map((reaction: MessageReaction) => reaction.remove())));
+  }
+
+  private async deleteEvent(sentMessage: Message, eventIdToDelete: number): Promise<boolean> {
+    const toResolve: Array<Promise<any>> = [];
+    const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
+    if (canDelete) {
+      toResolve.push(sentMessage.delete());
+    }
+    toResolve.push(Event.delete(eventIdToDelete));
+    return !!(await Promise.all(toResolve));
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {
