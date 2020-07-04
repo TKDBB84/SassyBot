@@ -264,12 +264,13 @@ export class Sassybot extends EventEmitter {
 
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
     if (params.args === '') {
+      const commands: string[] = [];
+      this.registeredCommands.forEach((value) => commands.push(value));
+      commands.sort();
       await message.channel.send(
-        `Available commands are:\n${[...this.registeredCommands]
-          .sort()
-          .join(
-            ', ',
-          )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
+        `Available commands are:\n${commands.join(
+          ', ',
+        )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
         {
           split: true,
         },
