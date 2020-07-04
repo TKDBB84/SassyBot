@@ -233,6 +233,7 @@ export class Sassybot extends EventEmitter {
         uniqueCommands.add(thisCommand);
       });
       const command = sbEvent.commands[0].toLowerCase();
+      console.log({commands: sbEvent.commands, 0: sbEvent.commands[0]})
       this.registeredCommands.add(command);
     }
     this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
