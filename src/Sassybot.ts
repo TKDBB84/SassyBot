@@ -255,8 +255,9 @@ export class Sassybot extends EventEmitter {
       const params = Sassybot.getCommandParameters(message);
       if (params.command === 'help') {
         await this.processHelpCommand(message, params);
+      } else {
+        this.emit('sassybotCommand', {message, params});
       }
-      this.emit('sassybotCommand', { message, params });
       this.emit('sassybotCommandPostprocess', { message });
     }
     this.emit('messageEnd', { message });
@@ -264,13 +265,9 @@ export class Sassybot extends EventEmitter {
 
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
     if (params.args === '') {
-      const commands: string[] = [];
-      this.registeredCommands.forEach((value) => commands.push(value));
-      commands.sort();
+      const commands: string[] = [...this.registeredCommands];
       await message.channel.send(
-        `Available commands are:\n${commands.join(
-          ', ',
-        )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
+        `Available commands are:\n${commands.join()}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
         {
           split: true,
         },
