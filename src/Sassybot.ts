@@ -183,7 +183,7 @@ export class Sassybot extends EventEmitter {
   }
 
   public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
-    return 'command' in sbEvent;
+    return 'commands' in sbEvent;
   }
 
   public async botHasPermission(permissionString: PermissionResolvable, guildId: Snowflake): Promise<boolean> {
@@ -233,7 +233,6 @@ export class Sassybot extends EventEmitter {
         uniqueCommands.add(thisCommand);
       });
       const command = sbEvent.commands[0].toLowerCase();
-      console.log({commands: sbEvent.commands, 0: sbEvent.commands[0]})
       this.registeredCommands.add(command);
     }
     this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
@@ -267,9 +266,9 @@ export class Sassybot extends EventEmitter {
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
     if (params.args === '') {
       const commands: string[] = [...this.registeredCommands];
-      console.log({ commands })
+      commands.sort()
       await message.channel.send(
-        `Available commands are:\n${commands.join()}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
+        `Available commands are:\n${commands.join(', ')}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
         {
           split: true,
         },
