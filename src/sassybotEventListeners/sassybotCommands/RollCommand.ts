@@ -18,12 +18,12 @@ export default class RollCommand extends SassybotCommand {
       };
     }
 
-    if (ret.num > 300) {
-      ret.num = 300;
+    if (ret.num > 420) {
+      ret.num = 420;
     }
 
-    if (ret.sides > 300) {
-      ret.sides = 300;
+    if (ret.sides > 420) {
+      ret.sides = 420;
     }
 
     return ret;
@@ -143,6 +143,7 @@ export default class RollCommand extends SassybotCommand {
     if (parsed.num === 69 || parsed.sides === 69) {
       replyMessage += '(nice) '
     }
+
     if (parsed.num === 420 || parsed.sides === 420) {
       replyMessage += '(blaze-it) '
     }
