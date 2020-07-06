@@ -126,10 +126,12 @@ export default class RollCommand extends SassybotCommand {
   }
 
   private static rollFunction(args: string) {
+    const parsed = RollCommand.parseDice(args)
     const keptAndDropped = RollCommand.actionKeepOrDrops(
       RollCommand.parseKeepOrDrops(args),
-      RollCommand.rollDice(RollCommand.parseDice(args)),
+      RollCommand.rollDice(parsed),
     );
+
     const additions = RollCommand.parseStaticAdditions(args);
     let total = 0;
 
@@ -137,7 +139,15 @@ export default class RollCommand extends SassybotCommand {
       total = keptAndDropped.kept.reduce((carry, num) => carry + num);
     }
 
-    let replyMessage = '[ ';
+    let replyMessage = '';
+    if (parsed.num === 69 || parsed.sides === 69) {
+      replyMessage += '(nice) '
+    }
+    if (parsed.num === 420 || parsed.sides === 420) {
+      replyMessage += '(blaze-it) '
+    }
+
+    replyMessage += '[ ';
     for (let i = 0; i < keptAndDropped.kept.length; i++) {
       if (i > 0) {
         replyMessage += ', ';
