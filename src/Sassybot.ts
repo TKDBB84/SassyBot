@@ -40,7 +40,10 @@ export interface ISassybotCommandParams {
 
 export class Sassybot extends EventEmitter {
   private static isSassybotCommand(message: Message): boolean {
-    return message.cleanContent.startsWith('!sb ') || message.cleanContent.startsWith('!sassybot ');
+    return (
+      message.cleanContent.toLowerCase().startsWith('!sb ') ||
+      message.cleanContent.toLowerCase().startsWith('!sassybot ')
+    );
   }
 
   private static getCommandParameters(message: Message): ISassybotCommandParams {
@@ -256,7 +259,7 @@ export class Sassybot extends EventEmitter {
       if (params.command === 'help') {
         await this.processHelpCommand(message, params);
       } else {
-        this.emit('sassybotCommand', {message, params});
+        this.emit('sassybotCommand', { message, params });
       }
       this.emit('sassybotCommandPostprocess', { message });
     }
@@ -266,9 +269,11 @@ export class Sassybot extends EventEmitter {
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
     if (params.args === '') {
       const commands: string[] = [...this.registeredCommands];
-      commands.sort()
+      commands.sort();
       await message.channel.send(
-        `Available commands are:\n${commands.join(', ')}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
+        `Available commands are:\n${commands.join(
+          ', ',
+        )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
         {
           split: true,
         },

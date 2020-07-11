@@ -38,7 +38,11 @@ export default class EventCommand extends SassybotCommand {
       return;
     }
 
-    if (params.args.trim().toLowerCase() === 'list' || params.args.trim().toLowerCase() === 'all') {
+    if (
+      params.args.trim().toLowerCase() === 'list' ||
+      params.args.trim().toLowerCase() === 'all' ||
+      params.args.trim() === ''
+    ) {
       await this.listAll(message, currentUser.timezone);
       return;
     }
@@ -103,7 +107,7 @@ export default class EventCommand extends SassybotCommand {
       time: 300000, // 5 min
     };
     Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
-      ([reactionRepeat, reactionNo]: Array<MessageReaction>) => {
+      ([reactionRepeat, reactionNo]: MessageReaction[]) => {
         const reactionCollector = sentMessage.createReactionCollector(
           reactionCollectorFilter,
           reactionCollectorOptions,
@@ -131,7 +135,7 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async deleteEvent(sentMessage: Message, eventIdToDelete: number): Promise<boolean> {
-    const toResolve: Array<Promise<any>> = [];
+    const toResolve: Promise<any>[] = [];
     const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
     if (canDelete) {
       toResolve.push(sentMessage.delete());
