@@ -168,6 +168,7 @@ const checkForReminders = async (sb: Sassybot) => {
   const oldPromotionCount = await sb.dbConnection
     .getRepository(PromotionRequest)
     .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
+  console.log(`${oldPromotionCount} old promotions found`)
   if (oldPromotionCount >= 2) {
     const officerChat = await sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {

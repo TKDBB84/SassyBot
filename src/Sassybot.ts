@@ -326,12 +326,16 @@ if (process.env.NODE_ENV !== 'production') {
   dbConnection = createConnection();
 }
 
-dbConnection.then(async (connection: Connection) => {
-  const sb = new Sassybot(connection);
+dbConnection
+  .then(async (connection: Connection) => {
+    const sb = new Sassybot(connection);
 
-  SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
-  jobs.forEach(({ job, schedule }) => {
-    cron.schedule(schedule, job.bind(null, sb));
+    SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
+    jobs.forEach(({ job, schedule }) => {
+      cron.schedule(schedule, job.bind(null, sb));
+    });
+    await sb.run();
+  })
+  .catch((e) => {
+    logger.error('error connecting to database', { e });
   });
-  await sb.run();
-});
