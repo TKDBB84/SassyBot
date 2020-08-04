@@ -193,6 +193,8 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 const annoyRyk = async (sb: Sassybot) => {
   const guild = await sb.getGuild(GuildIds.GAMEZZZ_GUILD_ID);
   if (guild) {
@@ -200,10 +202,10 @@ const annoyRyk = async (sb: Sassybot) => {
     const randomTextChannel = textChannels.random();
     if (sb.isTextChannel(randomTextChannel)) {
       await randomTextChannel.startTyping();
-      console.log(`typing in: ${randomTextChannel.name}`)
-      setTimeout(() => {
-        randomTextChannel.stopTyping();
-      }, 8000);
+      logger.info(`typing to ${randomTextChannel.name}`);
+      await delay(8000);
+      logger.info(`stopping typing in ${randomTextChannel.nsfw}`);
+      randomTextChannel.stopTyping(true);
     }
   }
 };
