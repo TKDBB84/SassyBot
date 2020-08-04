@@ -227,10 +227,10 @@ const jobs: IScheduledJob[] = [
     job: deletePastEvents,
     schedule: twiceADay,
   },
-  {
-    job: annoyRyk,
-    schedule: every15Min,
-  },
+  // {
+  //   job: annoyRyk,
+  //   schedule: every15Min,
+  // },
 ];
 
 export default jobs;
