@@ -2,7 +2,6 @@ import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js'
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../consts';
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
-import { logger } from '../log';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
@@ -14,15 +13,15 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     );
   }
 
-  private static async couldNotRemoveRole(message: Message, role: any, error: any) {
-    logger.warn('could not remove role', { role, error });
+  private async couldNotRemoveRole(message: Message, role: any, error: any) {
+    this.sb.logger.warn('could not remove role', { role, error });
     await message.channel.send(
       "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
       { reply: message.author },
     );
   }
-  private static async couldNotAddRole(message: Message, role: any, error: any) {
-    logger.warn('could not add role', { role, error });
+  private async couldNotAddRole(message: Message, role: any, error: any) {
+    this.sb.logger.warn('could not add role', { role, error });
     await message.channel.send(
       `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
       { reply: message.author },
@@ -53,7 +52,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
     const newMemberChannel = (await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID])) as TextChannel;
     if (!newMemberChannel) {
-      logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
+      this.sb.logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
       return;
     }
 
@@ -61,7 +60,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (newRole) {
       await member.roles.add(newRole, 'User Joined Server');
     } else {
-      logger.warn(`Unable to find CoT New Rank`, { newRole });
+      this.sb.logger.warn(`Unable to find CoT New Rank`, { newRole });
       return;
     }
 
@@ -112,7 +111,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
         { reply: message.author },
       );
-      logger.warn('unable to update nickname', { error });
+      this.sb.logger.warn('unable to update nickname', { error });
     });
     const nameMatch = await this.sb.dbConnection
       .getRepository(FFXIVChar)
@@ -162,11 +161,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
           } catch (e) {
-            await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
+            await this.couldNotRemoveRole(message, newRole, e);
             return true;
           }
         } else {
-          await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+          await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
           return true;
         }
         const roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
@@ -174,15 +173,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           try {
             await message.member.roles.add(roleToAdd, 'added best-guess rank');
           } catch (e) {
-            await CoTNewMemberListener.couldNotAddRole(message, roleToAdd, e);
+            await this.couldNotAddRole(message, roleToAdd, e);
             return true;
           }
         } else {
-          await CoTNewMemberListener.couldNotAddRole(
-            message,
-            CoTRankValueToString[cotMember.rank],
-            'unable to get role from client',
-          );
+          await this.couldNotAddRole(message, CoTRankValueToString[cotMember.rank], 'unable to get role from client');
           return true;
         }
       } else {
@@ -192,22 +187,22 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
           } catch (e) {
-            await CoTNewMemberListener.couldNotRemoveRole(message, newRole, e);
+            await this.couldNotRemoveRole(message, newRole, e);
             return true;
           }
         } else {
-          await CoTNewMemberListener.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+          await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
           return true;
         }
         if (guest) {
           try {
             await message.member.roles.add(guest, 'User not found in COT from API');
           } catch (e) {
-            await CoTNewMemberListener.couldNotAddRole(message, guest, e);
+            await this.couldNotAddRole(message, guest, e);
             return true;
           }
         } else {
-          await CoTNewMemberListener.couldNotAddRole(message, 'Guest', 'unable to get role from client');
+          await this.couldNotAddRole(message, 'Guest', 'unable to get role from client');
           return true;
         }
       }

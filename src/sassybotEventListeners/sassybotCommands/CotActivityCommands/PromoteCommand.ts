@@ -3,7 +3,6 @@ import * as moment from 'moment';
 import 'moment-timezone';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
-import { logger } from '../../../log';
 import ActivityCommand from './ActivityCommand';
 
 export default class PromoteCommand extends ActivityCommand {
@@ -109,7 +108,7 @@ export default class PromoteCommand extends ActivityCommand {
                     await member.roles.remove(previousRole, reason);
                   }
                 } catch (error) {
-                  logger.warn('error promoting member, adding/removing rank:', {
+                  this.sb.logger.warn('error promoting member, adding/removing rank:', {
                     error,
                     member,
                     newRole,

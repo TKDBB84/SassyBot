@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import { UserIds } from '../../consts';
-import { logger } from '../../log';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
@@ -21,7 +20,7 @@ export default class EvalCommand extends SassybotCommand {
         await message.reply("I sure hope you know what you're doing...");
         const forUser = message.author.id === UserIds.CAIT ? 'Cait' : 'Ryk';
         const log = `Running Eval'd: ${params.args} for ${forUser}`;
-        logger.warn(log, { message, params, forUser });
+        this.sb.logger.warn(log, { message, params, forUser });
       }
       // tslint:disable-next-line:no-eval
       let result = eval(params.args);

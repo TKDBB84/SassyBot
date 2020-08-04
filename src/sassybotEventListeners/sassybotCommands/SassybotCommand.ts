@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import { logger } from '../../log';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotEventListener from '../SassybotEventListener';
 
@@ -34,7 +33,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
       try {
         await this.listener({ message, params });
       } catch (e) {
-        logger.warn(`Error Processing ${invoked}`, { message, params });
+        this.sb.logger.warn(`Error Processing ${invoked}`, { message, params });
       }
     }
     if (invoked === 'help' && commands.includes(params.args.toLowerCase())) {

@@ -24,7 +24,7 @@ interface IFreeCompanyMember {
 const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   return new Promise((resolve) => {
     const client = http2.connect('https://xivapi.com:443');
-    client.on('error', e => sb.logger.error('error in getLatestMemberList', e));
+    client.on('error', (e) => sb.logger.error('error in getLatestMemberList', e));
     const req = client.request({
       ':path': `/freecompany/9229001536389012456?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
     });
@@ -201,9 +201,9 @@ const annoyRyk = async (sb: Sassybot) => {
     const randomTextChannel = textChannels.random();
     if (sb.isTextChannel(randomTextChannel)) {
       // await randomTextChannel.startTyping();
-      sb.logger.info('start typing', {name: randomTextChannel.name});
+      sb.logger.info('start typing', { name: randomTextChannel.name });
       await delay(30000);
-      sb.logger.info('stop typing', {name: randomTextChannel.name});
+      sb.logger.info('stop typing', { name: randomTextChannel.name });
       // randomTextChannel.stopTyping(true);
     }
   }
