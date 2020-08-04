@@ -200,6 +200,7 @@ const annoyRyk = async (sb: Sassybot) => {
     const randomTextChannel = textChannels.random();
     if (sb.isTextChannel(randomTextChannel)) {
       await randomTextChannel.startTyping();
+      console.log(`typing in: ${randomTextChannel.name}`)
       setTimeout(() => {
         randomTextChannel.stopTyping();
       }, 8000);
