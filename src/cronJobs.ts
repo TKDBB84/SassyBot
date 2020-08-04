@@ -194,7 +194,7 @@ const deletePastEvents = async (sb: Sassybot) => {
 };
 
 const annoyRyk = async (sb: Sassybot) => {
-  const guild = await sb.getGuild(GuildIds.COT_GUILD_ID);
+  const guild = await sb.getGuild(GuildIds.GAMEZZZ_GUILD_ID);
   if (guild) {
     const textChannels = guild.channels.cache.filter(sb.isTextChannel);
     const randomTextChannel = textChannels.random();
