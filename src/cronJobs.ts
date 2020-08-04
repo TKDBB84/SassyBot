@@ -203,7 +203,7 @@ const annoyRyk = async (sb: Sassybot) => {
     if (sb.isTextChannel(randomTextChannel)) {
       await randomTextChannel.startTyping();
       logger.info(`typing to ${randomTextChannel.name}`);
-      await delay(8000);
+      await delay(30000);
       logger.info(`stopping typing in ${randomTextChannel.nsfw}`);
       randomTextChannel.stopTyping(true);
     }
