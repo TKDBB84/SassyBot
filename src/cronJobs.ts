@@ -201,11 +201,11 @@ const annoyRyk = async (sb: Sassybot) => {
     const textChannels = guild.channels.cache.filter(sb.isTextChannel);
     const randomTextChannel = textChannels.random();
     if (sb.isTextChannel(randomTextChannel)) {
-      await randomTextChannel.startTyping();
-      logger.info('start typing', {name: randomTextChannel.name});
+      // await randomTextChannel.startTyping();
+      sb.logger.info('start typing', {name: randomTextChannel.name});
       await delay(30000);
-      logger.info('stop typing', {name: randomTextChannel.name});
-      randomTextChannel.stopTyping(true);
+      sb.logger.info('stop typing', {name: randomTextChannel.name});
+      // randomTextChannel.stopTyping(true);
     }
   }
 };
@@ -227,10 +227,10 @@ const jobs: IScheduledJob[] = [
     job: deletePastEvents,
     schedule: twiceADay,
   },
-  // {
-  //   job: annoyRyk,
-  //   schedule: every15Min,
-  // },
+  {
+    job: annoyRyk,
+    schedule: every15Min,
+  },
 ];
 
 export default jobs;

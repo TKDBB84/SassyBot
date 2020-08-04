@@ -70,6 +70,7 @@ export class Sassybot extends EventEmitter {
     return result;
   }
   public dbConnection: Connection;
+  public logger: typeof logger
   protected discordClient: Client;
   private registeredCommands = new Set<string>();
 
@@ -77,6 +78,7 @@ export class Sassybot extends EventEmitter {
     super();
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
+    this.logger = logger
   }
 
   public async getGuild(guildId: string): Promise<Guild | null> {
