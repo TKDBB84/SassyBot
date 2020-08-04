@@ -5,7 +5,6 @@ import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
-import { logger } from './log';
 import { Sassybot } from './Sassybot';
 
 export interface IScheduledJob {
@@ -22,10 +21,10 @@ interface IFreeCompanyMember {
   RankIcon: string;
   Server: string;
 }
-const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
+const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   return new Promise((resolve) => {
     const client = http2.connect('https://xivapi.com:443');
-    client.on('error', logger.error);
+    client.on('error', e => sb.logger.error('error in getLatestMemberList', e));
     const req = client.request({
       ':path': `/freecompany/9229001536389012456?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
     });
@@ -42,7 +41,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
           finalResult = parsedBody.FreeCompanyMembers;
         }
       } catch (err) {
-        logger.error('Error From XIVAPI', { err });
+        sb.logger.error('Error From XIVAPI', { err });
         finalResult = [];
       }
       client.close(() => {
@@ -87,7 +86,7 @@ const getLatestMemberList = (): Promise<IFreeCompanyMember[]> => {
 
 const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const pullTime = new Date();
-  const lodestoneMembers = await getLatestMemberList();
+  const lodestoneMembers = await getLatestMemberList(sb);
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
 
@@ -95,7 +94,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     if (!carry[member.ID]) {
       carry[member.ID] = member;
     } else {
-      logger.info('skipping: ', { duplicate: member });
+      sb.logger.info('skipping: ', { duplicate: member });
     }
     return carry;
   }, {});
@@ -168,7 +167,7 @@ const checkForReminders = async (sb: Sassybot) => {
   const oldPromotionCount = await sb.dbConnection
     .getRepository(PromotionRequest)
     .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
-  console.log(`${oldPromotionCount} old promotions found`);
+  sb.logger.info(`${oldPromotionCount} old promotions found`);
   if (oldPromotionCount >= 2) {
     const officerChat = await sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {
@@ -180,7 +179,7 @@ const checkForReminders = async (sb: Sassybot) => {
           }, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
         );
       } catch (error) {
-        logger.warn("couldn't report to officers channel", { error, CoTOfficerChannelId });
+        sb.logger.warn("couldn't report to officers channel", { error, CoTOfficerChannelId });
       }
     }
   }
