@@ -1,6 +1,7 @@
 import {
   Channel,
   Client,
+  Guild,
   GuildMember,
   Message,
   MessageMentions,
@@ -76,6 +77,10 @@ export class Sassybot extends EventEmitter {
     super();
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
+  }
+
+  public async getGuild(guildId: string): Promise<Guild | null> {
+    return this.discordClient.guilds.resolve(guildId);
   }
 
   public async getRole(guildId: string, roleId: string): Promise<Role | null | undefined> {

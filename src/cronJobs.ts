@@ -168,7 +168,7 @@ const checkForReminders = async (sb: Sassybot) => {
   const oldPromotionCount = await sb.dbConnection
     .getRepository(PromotionRequest)
     .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
-  console.log(`${oldPromotionCount} old promotions found`)
+  console.log(`${oldPromotionCount} old promotions found`);
   if (oldPromotionCount >= 2) {
     const officerChat = await sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {
@@ -193,8 +193,23 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
+const annoyRyk = async (sb: Sassybot) => {
+  const guild = await sb.getGuild(GuildIds.COT_GUILD_ID);
+  if (guild) {
+    const textChannels = guild.channels.cache.filter(sb.isTextChannel);
+    const randomTextChannel = textChannels.random();
+    if (sb.isTextChannel(randomTextChannel)) {
+      await randomTextChannel.startTyping();
+      setTimeout(() => {
+        randomTextChannel.stopTyping();
+      }, 8000);
+    }
+  }
+};
+
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
+const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
   {
@@ -208,6 +223,10 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastEvents,
     schedule: twiceADay,
+  },
+  {
+    job: annoyRyk,
+    schedule: every15Min,
   },
 ];
 
