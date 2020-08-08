@@ -1,12 +1,11 @@
 import * as http2 from 'http2';
 import { LessThan } from 'typeorm';
-import { CoTOfficerChannelId, CotRanks, GuildIds, UserIds } from './consts';
+import { CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
-import { TextChannel } from 'discord.js';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -193,37 +192,37 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+// const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-const annoyRyk = async (sb: Sassybot) => {
-  const guild = await sb.getGuild(GuildIds.GAMEZZZ_GUILD_ID);
-  const SassyBot = await sb.getMember(GuildIds.GAMEZZZ_GUILD_ID, UserIds.SASSYBOT);
-  if (guild && SassyBot) {
-    const textChannels = guild.channels.cache.array();
-    const mixedChannels: (null | TextChannel)[] = await Promise.all(
-      textChannels.map(async (channel) => {
-        if (sb.isTextChannel(channel)) {
-          const permissions = await channel.permissionsFor(SassyBot);
-          if (permissions && permissions.has('SEND_MESSAGES')) {
-            return channel;
-          }
-        }
-        return null;
-      }),
-    );
-    const allowableChannels = mixedChannels.filter(sb.isTextChannel);
-    const randomTextChannel = allowableChannels[Math.floor(Math.random() * allowableChannels.length)];
-    // await randomTextChannel.startTyping();
-    sb.logger.info('start typing', { name: randomTextChannel.name });
-    await delay(30000);
-    sb.logger.info('stop typing', { name: randomTextChannel.name });
-    // randomTextChannel.stopTyping(true);
-  }
-};
+// const annoyRyk = async (sb: Sassybot) => {
+//   const guild = await sb.getGuild(GuildIds.GAMEZZZ_GUILD_ID);
+//   const SassyBot = await sb.getMember(GuildIds.GAMEZZZ_GUILD_ID, UserIds.SASSYBOT);
+//   if (guild && SassyBot) {
+//     const textChannels = guild.channels.cache.array();
+//     const mixedChannels: (null | TextChannel)[] = await Promise.all(
+//       textChannels.map(async (channel) => {
+//         if (sb.isTextChannel(channel)) {
+//           const permissions = await channel.permissionsFor(SassyBot);
+//           if (permissions && permissions.has('SEND_MESSAGES')) {
+//             return channel;
+//           }
+//         }
+//         return null;
+//       }),
+//     );
+//     const allowableChannels = mixedChannels.filter(sb.isTextChannel);
+//     const randomTextChannel = allowableChannels[Math.floor(Math.random() * allowableChannels.length)];
+//     await randomTextChannel.startTyping();
+//     sb.logger.info('start typing', { name: randomTextChannel.name });
+//     await delay(30000);
+//     sb.logger.info('stop typing', { name: randomTextChannel.name });
+//     randomTextChannel.stopTyping(true);
+//   }
+// };
 
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
-const every15Min = '0 0,15,30,45 * * * *';
+// const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
   {
@@ -238,10 +237,10 @@ const jobs: IScheduledJob[] = [
     job: deletePastEvents,
     schedule: twiceADay,
   },
-  {
-    job: annoyRyk,
-    schedule: every15Min,
-  },
+  // {
+  //   job: annoyRyk,
+  //   schedule: every15Min,
+  // },
 ];
 
 export default jobs;

@@ -111,14 +111,26 @@ export default class VoiceLogListener extends SassybotEventListener {
       userJoinedChannel = null;
     }
 
-    const previousMemberName: string = `${previousMemberState.member?.displayName || ''} (${
-      previousMemberState.member?.user.username || ''
-    })`;
+    let previousMemberName;
+    const previousMemberDisplayName = (previousMemberState.member?.displayName || '').trim();
+    const previousMemberUsername = (previousMemberState.member?.user.username || '').trim();
+    if (previousMemberDisplayName === previousMemberUsername) {
+      previousMemberName = previousMemberDisplayName;
+    } else {
+      previousMemberName = `${previousMemberDisplayName} (${previousMemberUsername})`;
+    }
+
+    let currentMemberName;
+    const currentMemberDisplayName = (currentMemberState.member?.displayName || '').trim();
+    const currentMemberUsername = (currentMemberState.member?.user.username || '').trim();
+    if (currentMemberDisplayName === currentMemberUsername) {
+      currentMemberName = currentMemberDisplayName;
+    } else {
+      currentMemberName = `${currentMemberDisplayName} (${currentMemberUsername})`;
+    }
+
     const leftNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
-    const currentMemberName: string = `${currentMemberState.member?.displayName || ''} (${
-      currentMemberState.member?.user.username || ''
-    })`;
     const joinedNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
 
     if (userLeftChannel && userJoinedChannel) {
