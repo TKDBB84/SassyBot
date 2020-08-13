@@ -183,7 +183,9 @@ export default class RollCommand extends SassybotCommand {
     const response = await RollCommand.rollFunction(params.args);
     message.channel.send(response, {
       reply: message.author,
-      split: true,
+      split: {
+        char: ',',
+      },
     });
     return;
   }
