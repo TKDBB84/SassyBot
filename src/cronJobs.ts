@@ -6,6 +6,7 @@ import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
+import { In } from 'typeorm/index';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -192,6 +193,48 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
+const cleanUpOldMembers = async (sb: Sassybot) => {
+  const SIX_MONTHS_AGO = new Date();
+  SIX_MONTHS_AGO.setMonth(SIX_MONTHS_AGO.getMonth() - 6);
+
+  const charRepo = sb.dbConnection.getRepository(FFXIVChar);
+  const memberRepo = sb.dbConnection.getRepository(COTMember);
+
+  const lostCharacters = await charRepo.find({ where: { lastSeenApi: LessThan<Date>(SIX_MONTHS_AGO) } });
+  const charIds = lostCharacters.map((char) => char.id);
+  const lostMembers = await memberRepo.find({ where: { character: { id: In<number>(charIds) } } });
+
+  const vetRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN);
+  if (!vetRole) {
+    sb.logger.error('couldnt fetch vet role', { vetRole });
+    return;
+  }
+  for (let i = 0, iMax = lostMembers.length; i < iMax; i++) {
+    const member = lostMembers[i];
+    const discordId = member.character.user.discordUserId;
+    const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, discordId);
+
+    const promises: Promise<any>[] = [];
+    if (discordMember) {
+      const highestRole = discordMember?.roles.highest;
+      // if their highest role, is higher than vet, don't touch them
+      if (highestRole && highestRole.comparePositionTo(vetRole) <= 0) {
+        promises.push(discordMember.roles.remove([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT]));
+        promises.push(discordMember.roles.add(CotRanks.GUEST));
+      }
+    }
+    if (member.rank <= CotRanks.VETERAN) {
+      promises.push(memberRepo.query(`DELETE FROM cot_member WHERE id = ${member.id}`));
+      promises.push(
+        charRepo.query(
+          `UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`,
+        ),
+      );
+    }
+    await Promise.all(promises);
+  }
+};
+
 // const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 // const annoyRyk = async (sb: Sassybot) => {
@@ -222,6 +265,7 @@ const deletePastEvents = async (sb: Sassybot) => {
 
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
+const afterTwiceADay = '0 30 8,20 * * *';
 // const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
@@ -236,6 +280,10 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastEvents,
     schedule: twiceADay,
+  },
+  {
+    job: cleanUpOldMembers,
+    schedule: afterTwiceADay,
   },
   // {
   //   job: annoyRyk,
