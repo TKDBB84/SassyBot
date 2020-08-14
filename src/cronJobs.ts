@@ -7,6 +7,7 @@ import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 import { In } from 'typeorm/index';
+import { Role } from 'discord.js';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -91,6 +92,12 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
 
+  const [VETERAN, MEMBER, RECRUIT] = await Promise.all([
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.MEMBER),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.RECRUIT),
+  ]);
+
   const membersByApiId = lodestoneMembers.reduce((carry: { [key: string]: IFreeCompanyMember }, member) => {
     if (!carry[member.ID]) {
       carry[member.ID] = member;
@@ -133,19 +140,29 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
 
     let targetRank;
+    let discordRemove: Role[];
+    let discordAdd: Role | null | undefined;
     switch (CotRanks[lodestoneMember.Rank]) {
       case CotRanks.OFFICER:
         targetRank = CotRanks.OFFICER;
+        // sassybot dont mess w/ officers in discord
+        discordRemove = [];
         break;
       case CotRanks.VETERAN:
         targetRank = CotRanks.VETERAN;
+        discordAdd = VETERAN;
+        discordRemove = [MEMBER, RECRUIT].filter((role): role is Role => !!role);
         break;
       case CotRanks.MEMBER:
         targetRank = CotRanks.MEMBER;
+        discordAdd = MEMBER;
+        discordRemove = [RECRUIT].filter((role): role is Role => !!role);
         break;
       default:
       case CotRanks.RECRUIT:
         targetRank = CotRanks.RECRUIT;
+        discordAdd = MEMBER;
+        discordRemove = [];
         break;
     }
 
@@ -157,6 +174,19 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     } else {
       if (targetRank !== cotMember.rank) {
         await cotMemberRepo.update(cotMember.id, { rank: targetRank });
+      }
+    }
+
+    const sbUser = character.user;
+    if (sbUser && sbUser.discordUserId) {
+      const cotMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
+      if (cotMember) {
+        if (discordAdd) {
+          await cotMember.roles.add(discordAdd);
+        }
+        if (discordRemove.length) {
+          await cotMember.roles.remove(discordRemove);
+        }
       }
     }
   }
@@ -219,8 +249,13 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
       const highestRole = discordMember?.roles.highest;
       // if their highest role, is higher than vet, don't touch them
       if (highestRole && highestRole.comparePositionTo(vetRole) <= 0) {
-        promises.push(discordMember.roles.remove([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT]));
-        promises.push(discordMember.roles.add(CotRanks.GUEST));
+        promises.push(
+          discordMember.roles.remove(
+            [CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT],
+            'Not Seen In FC for 6 Months',
+          ),
+        );
+        promises.push(discordMember.roles.add(CotRanks.GUEST, 'Not Seen In FC for 6 Months'));
       }
     }
     if (member.rank <= CotRanks.VETERAN) {
