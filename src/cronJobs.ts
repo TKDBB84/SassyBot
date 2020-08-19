@@ -182,10 +182,10 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       const cotMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
       if (cotMember) {
         if (discordAdd) {
-          await cotMember.roles.add(discordAdd);
+          await cotMember.roles.add(discordAdd, 'updated in lodestone');
         }
         if (discordRemove.length) {
-          await cotMember.roles.remove(discordRemove);
+          await cotMember.roles.remove(discordRemove, 'updated in lodestone');
         }
       }
     }
@@ -316,10 +316,10 @@ const jobs: IScheduledJob[] = [
     job: deletePastEvents,
     schedule: twiceADay,
   },
-  {
-    job: cleanUpOldMembers,
-    schedule: afterTwiceADay,
-  },
+  // {
+  //   job: cleanUpOldMembers,
+  //   schedule: afterTwiceADay,
+  // },
   // {
   //   job: annoyRyk,
   //   schedule: every15Min,
