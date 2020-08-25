@@ -1,10 +1,10 @@
-import {Message, MessageCollector} from 'discord.js';
+import { Message, MessageCollector } from 'discord.js';
 import * as moment from 'moment';
 import 'moment-timezone';
-import {MoreThan} from 'typeorm';
+import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
-import {CotRanks} from '../../../consts';
+import { CotRanks } from '../../../consts';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly commands = ['absent', 'absence'];

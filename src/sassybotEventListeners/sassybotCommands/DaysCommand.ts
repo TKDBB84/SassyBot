@@ -3,7 +3,7 @@ import * as moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import { CotRanks } from '../../consts';
+import { CotRanks, UserIds } from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
 
 export default class DaysCommand extends SassybotCommand {
@@ -24,7 +24,7 @@ export default class DaysCommand extends SassybotCommand {
     }
     let firstSeen = moment(cotMember.character.firstSeenApi);
 
-    if (params.args && cotMember.rank === CotRanks.OFFICER) {
+    if (params.args && (cotMember.rank === CotRanks.OFFICER || authorId === UserIds.SASNER)) {
       const targetMember = params.args.trim().toLowerCase();
       const charByName = await this.sb.dbConnection
         .getRepository(FFXIVChar)
