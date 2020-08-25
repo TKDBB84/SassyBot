@@ -3,6 +3,8 @@ import * as moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
+import { CotRanks } from '../../consts';
+import FFXIVChar from '../../entity/FFXIVChar';
 
 export default class DaysCommand extends SassybotCommand {
   public readonly commands = ['days', 'day'];
@@ -20,10 +22,25 @@ export default class DaysCommand extends SassybotCommand {
       );
       return;
     }
+    let firstSeen = moment(cotMember.character.firstSeenApi);
+
+    if (params.args && cotMember.rank === CotRanks.OFFICER) {
+      const targetMember = params.args.trim().toLowerCase();
+      const charByName = await this.sb.dbConnection
+        .getRepository(FFXIVChar)
+        .createQueryBuilder()
+        .where(`LOWER(name) = LOWER(:name)`, { name: targetMember })
+        .getOne();
+
+      if (!charByName) {
+        await message.channel.send(`I haven't seen a character by that name: ${targetMember}`);
+        return;
+      }
+      firstSeen = moment(charByName.firstSeenApi);
+    }
 
     const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
     const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
-    const firstSeen = moment(cotMember.character.firstSeenApi);
     let daysInFc: string = '';
     if (firstSeen.isAfter(firstPull)) {
       daysInFc = `You've been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
