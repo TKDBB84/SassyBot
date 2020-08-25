@@ -144,7 +144,7 @@ export default class AbsentCommand extends ActivityCommand {
       case CotRanks.GUEST:
       case CotRanks.NEW:
       case CotRanks.RECRUIT:
-        maxDuration = 14;
+        maxDuration = 30;
         break;
       default:
         maxDuration = 180;
