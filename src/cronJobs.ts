@@ -1,4 +1,3 @@
-import * as http2 from 'http2';
 import * as moment from 'moment';
 import { In, LessThan } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
@@ -8,6 +7,8 @@ import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 import { Role } from 'discord.js';
+// @ts-ignore
+import * as XIVAPI from 'xivapi-js';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -23,67 +24,109 @@ interface IFreeCompanyMember {
   RankIcon: string;
   Server: string;
 }
-const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
-  return new Promise((resolve) => {
-    const client = http2.connect('https://xivapi.com:443');
-    client.on('error', (e) => sb.logger.error('error in getLatestMemberList', e));
-    const req = client.request({
-      ':path': `/freecompany/${CoTAPIId}?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
-    });
-    req.setEncoding('utf8');
-    let responseBody = '';
-    req.on('data', (chunk) => {
-      responseBody += chunk;
-    });
-    req.on('end', () => {
-      let finalResult: IFreeCompanyMember[] = [];
-      try {
-        const parsedBody = JSON.parse(responseBody);
-        if (parsedBody.hasOwnProperty('FreeCompanyMembers')) {
-          finalResult = parsedBody.FreeCompanyMembers;
-        }
-      } catch (err) {
-        sb.logger.error('Error From XIVAPI', { err });
-        finalResult = [];
-      }
-      client.close(() => {
-        resolve(
-          finalResult.map((r) => {
-            const Rank = r.Rank.toUpperCase().trim();
-            if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER'].includes(Rank)) {
-              return {
-                ...r,
-                Rank: 'OFFICER',
-              };
-            }
-            if (Rank === 'DIGNITARY') {
-              return {
-                ...r,
-                Rank: 'MEMBER',
-              };
-            }
-            if (Rank === 'STEWARDS') {
-              return {
-                ...r,
-                Rank: 'VETERAN',
-              };
-            }
-            if (Rank === 'MEMBER' || Rank === 'VETERAN') {
-              return {
-                ...r,
-                Rank,
-              };
-            }
+const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
+  const xiv = new XIVAPI({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
+  try {
+    const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    if (memberList && memberList.FreeCompanyMembers) {
+      return memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
+        const Rank = member.Rank.toUpperCase().trim();
+        switch (Rank) {
+          case 'FOUNDER':
+          case 'FCM':
+          case 'NOTMIA':
+          case 'OFFICER':
             return {
-              ...r,
+              ...member,
+              Rank: 'OFFICER',
+            };
+          case 'VETERAN':
+          case 'STEWARDS':
+            return {
+              ...member,
+              Rank: 'VETERAN',
+            };
+          case 'DIGNITARY':
+          case 'MEMBER':
+            return {
+              ...member,
+              Rank: 'MEMBER',
+            };
+          default:
+            return {
+              ...member,
               Rank: 'RECRUIT',
             };
-          }),
-        );
+        }
       });
-    });
-    req.end();
-  });
+    } else {
+      sb.logger.error('Could not fetch member list');
+    }
+  } catch (err) {
+    sb.logger.error('Could not fetch member list', err);
+  }
+  return [];
+
+  // return new Promise((resolve) => {
+  //   const client = http2.connect('https://xivapi.com:443');
+  //   client.on('error', (e) => sb.logger.error('error in getLatestMemberList', e));
+  //   const req = client.request({
+  //     ':path': `/freecompany/${CoTAPIId}?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
+  //   });
+  //   req.setEncoding('utf8');
+  //   let responseBody = '';
+  //   req.on('data', (chunk) => {
+  //     responseBody += chunk;
+  //   });
+  //   req.on('end', () => {
+  //     let finalResult: IFreeCompanyMember[] = [];
+  //     try {
+  //       const parsedBody = JSON.parse(responseBody);
+  //       if (parsedBody.hasOwnProperty('FreeCompanyMembers')) {
+  //         finalResult = parsedBody.FreeCompanyMembers;
+  //       }
+  //     } catch (err) {
+  //       sb.logger.error('Error From XIVAPI', { err });
+  //       finalResult = [];
+  //     }
+  //     client.close(() => {
+  //       resolve(
+  //         finalResult.map((r) => {
+  //           const Rank = r.Rank.toUpperCase().trim();
+  //           if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER'].includes(Rank)) {
+  //             return {
+  //               ...r,
+  //               Rank: 'OFFICER',
+  //             };
+  //           }
+  //           if (Rank === 'DIGNITARY') {
+  //             return {
+  //               ...r,
+  //               Rank: 'MEMBER',
+  //             };
+  //           }
+  //           if (Rank === 'STEWARDS') {
+  //             return {
+  //               ...r,
+  //               Rank: 'VETERAN',
+  //             };
+  //           }
+  //           if (Rank === 'MEMBER' || Rank === 'VETERAN') {
+  //             return {
+  //               ...r,
+  //               Rank,
+  //             };
+  //           }
+  //           return {
+  //             ...r,
+  //             Rank: 'RECRUIT',
+  //           };
+  //         }),
+  //       );
+  //     });
+  //   });
+  //   req.end();
+  // });
 };
 
 const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
