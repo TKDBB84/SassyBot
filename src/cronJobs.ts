@@ -1,6 +1,6 @@
 import * as http2 from 'http2';
 import { LessThan } from 'typeorm';
-import { CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
+import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
@@ -15,7 +15,7 @@ export interface IScheduledJob {
 }
 
 interface IFreeCompanyMember {
-  Avatar: 'https://img2.finalfantasyxiv.com/f/9bb002c4984cb609a79dd28c4079c5d4_ce736afe35e2ded4e46c4fd0659aef7efc0_96x96.jpg';
+  Avatar: string;
   FeastMatches: number;
   ID: number;
   Name: string;
@@ -28,7 +28,7 @@ const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
     const client = http2.connect('https://xivapi.com:443');
     client.on('error', (e) => sb.logger.error('error in getLatestMemberList', e));
     const req = client.request({
-      ':path': `/freecompany/9229001536389012456?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
+      ':path': `/freecompany/${CoTAPIId}?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
     });
     req.setEncoding('utf8');
     let responseBody = '';

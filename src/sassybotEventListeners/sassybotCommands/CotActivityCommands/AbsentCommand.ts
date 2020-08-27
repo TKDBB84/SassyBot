@@ -4,6 +4,7 @@ import 'moment-timezone';
 import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
+import { CotRanks } from '../../../consts';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly commands = ['absent', 'absence'];
@@ -80,7 +81,10 @@ export default class AbsentCommand extends ActivityCommand {
               messageCount--;
             } else {
               absent.endDate = endDate;
-              await this.summarizeData(collectedMessage, absent);
+              const durationAllowed = await AbsentCommand.checkDuration(collectedMessage, absent);
+              if (durationAllowed) {
+                await this.summarizeData(collectedMessage, absent);
+              }
               messageCollector.stop();
             }
             break;
@@ -129,5 +133,29 @@ export default class AbsentCommand extends ActivityCommand {
       year: 'numeric',
     })}`;
     await message.reply(summary, { reply: message.author, split: true });
+  }
+
+  private static async checkDuration(message: Message, absentRequest: AbsentRequest): Promise<boolean> {
+    let maxDuration;
+    switch (absentRequest.CotMember.rank) {
+      case CotRanks.MEMBER:
+        maxDuration = 90;
+        break;
+      case CotRanks.GUEST:
+      case CotRanks.NEW:
+      case CotRanks.RECRUIT:
+        maxDuration = 30;
+        break;
+      default:
+        maxDuration = 180;
+    }
+    const duration = moment(absentRequest.endDate).diff(absentRequest.startDate, 'days');
+    if (duration > maxDuration) {
+      await message.reply(
+        `This request Appears to be for *${duration} days*, the max your rank allows is *${maxDuration} days*.\n\nThis Request has been canceled.`,
+      );
+      return false;
+    }
+    return true;
   }
 }
