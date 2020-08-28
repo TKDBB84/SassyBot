@@ -48,22 +48,22 @@ const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
         resolve(
           finalResult.map((r) => {
             const Rank = r.Rank.toUpperCase().trim();
-            if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER'].includes(Rank)) {
+            if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER', 'GLUE EATER', 'AN ACADEMIC'].includes(Rank)) {
               return {
                 ...r,
                 Rank: 'OFFICER',
               };
             }
-            if (Rank === 'DIGNITARY') {
-              return {
-                ...r,
-                Rank: 'MEMBER',
-              };
-            }
-            if (Rank === 'STEWARDS') {
+            if (Rank === 'STEWARDS' || Rank === 'MY SIMPS <3') {
               return {
                 ...r,
                 Rank: 'VETERAN',
+              };
+            }
+            if (Rank === 'DIGNITARY' || Rank === 'FOUNDER') {
+              return {
+                ...r,
+                Rank: 'MEMBER',
               };
             }
             if (Rank === 'MEMBER' || Rank === 'VETERAN') {
