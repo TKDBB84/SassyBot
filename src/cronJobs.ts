@@ -1,11 +1,14 @@
-import * as http2 from 'http2';
-import { LessThan } from 'typeorm';
+import * as moment from 'moment';
+import { In, LessThan } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
+import { Role } from 'discord.js';
+// @ts-ignore
+import * as XIVAPI from 'xivapi-js';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -20,68 +23,63 @@ interface IFreeCompanyMember {
   Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
   RankIcon: string;
   Server: string;
+  exactRecruit: boolean;
 }
-const getLatestMemberList = (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
-  return new Promise((resolve) => {
-    const client = http2.connect('https://xivapi.com:443');
-    client.on('error', (e) => sb.logger.error('error in getLatestMemberList', e));
-    const req = client.request({
-      ':path': `/freecompany/${CoTAPIId}?private_key=${process.env.XIV_API_TOKEN}&data=FCM`,
-    });
-    req.setEncoding('utf8');
-    let responseBody = '';
-    req.on('data', (chunk) => {
-      responseBody += chunk;
-    });
-    req.on('end', () => {
-      let finalResult: IFreeCompanyMember[] = [];
-      try {
-        const parsedBody = JSON.parse(responseBody);
-        if (parsedBody.hasOwnProperty('FreeCompanyMembers')) {
-          finalResult = parsedBody.FreeCompanyMembers;
-        }
-      } catch (err) {
-        sb.logger.error('Error From XIVAPI', { err });
-        finalResult = [];
-      }
-      client.close(() => {
-        resolve(
-          finalResult.map((r) => {
-            const Rank = r.Rank.toUpperCase().trim();
-            if (['FOUNDER', 'FCM', 'NOTMIA', 'OFFICER', 'GLUE EATER', 'AN ACADEMIC'].includes(Rank)) {
-              return {
-                ...r,
-                Rank: 'OFFICER',
-              };
-            }
-            if (Rank === 'STEWARDS' || Rank === 'MY SIMPS <3') {
-              return {
-                ...r,
-                Rank: 'VETERAN',
-              };
-            }
-            if (Rank === 'DIGNITARY' || Rank === 'FOUNDER') {
-              return {
-                ...r,
-                Rank: 'MEMBER',
-              };
-            }
-            if (Rank === 'MEMBER' || Rank === 'VETERAN') {
-              return {
-                ...r,
-                Rank,
-              };
-            }
+const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
+  const xiv = new XIVAPI({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
+  try {
+    const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    if (memberList && memberList.FreeCompanyMembers) {
+      return memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
+        const Rank = member.Rank.toUpperCase().trim();
+        switch (Rank) {
+          case 'FOUNDER':
+          case 'FCM':
+          case 'NOTMIA':
+          case 'OFFICER':
+          case 'GLUE EATER':
+          case 'AN ACADEMIC':
             return {
-              ...r,
-              Rank: 'RECRUIT',
+              ...member,
+              Rank: 'OFFICER',
+              exactRecruit: false,
             };
-          }),
-        );
+          case 'VETERAN':
+          case 'STEWARDS':
+          case 'MY SIMPS <3':
+            return {
+              ...member,
+              Rank: 'VETERAN',
+              exactRecruit: false,
+            };
+          case 'DIGNITARY':
+          case 'MEMBER':
+            return {
+              ...member,
+              Rank: 'MEMBER',
+              exactRecruit: false,
+            };
+          case 'RECRUIT':
+            return {
+              ...member,
+              Rank: 'RECRUIT',
+              exactRecruit: true,
+            };
+          default:
+            return {
+              ...member,
+              Rank: 'RECRUIT',
+              exactRecruit: false,
+            };
+        }
       });
-    });
-    req.end();
-  });
+    } else {
+      sb.logger.error('Could not fetch member list');
+    }
+  } catch (err) {
+    sb.logger.error('Could not fetch member list', err);
+  }
+  return [];
 };
 
 const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
@@ -89,6 +87,14 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const lodestoneMembers = await getLatestMemberList(sb);
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
+
+  const [OFFICER, VETERAN, MEMBER, RECRUIT, GUEST] = await Promise.all([
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.MEMBER),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.RECRUIT),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST),
+  ]);
 
   const membersByApiId = lodestoneMembers.reduce((carry: { [key: string]: IFreeCompanyMember }, member) => {
     if (!carry[member.ID]) {
@@ -132,19 +138,33 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
 
     let targetRank;
+    let discordRemove: Role[];
+    let discordAdd: Role | null | undefined;
     switch (CotRanks[lodestoneMember.Rank]) {
       case CotRanks.OFFICER:
         targetRank = CotRanks.OFFICER;
+        // don't touch officers
+        discordRemove = [];
         break;
       case CotRanks.VETERAN:
         targetRank = CotRanks.VETERAN;
+        discordAdd = VETERAN;
+        discordRemove = [MEMBER, RECRUIT, GUEST].filter((role): role is Role => !!role);
         break;
       case CotRanks.MEMBER:
         targetRank = CotRanks.MEMBER;
+        discordAdd = MEMBER;
+        discordRemove = [VETERAN, RECRUIT, GUEST].filter((role): role is Role => !!role);
         break;
       default:
       case CotRanks.RECRUIT:
         targetRank = CotRanks.RECRUIT;
+        if (lodestoneMember.exactRecruit) {
+          discordAdd = RECRUIT;
+          discordRemove = [VETERAN, MEMBER, GUEST].filter((role): role is Role => !!role);
+        } else {
+          discordRemove = [];
+        }
         break;
     }
 
@@ -156,6 +176,22 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     } else {
       if (targetRank !== cotMember.rank) {
         await cotMemberRepo.update(cotMember.id, { rank: targetRank });
+      }
+    }
+
+    const sbUser = character.user;
+    if (sbUser && sbUser.discordUserId) {
+      const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
+      const isLocalOfficer = targetRank === CotRanks.OFFICER || cotMember.rank >= CotRanks.OFFICER;
+      if (discordMember) {
+        const isDiscordOfficer = OFFICER && discordMember.roles.highest.comparePositionTo(OFFICER) >= 0;
+        const possiblyOfficer = isLocalOfficer || isDiscordOfficer;
+        if (discordAdd && !possiblyOfficer) {
+          await discordMember.roles.add(discordAdd, 'updated in lodestone');
+        }
+        if (discordRemove.length && !possiblyOfficer) {
+          await discordMember.roles.remove(discordRemove, 'updated in lodestone');
+        }
       }
     }
   }
@@ -192,6 +228,47 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
+const cleanUpOldMembers = async (sb: Sassybot) => {
+  const nowMoment = moment();
+  // const FIFTEEN_DAYS_AGO = nowMoment.subtract(15, 'days').toDate();
+  // const NINETY_DAYS_AGO = nowMoment.subtract(90, 'days').toDate();
+  const TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO = nowMoment.subtract(275, 'days').toDate();
+
+  const charRepo = sb.dbConnection.getRepository(FFXIVChar);
+  const memberRepo = sb.dbConnection.getRepository(COTMember);
+
+  const relevantMembers = await memberRepo.find({
+    where: { rank: In<CotRanks>([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT]) },
+  });
+
+  const lostMembers = relevantMembers.filter(
+    (member) => member.character.lastSeenApi < TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO,
+  );
+
+  for (let i = 0, iMax = lostMembers.length; i < iMax; i++) {
+    const member = lostMembers[i];
+    const discordId = member.character.user.discordUserId;
+    if (discordId) {
+      const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, discordId);
+
+      const promises: Promise<any>[] = [];
+      if (discordMember) {
+        promises.push(
+          discordMember.roles.remove([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT], 'No longer seen in FC'),
+        );
+        promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
+      }
+      promises.push(memberRepo.query(`DELETE FROM cot_member WHERE id = ${member.id}`));
+      promises.push(
+        charRepo.query(
+          `UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`,
+        ),
+      );
+      await Promise.all(promises);
+    }
+  }
+};
+
 // const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 // const annoyRyk = async (sb: Sassybot) => {
@@ -222,6 +299,7 @@ const deletePastEvents = async (sb: Sassybot) => {
 
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
+const afterTwiceADay = '0 30 8,20 * * *';
 // const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
@@ -236,6 +314,10 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastEvents,
     schedule: twiceADay,
+  },
+  {
+    job: cleanUpOldMembers,
+    schedule: afterTwiceADay,
   },
   // {
   //   job: annoyRyk,
