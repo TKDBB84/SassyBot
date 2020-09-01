@@ -247,25 +247,23 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
 
   for (let i = 0, iMax = lostMembers.length; i < iMax; i++) {
     const member = lostMembers[i];
-    const discordId = member.character.user.discordUserId;
+    const discordId = member.character.user?.discordUserId;
+    const promises: Promise<any>[] = [];
     if (discordId) {
       const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, discordId);
 
-      const promises: Promise<any>[] = [];
       if (discordMember) {
         promises.push(
           discordMember.roles.remove([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT], 'No longer seen in FC'),
         );
         promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
       }
-      promises.push(memberRepo.query(`DELETE FROM cot_member WHERE id = ${member.id}`));
-      promises.push(
-        charRepo.query(
-          `UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`,
-        ),
-      );
-      await Promise.all(promises);
     }
+    promises.push(memberRepo.query(`DELETE FROM cot_member WHERE id = ${member.id}`));
+    promises.push(
+      charRepo.query(`UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`),
+    );
+    await Promise.all(promises);
   }
 };
 
