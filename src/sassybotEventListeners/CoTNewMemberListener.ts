@@ -16,14 +16,14 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   private async couldNotRemoveRole(message: Message, role: any, error: any) {
     this.sb.logger.warn('could not remove role', { role, error });
     await message.channel.send(
-      "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 or @Zed#8495 for help.",
+      "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 for help.",
       { reply: message.author },
     );
   }
   private async couldNotAddRole(message: Message, role: any, error: any) {
     this.sb.logger.warn('could not add role', { role, error });
     await message.channel.send(
-      `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 or @Zed#8495 for help.`,
+      `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 for help.`,
       { reply: message.author },
     );
   }
