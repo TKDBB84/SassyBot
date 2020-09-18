@@ -26,7 +26,7 @@ export default class DaysCommand extends SassybotCommand {
       );
       return;
     }
-    let firstSeen = moment(cotMember.character.firstSeenApi);
+    let firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
     let charName = cotMember.character.name;
 
     const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
@@ -46,7 +46,7 @@ export default class DaysCommand extends SassybotCommand {
         await message.channel.send(`I have never seen a character by the name: ${targetMember}`);
         return;
       }
-      firstSeen = moment(charByName.firstSeenApi);
+      firstSeen = charByName.firstSeenApi ? moment(charByName.firstSeenApi) : false;
       charName = charByName.name;
     }
 
