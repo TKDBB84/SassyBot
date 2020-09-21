@@ -110,7 +110,7 @@ export class Sassybot extends EventEmitter {
         channel = await this.discordClient.channels.fetch(channelId);
       }
     } catch (error) {
-      logger.warn('could not fetch channel', { channelId, error });
+      logger.error('could not fetch channel', { channelId, error });
     }
     return channel || null;
   }
@@ -142,7 +142,7 @@ export class Sassybot extends EventEmitter {
       }
       return user;
     } catch (error) {
-      logger.warn('could not fetch user', { userId, error });
+      logger.error('could not fetch user', { userId, error });
       throw error;
     }
   }
@@ -183,7 +183,7 @@ export class Sassybot extends EventEmitter {
       }
       return member;
     } catch (e) {
-      logger.warn('could not fetch member', userResolvable, guildId, e);
+      logger.error('could not fetch member', userResolvable, guildId, e);
       throw e;
     }
   }

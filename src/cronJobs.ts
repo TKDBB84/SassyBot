@@ -215,7 +215,7 @@ const checkForReminders = async (sb: Sassybot) => {
           }, I'm just here to let you know that there are currently ${oldPromotionCount} promotion requests that are more than 20 days old.`,
         );
       } catch (error) {
-        sb.logger.warn("couldn't report to officers channel", { error, CoTOfficerChannelId });
+        sb.logger.error("couldn't report to officers channel", { error, CoTOfficerChannelId });
       }
     }
   }
