@@ -6,7 +6,7 @@ import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
-import { Role } from 'discord.js';
+import { GuildMember, Role } from 'discord.js';
 // @ts-ignore
 import * as XIVAPI from 'xivapi-js';
 
@@ -242,7 +242,7 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
   });
 
   const lostMembers = relevantMembers.filter(
-    (member) => member.character.lastSeenApi < TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO,
+    (member) => !!member.character.lastSeenApi && member.character.lastSeenApi < TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO,
   );
 
   for (let i = 0, iMax = lostMembers.length; i < iMax; i++) {
@@ -250,7 +250,9 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
     const discordId = member.character.user?.discordUserId;
     const promises: Promise<any>[] = [];
     if (discordId) {
-      const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, discordId);
+      const discordMember: GuildMember | undefined | false = await sb
+        .getMember(GuildIds.COT_GUILD_ID, discordId)
+        .catch(() => false);
 
       if (discordMember) {
         promises.push(
