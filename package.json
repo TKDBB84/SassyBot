@@ -17,7 +17,7 @@
     "@types/node-cron": "^2.0.3",
     "@types/shortid": "0.0.29",
     "@types/winston": "^2.4.4",
-    "@types/ws": "^7.2.2",
+    "@types/ws": "^7.2.7",
     "discord.js": "^12.3.1",
     "moment": "^2.29.0",
     "moment-timezone": "^0.5.31",
@@ -29,12 +29,12 @@
     "tsd": "^0.13.1",
     "typeorm": "^0.2.28",
     "typescript": "^3.9.3",
-    "winston": "^3.2.1",
+    "winston": "^3.3.3",
     "xivapi-js": "^0.3.0"
   },
   "devDependencies": {
     "prettier": "^2.0.5",
-    "ts-node": "^8.10.1",
+    "ts-node": "^9.0.0",
     "tslint": "^6.1.2",
     "tslint-config-prettier": "^1.18.0"
   },
