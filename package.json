@@ -33,7 +33,7 @@
     "xivapi-js": "^0.3.0"
   },
   "devDependencies": {
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.2",
     "ts-node": "^9.0.0",
     "tslint": "^6.1.2",
     "tslint-config-prettier": "^1.18.0"
