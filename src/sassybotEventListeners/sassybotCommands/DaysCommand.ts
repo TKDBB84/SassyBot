@@ -51,8 +51,8 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     if (!firstSeen) {
-      await message.channel.send(`${charName} does not appear to be in the FC.`)
-      return
+      await message.channel.send(`${charName} does not appear to be in the FC.`);
+      return;
     }
 
     const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));

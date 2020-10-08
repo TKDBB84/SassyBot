@@ -29,8 +29,8 @@ export default class ClaimCommand extends SassybotCommand {
 
     const name = params.args.trim().toLowerCase();
     if (!name) {
-      await message.channel.send(this.getHelpText())
-      return
+      await message.channel.send(this.getHelpText());
+      return;
     }
     memberByUserId = await COTMember.getCotMemberByName(name, message.member.id);
     if (memberByUserId.rank === CotRanks.NEW) {
