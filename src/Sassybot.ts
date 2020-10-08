@@ -183,7 +183,7 @@ export class Sassybot extends EventEmitter {
       }
       return member;
     } catch (e) {
-      logger.error('could not fetch member', userResolvable, guildId, e);
+      logger.error('could not fetch member', { userResolvable, guildId, error: e });
       throw e;
     }
   }
