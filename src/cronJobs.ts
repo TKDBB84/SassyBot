@@ -181,16 +181,23 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
 
     const sbUser = character.user;
     if (sbUser && sbUser.discordUserId) {
-      const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
       const isLocalOfficer = targetRank === CotRanks.OFFICER || cotMember.rank >= CotRanks.OFFICER;
-      if (discordMember) {
-        const isDiscordOfficer = OFFICER && discordMember.roles.highest.comparePositionTo(OFFICER) >= 0;
-        const possiblyOfficer = isLocalOfficer || isDiscordOfficer;
-        if (discordAdd && !possiblyOfficer) {
-          await discordMember.roles.add(discordAdd, 'updated in lodestone');
+      try {
+        const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
+        if (discordMember) {
+          const isDiscordOfficer = OFFICER && discordMember.roles.highest.comparePositionTo(OFFICER) >= 0;
+          const possiblyOfficer = isLocalOfficer || isDiscordOfficer;
+          if (discordAdd && !possiblyOfficer) {
+            await discordMember.roles.add(discordAdd, 'updated in lodestone');
+          }
+          if (discordRemove.length && !possiblyOfficer) {
+            await discordMember.roles.remove(discordRemove, 'updated in lodestone');
+          }
         }
-        if (discordRemove.length && !possiblyOfficer) {
-          await discordMember.roles.remove(discordRemove, 'updated in lodestone');
+      } catch (e) {
+        // user no longer in discord
+        if (character.id) {
+          await characterRepo.query(`UPDATE ffxiv_char SET userDiscordUserId = NULL WHERE id = ${character.id}`);
         }
       }
     }
