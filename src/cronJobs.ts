@@ -112,7 +112,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     let cotMember;
     let character;
 
-    const charUpdates = {
+    const charUpdates: { apiId: number; firstSeenApi?: Date; lastSeenApi: Date; name: string } = {
       apiId: +lodestoneMember.ID,
       firstSeenApi: pullTime,
       lastSeenApi: pullTime,
