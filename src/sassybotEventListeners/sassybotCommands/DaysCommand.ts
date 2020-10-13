@@ -10,7 +10,7 @@ export default class DaysCommand extends SassybotCommand {
   public readonly commands = ['days', 'day'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} echo {message}` -- I tell you the number of days  you\'ve been in the fc, as best i know';
+    return "usage: `!{sassybot|sb} echo {message}` -- I tell you the number of days  you've been in the fc, as best i know";
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
