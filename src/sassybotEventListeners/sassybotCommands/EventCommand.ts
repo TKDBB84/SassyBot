@@ -5,6 +5,7 @@ import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
+import { GuildIds } from '../../consts';
 
 export default class EventCommand extends SassybotCommand {
   public readonly commands = ['event', 'events'];
@@ -81,13 +82,15 @@ export default class EventCommand extends SassybotCommand {
     }
     const guildId = message.guild.id;
     const allEvents = await Event.getAll(guildId);
-    allEvents.push({
-      id: 123456789,
-      eventName: "averil's dragon farm",
-      // @ts-ignore
-      user: { discordUserId: '0' },
-      eventTime: moment().startOf('isoWeek').add(1, 'week').day('sunday').add(15, 'hours').toDate(),
-    });
+    if (guildId === GuildIds.COT_GUILD_ID) {
+      allEvents.push({
+        id: 123456789,
+        eventName: "averil's dragon farm",
+        // @ts-ignore
+        user: { discordUserId: '0' },
+        eventTime: moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours').toDate(),
+      });
+    }
     if (allEvents && allEvents.length) {
       for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
         const eventMoment = moment.tz(allEvents[i].eventTime, 'UTC');
