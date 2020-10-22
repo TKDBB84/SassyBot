@@ -83,12 +83,17 @@ export default class EventCommand extends SassybotCommand {
     const guildId = message.guild.id;
     const allEvents = await Event.getAll(guildId);
     if (guildId === GuildIds.COT_GUILD_ID) {
+      let nextSaturday = moment().startOf('isoWeek').day('saturday').add(15, 'hours');
+      const now = moment();
+      if (now.isAfter(nextSaturday)) {
+        nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours');
+      }
       allEvents.push({
         id: 123456789,
         eventName: "averil's dragon farm",
         // @ts-ignore
         user: { discordUserId: '0' },
-        eventTime: moment().startOf('isoWeek').day('saturday').add(15, 'hours').toDate(),
+        eventTime: nextSaturday.toDate(),
       });
     }
     if (allEvents && allEvents.length) {
