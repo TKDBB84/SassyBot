@@ -88,7 +88,7 @@ export default class EventCommand extends SassybotCommand {
         eventName: "averil's dragon farm",
         // @ts-ignore
         user: { discordUserId: '0' },
-        eventTime: moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours').toDate(),
+        eventTime: moment().startOf('isoWeek').day('saturday').add(15, 'hours').toDate(),
       });
     }
     if (allEvents && allEvents.length) {
