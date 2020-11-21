@@ -10,7 +10,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     return this.onEventCallback.bind(this);
   }
 
-  protected abstract async listener({
+  protected abstract listener({
     message,
     params,
   }: {
