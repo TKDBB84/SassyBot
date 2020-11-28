@@ -68,6 +68,13 @@ export default class AbsentCommand extends ActivityCommand {
     if (this.sb.isTextChannel(message.channel)) {
       const messageCollector = new MessageCollector(message.channel, filter);
       messageCollector.on('collect', async (collectedMessage: Message) => {
+        const messageText = collectedMessage.cleanContent
+        if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
+          AbsentCommand.runningUsers.delete(messageAuthorId);
+          clearTimeout(expiration);
+          messageCollector.stop();
+          await collectedMessage.reply("I've canceled everything, you can just start over now")
+        }
         switch (messageCount) {
           case 0:
             foundMember = await this.parseCharacterName(collectedMessage);
