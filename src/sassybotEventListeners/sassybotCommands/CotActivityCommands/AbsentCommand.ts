@@ -9,6 +9,8 @@ import { CotRanks } from '../../../consts';
 export default class AbsentCommand extends ActivityCommand {
   public readonly commands = ['absent', 'absence'];
 
+  private static runningUsers = new Set();
+
   protected async listAll(message: Message): Promise<void> {
     const yesterday = new Date();
     yesterday.setTime(new Date().getTime() - 36 * (60 * 60 * 1000));
@@ -43,9 +45,17 @@ export default class AbsentCommand extends ActivityCommand {
   }
 
   protected async activityListener({ message }: { message: Message }): Promise<void> {
+    const messageAuthorId = message.author.id;
+    if (AbsentCommand.runningUsers.has(messageAuthorId)) {
+      return;
+    }
+    AbsentCommand.runningUsers.add(messageAuthorId);
+    const expiration = setTimeout(() => {
+      AbsentCommand.runningUsers.delete(messageAuthorId);
+    }, 300000); // 5 min
     const absent = new AbsentRequest();
     absent.requested = new Date();
-    let foundMember = await this.sb.findCoTMemberByDiscordId(message.author.id);
+    let foundMember = await this.sb.findCoTMemberByDiscordId(messageAuthorId);
     let messageCount = 0;
     if (!foundMember) {
       await this.requestCharacterName(message);
@@ -54,7 +64,7 @@ export default class AbsentCommand extends ActivityCommand {
       await this.requestStartDate(message, absent);
       messageCount = 1;
     }
-    const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
+    const filter = (filterMessage: Message) => filterMessage.author.id === messageAuthorId;
     if (this.sb.isTextChannel(message.channel)) {
       const messageCollector = new MessageCollector(message.channel, filter);
       messageCollector.on('collect', async (collectedMessage: Message) => {
@@ -85,6 +95,8 @@ export default class AbsentCommand extends ActivityCommand {
               if (durationAllowed) {
                 await this.summarizeData(collectedMessage, absent);
               }
+              AbsentCommand.runningUsers.delete(messageAuthorId);
+              clearTimeout(expiration);
               messageCollector.stop();
             }
             break;
