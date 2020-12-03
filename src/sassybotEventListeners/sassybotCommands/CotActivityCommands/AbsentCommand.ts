@@ -72,8 +72,10 @@ export default class AbsentCommand extends ActivityCommand {
         if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
           AbsentCommand.runningUsers.delete(messageAuthorId);
           clearTimeout(expiration);
+          messageCount = 0;
           messageCollector.stop();
           await collectedMessage.reply("I've canceled everything, you can just start over now")
+          return
         }
         switch (messageCount) {
           case 0:
