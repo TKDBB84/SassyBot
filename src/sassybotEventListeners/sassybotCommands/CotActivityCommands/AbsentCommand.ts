@@ -66,52 +66,57 @@ export default class AbsentCommand extends ActivityCommand {
     }
     const filter = (filterMessage: Message) => filterMessage.author.id === messageAuthorId;
     if (this.sb.isTextChannel(message.channel)) {
-      const messageCollector = new MessageCollector(message.channel, filter);
-      messageCollector.on('collect', async (collectedMessage: Message) => {
-        const messageText = collectedMessage.cleanContent
-        if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
+      const messageCollector = new MessageCollector(message.channel, filter, { time: 300000 });
+      messageCollector
+        .on('collect', async (collectedMessage: Message) => {
+          const messageText = collectedMessage.cleanContent.toLowerCase();
+          if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
+            AbsentCommand.runningUsers.delete(messageAuthorId);
+            clearTimeout(expiration);
+            messageCount = 0;
+            messageCollector.stop();
+            await collectedMessage.reply("I've canceled everything, you can just start over now");
+            return;
+          }
+          switch (messageCount) {
+            case 0:
+              foundMember = await this.parseCharacterName(collectedMessage);
+              absent.CotMember = foundMember;
+              await this.requestStartDate(collectedMessage, absent);
+              break;
+            case 1:
+              const startDate = await this.parseDate(collectedMessage);
+              if (!startDate) {
+                await this.requestStartDate(collectedMessage, absent);
+                messageCount--;
+              } else {
+                absent.startDate = startDate;
+                this.requestEndDate(collectedMessage, absent);
+              }
+              break;
+            case 2:
+              const endDate = await this.parseDate(collectedMessage);
+              if (!endDate) {
+                await this.requestEndDate(collectedMessage, absent);
+                messageCount--;
+              } else {
+                absent.endDate = endDate;
+                const durationAllowed = await AbsentCommand.checkDuration(collectedMessage, absent);
+                if (durationAllowed) {
+                  await this.summarizeData(collectedMessage, absent);
+                }
+                AbsentCommand.runningUsers.delete(messageAuthorId);
+                clearTimeout(expiration);
+                messageCollector.stop();
+              }
+              break;
+          }
+          messageCount++;
+        })
+        .on('end', () => {
           AbsentCommand.runningUsers.delete(messageAuthorId);
           clearTimeout(expiration);
-          messageCount = 0;
-          messageCollector.stop();
-          await collectedMessage.reply("I've canceled everything, you can just start over now")
-          return
-        }
-        switch (messageCount) {
-          case 0:
-            foundMember = await this.parseCharacterName(collectedMessage);
-            absent.CotMember = foundMember;
-            await this.requestStartDate(collectedMessage, absent);
-            break;
-          case 1:
-            const startDate = await this.parseDate(collectedMessage);
-            if (!startDate) {
-              await this.requestStartDate(collectedMessage, absent);
-              messageCount--;
-            } else {
-              absent.startDate = startDate;
-              this.requestEndDate(collectedMessage, absent);
-            }
-            break;
-          case 2:
-            const endDate = await this.parseDate(collectedMessage);
-            if (!endDate) {
-              await this.requestEndDate(collectedMessage, absent);
-              messageCount--;
-            } else {
-              absent.endDate = endDate;
-              const durationAllowed = await AbsentCommand.checkDuration(collectedMessage, absent);
-              if (durationAllowed) {
-                await this.summarizeData(collectedMessage, absent);
-              }
-              AbsentCommand.runningUsers.delete(messageAuthorId);
-              clearTimeout(expiration);
-              messageCollector.stop();
-            }
-            break;
-        }
-        messageCount++;
-      });
+        });
     }
   }
 
