@@ -7,6 +7,7 @@ import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
 import PingCommand from './PingCommand';
+import PodcastCommand from './PodcastCommand';
 import QuoteCommand from './QuoteCommand';
 import RollCommand from './RollCommand';
 import SpamCommand from './SpamCommand';
@@ -21,6 +22,7 @@ export default [
   EvalCommand,
   EventCommand,
   PingCommand,
+  PodcastCommand,
   PromoteCommand,
   QuoteCommand,
   RollCommand,

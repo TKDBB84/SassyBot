@@ -14,6 +14,7 @@ export const CoTOfficerChannelId = '331196148079394836';
 export const CoTButtStuffChannelId = '331786517041119233';
 export const CoTPromotionChannelId = '362037806178238464';
 export const CoTAPIId = '9229001536389012456';
+export const PodcastRoleId = '784239695771992065';
 
 export const enum UserIds {
   BRIGIE = '189195422114381824',
