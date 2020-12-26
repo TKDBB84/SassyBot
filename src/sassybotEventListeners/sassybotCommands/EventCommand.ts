@@ -90,7 +90,7 @@ export default class EventCommand extends SassybotCommand {
       }
       allEvents.push({
         id: 123456789,
-        eventName: "averil's dragon farm",
+        eventName: "averil's mount farm",
         // @ts-ignore
         user: { discordUserId: '0' },
         eventTime: nextSaturday.toDate(),
