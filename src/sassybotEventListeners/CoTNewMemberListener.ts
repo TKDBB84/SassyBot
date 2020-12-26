@@ -124,9 +124,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id, CotRanks.NEW);
       if (cotMember.rank !== CotRanks.NEW) {
         await message.channel.send(
-          `I've found your FC membership, it looks like you're currently a: ${
+          `I've found your FC membership, it looks like you're currently a ${
             CoTRankValueToString[cotMember.rank]
-          }, i'll be sure to set that for you when we're done.`,
+          }, I'll be sure to set that for you when we're done.`,
           { split: true },
         );
       }
@@ -143,6 +143,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
+    const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
     if (messageContent === 'i agree') {
       const nameMatch = await this.sb.dbConnection
         .getRepository(FFXIVChar)
@@ -156,7 +157,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         if (cotMember.rank === CotRanks.NEW) {
           await cotMember.promote();
         }
-        const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
         if (newRole) {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
@@ -182,7 +182,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         }
       } else {
         const guest = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST);
-        const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
         if (newRole) {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
