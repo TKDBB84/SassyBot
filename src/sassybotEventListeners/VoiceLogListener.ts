@@ -129,9 +129,9 @@ export default class VoiceLogListener extends SassybotEventListener {
       currentMemberName = `${currentMemberDisplayName} (${currentMemberUsername})`;
     }
 
-    const leftNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
+    const leftNow: moment.Moment = moment().tz(timezone || 'UTC');
 
-    const joinedNow: moment.Moment = moment().tz(timezone ? timezone : 'UTC');
+    const joinedNow: moment.Moment = moment().tz(timezone || 'UTC');
 
     if (userLeftChannel && userJoinedChannel) {
       // user moved

@@ -112,9 +112,8 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
     let cotMember;
     let character;
 
-    const charUpdates: { apiId: number; firstSeenApi?: Date; lastSeenApi: Date; name: string } = {
+    const charUpdates: { apiId: number; lastSeenApi: Date; name: string } = {
       apiId: +lodestoneMember.ID,
-      firstSeenApi: pullTime,
       lastSeenApi: pullTime,
       name: lodestoneMember.Name.trim(),
     };
@@ -126,12 +125,15 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       .getOne();
     if (characterData && characterData.id) {
       character = await characterRepo.findOneOrFail(characterData.id);
-      if (characterData.firstSeenApi) {
-        delete charUpdates.firstSeenApi;
-      }
-      await characterRepo.update(characterData.id, charUpdates);
+      await characterRepo.update(characterData.id, {
+        ...charUpdates,
+        firstSeenApi: characterData.firstSeenApi || pullTime
+      });
     } else {
-      character = characterRepo.create(charUpdates);
+      character = characterRepo.create({
+        ...charUpdates,
+        firstSeenApi: pullTime,
+      });
       character = await characterRepo.save(character, { reload: true });
     }
 
