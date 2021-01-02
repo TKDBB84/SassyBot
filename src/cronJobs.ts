@@ -198,7 +198,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
         }
       } catch (e) {
         // user no longer in discord
-        if (character.id) {
+        if (e.message === 'Unknown Member' && e.httpStatus === 404 && character.id) {
           await characterRepo.query(`UPDATE ffxiv_char SET userDiscordUserId = NULL WHERE id = ${character.id}`);
         }
       }

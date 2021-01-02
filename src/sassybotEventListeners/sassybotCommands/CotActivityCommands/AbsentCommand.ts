@@ -91,7 +91,7 @@ export default class AbsentCommand extends ActivityCommand {
                 messageCount--;
               } else {
                 absent.startDate = startDate;
-                this.requestEndDate(collectedMessage, absent);
+                await this.requestEndDate(collectedMessage, absent);
               }
               break;
             case 2:
