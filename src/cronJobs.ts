@@ -9,6 +9,7 @@ import { Sassybot } from './Sassybot';
 import { GuildMember, Role } from 'discord.js';
 // @ts-ignore
 import * as XIVAPI from 'xivapi-js';
+import AbsentRequest from './entity/AbsentRequest';
 
 export interface IScheduledJob {
   job: (sb: Sassybot) => Promise<void>;
@@ -237,6 +238,13 @@ const deletePastEvents = async (sb: Sassybot) => {
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
+const deletePastAbsences = async (sb: Sassybot) => {
+  const absentRepo = sb.dbConnection.getRepository(AbsentRequest);
+  const YESTERDAY = new Date();
+  YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
+  await absentRepo.delete({endDate: LessThan<Date>(YESTERDAY)})
+}
+
 const cleanUpOldMembers = async (sb: Sassybot) => {
   const nowMoment = moment();
   // const FIFTEEN_DAYS_AGO = nowMoment.subtract(15, 'days').toDate();
@@ -328,6 +336,10 @@ const jobs: IScheduledJob[] = [
     job: cleanUpOldMembers,
     schedule: afterTwiceADay,
   },
+  {
+    job: deletePastAbsences,
+    schedule: twiceADay,
+  }
   // {
   //   job: annoyRyk,
   //   schedule: every15Min,
