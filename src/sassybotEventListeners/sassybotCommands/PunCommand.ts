@@ -15,6 +15,8 @@ export default class PunCommand extends SassybotCommand {
     const command = params.command.toLowerCase();
     if (['pun', 'puns'].includes(command)) {
       url += '/Pun';
+    } else {
+      url += '/Any'
     }
     url += '?type=twopart';
     const jokeRes = await fetch(url);
