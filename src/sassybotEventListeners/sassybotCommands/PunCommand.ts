@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import * as JokeAPI from 'sv443-joke-api';
+import { Response } from "node-fetch";
 
 export default class PunCommand extends SassybotCommand {
   public readonly commands = ['pun', 'puns', 'joke', 'jokes'];
@@ -12,10 +13,14 @@ export default class PunCommand extends SassybotCommand {
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const jokeRes = await JokeAPI.getJokes({categories: ["Pun"], jokeType: 'twopart'})
-    const data = jokeRes.json()
-    const text = `${data.setup}\n\n||${data.delivery}||`
-    await message.channel.send(text, {
-      split: false,
-    });
+    if (jokeRes instanceof  Response) {
+      const data: {setup: string, delivery: string} = await jokeRes.json()
+      const text = `${data.setup}\n\n||${data.delivery}||`
+      await message.channel.send(text, {
+        split: false,
+      });
+    } else {
+      this.sb.logger.warning('joke data', {jokeRes})
+    }
   }
 }
