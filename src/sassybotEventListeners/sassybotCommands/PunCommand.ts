@@ -12,15 +12,19 @@ export default class PunCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    const jokeRes = await JokeAPI.getJokes({categories: ["Pun"], jokeType: 'twopart'})
-    if (jokeRes instanceof  Response) {
-      const data: {setup: string, delivery: string} = await jokeRes.json()
-      const text = `${data.setup}\n\n||${data.delivery}||`
-      await message.channel.send(text, {
-        split: false,
-      });
-    } else {
-      this.sb.logger.warning('joke data', {jokeRes})
+    try {
+      const jokeRes = await JokeAPI.getJokes({categories: ["Pun"], jokeType: 'twopart'})
+      if (jokeRes instanceof Response) {
+        const data: { setup: string, delivery: string } = await jokeRes.json()
+        const text = `${data.setup}\n\n||${data.delivery}||`
+        await message.channel.send(text, {
+          split: false,
+        });
+      } else {
+        this.sb.logger.warning('joke data', {jokeRes})
+      }
+    } catch (e) {
+      this.sb.logger.warning('pun error', {e})
     }
   }
 }
