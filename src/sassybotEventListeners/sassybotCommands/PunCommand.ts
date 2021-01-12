@@ -11,7 +11,13 @@ export default class PunCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    const jokeRes = await fetch('https://v2.jokeapi.dev/joke/Pun?type=twopart');
+    let url = 'https://v2.jokeapi.dev/joke';
+    const command = params.command.toLowerCase();
+    if (['pun', 'puns'].includes(command)) {
+      url += '/Pun';
+    }
+    url += '?type=twopart';
+    const jokeRes = await fetch(url);
     const data: { setup: string; delivery: string } = await jokeRes.json();
     const text = `${data.setup}\n\n||${data.delivery}||`;
     await message.channel.send(text, {
