@@ -114,7 +114,9 @@ export default class PromoteCommand extends ActivityCommand {
                     newRole,
                     previousRole,
                   });
-                  await message.reply(`I was unable to change ${promotion.CotMember.character.name}'s rank, please update it when you have a moment.`)
+                  await message.reply(
+                    `I was unable to change ${promotion.CotMember.character.name}'s rank, please update it when you have a moment.`,
+                  );
                 }
               }
 

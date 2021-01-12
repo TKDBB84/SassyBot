@@ -128,7 +128,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       character = await characterRepo.findOneOrFail(characterData.id);
       await characterRepo.update(characterData.id, {
         ...charUpdates,
-        firstSeenApi: characterData.firstSeenApi || pullTime
+        firstSeenApi: characterData.firstSeenApi || pullTime,
       });
     } else {
       character = characterRepo.create({
@@ -242,8 +242,8 @@ const deletePastAbsences = async (sb: Sassybot) => {
   const absentRepo = sb.dbConnection.getRepository(AbsentRequest);
   const YESTERDAY = new Date();
   YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
-  await absentRepo.delete({endDate: LessThan<Date>(YESTERDAY)})
-}
+  await absentRepo.delete({ endDate: LessThan<Date>(YESTERDAY) });
+};
 
 const cleanUpOldMembers = async (sb: Sassybot) => {
   const nowMoment = moment();
@@ -339,7 +339,7 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastAbsences,
     schedule: twiceADay,
-  }
+  },
   // {
   //   job: annoyRyk,
   //   schedule: every15Min,

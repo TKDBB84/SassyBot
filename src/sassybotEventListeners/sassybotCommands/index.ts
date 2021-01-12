@@ -8,7 +8,7 @@ import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
 import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
-import PunCommand from "./PunCommand";
+import PunCommand from './PunCommand';
 import QuoteCommand from './QuoteCommand';
 import RollCommand from './RollCommand';
 import SpamCommand from './SpamCommand';
