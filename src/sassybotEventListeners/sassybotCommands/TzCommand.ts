@@ -12,7 +12,7 @@ export default class TzCommand extends SassybotCommand {
   public getHelpText(): string {
     return (
       'usage: `!{sassybot|sb} tz {iana timezone name}` --- a complete list of timezones can be found here\n' +
-      TzCommand.wikiLink
+      TzCommand.wikiLink + '\n please use the the name from the "TZ database name" column'
     );
   }
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
@@ -22,8 +22,11 @@ export default class TzCommand extends SassybotCommand {
       currentUser = new SbUser();
       currentUser.discordUserId = message.author.id;
     }
-
-    if (params.args.trim()) {
+    const tzParam = params.args.trim()
+    if (tzParam === '' && !currentUser.timezone) {
+      await message.channel.send(`You must provide a timezone to set. \n ${this.getHelpText()}`)
+      return
+    } else if (tzParam) {
       // return current timezone
       const newTz = params.args.trim().toLowerCase();
       if (!moment.tz.zone(newTz)) {
