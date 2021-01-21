@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import SassybotEventListener from './SassybotEventListener';
-import { GuildIds } from '../consts';
+import {GuildIds, UserIds} from '../consts';
 
 export default class GamezzEyeListenerListener extends SassybotEventListener {
   public readonly event = 'messageReceived';
@@ -17,6 +17,9 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
       message.guild.id !== GuildIds.GAMEZZZ_GUILD_ID
     ) {
       return;
+    }
+    if (message.author.id === UserIds.SASNER) {
+      return
     }
 
     let outMessage = '';
