@@ -214,7 +214,7 @@ const checkForReminders = async (sb: Sassybot) => {
     .getRepository(PromotionRequest)
     .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
   sb.logger.info(`${oldPromotionCount} old promotions found`);
-  if (oldPromotionCount >= 2) {
+  if (oldPromotionCount >= 1) {
     const officerChat = await sb.getTextChannel(CoTOfficerChannelId);
     if (officerChat) {
       const officeRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
