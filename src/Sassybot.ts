@@ -336,7 +336,7 @@ if (process.env.NODE_ENV !== 'production') {
 dbConnection
   .then(async (connection: Connection) => {
     const sb = new Sassybot(connection);
-
+    sb.setMaxListeners(30);
     SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
     jobs.forEach(({ job, schedule }) => {
       cron.schedule(schedule, job.bind(null, sb));
