@@ -219,7 +219,7 @@ const checkForReminders = async (sb: Sassybot) => {
     if (officerChat) {
       const officeRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
       try {
-        const areIs = oldPromotionCount === 1 ? 'are' : 'is';
+        const areIs = oldPromotionCount === 1 ? 'is' : 'are';
         await officerChat.send(
           `Hi ${
             officeRole ? officeRole : 'Officers'
