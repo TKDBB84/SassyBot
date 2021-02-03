@@ -58,18 +58,35 @@ export default class DaysCommand extends SassybotCommand {
     const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
     const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
     let daysInFc: string = '';
+    const isMinfi = charName.includes('Minfilia')
+
     if (firstSeen.isAfter(firstPull)) {
       daysInFc = `${charName} has been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
+      if (isMinfi) {
+        daysInFc = `${charName} has been locked in the Waking Sands for ${moment().diff(firstSeen, 'd')} days`;
+      }
     } else if (firstSeen.isBefore(beginningOfTime)) {
       daysInFc = `Sorry, ${charName} has been in the FC for longer than Sassybot has been tracking memberships, so more than ${moment().diff(
         beginningOfTime,
         'd',
       )} days`;
+      if (isMinfi) {
+        daysInFc = `Sorry, ${charName} has been locked in the Waking Sands for more than ${moment().diff(
+          beginningOfTime,
+          'd',
+        )} days`;
+      }
     } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
       daysInFc = `I lost track at one point, but ${charName} has been in the FC somewhere between ${moment().diff(
         firstPull,
         'd',
       )} and ${moment().diff(beginningOfTime, 'd')} days`;
+      if (isMinfi) {
+        daysInFc = `I lost track at one point, but ${charName} has been locked in the Waking Sands somewhere between ${moment().diff(
+          firstPull,
+          'd',
+        )} and ${moment().diff(beginningOfTime, 'd')} days`;
+      }
     }
     await message.channel.send(daysInFc);
   }
