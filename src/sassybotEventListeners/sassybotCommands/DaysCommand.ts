@@ -58,7 +58,7 @@ export default class DaysCommand extends SassybotCommand {
     const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
     const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
     let daysInFc: string = '';
-    const isMinfi = charName.includes('Minfilia')
+    const isMinfi = charName.includes('Minfilia');
 
     if (firstSeen.isAfter(firstPull)) {
       daysInFc = `${charName} has been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;

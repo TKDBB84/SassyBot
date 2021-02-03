@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import SassybotEventListener from './SassybotEventListener';
-import {GuildIds, UserIds} from '../consts';
+import { GuildIds, UserIds } from '../consts';
 
 export default class GamezzEyeListenerListener extends SassybotEventListener {
   public readonly event = 'messageReceived';
@@ -19,7 +19,7 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
       return;
     }
     if (message.author.id === UserIds.SASNER) {
-      return
+      return;
     }
 
     let outMessage = '';
@@ -64,8 +64,7 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
       }
     }
 
-
-    if (outMessage !== '' && (Math.random() >= 0.8)) {
+    if (outMessage !== '' && Math.random() >= 0.95) {
       await message.channel.send(outMessage);
     }
   }
