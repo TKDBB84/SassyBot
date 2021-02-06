@@ -22,6 +22,7 @@ export default class CockCommand extends SassybotCommand {
       '5/10, perfectly average in every way',
       '4/10, all wrinkly & moist',
       '10/10, you have a perfect & beautiful cock.',
+      '6/10, nothing special',
     ];
     let resp = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
