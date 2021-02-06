@@ -140,6 +140,9 @@ export default class PromoteCommand extends ActivityCommand {
   }
 
   protected async activityListener({ message }: { message: Message }): Promise<void> {
+    if (!this.sb.isTextChannel(message.channel)) {
+      return;
+    }
     const promotion = new PromotionRequest();
     promotion.requested = new Date();
 
@@ -147,21 +150,34 @@ export default class PromoteCommand extends ActivityCommand {
     if (!foundMember) {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-      if (this.sb.isTextChannel(message.channel)) {
-        const messageCollector = new MessageCollector(message.channel, filter);
-        messageCollector.on('collect', async (collectedMessage: Message) => {
-          promotion.CotMember = await this.parseCharacterName(collectedMessage);
-          await this.summarizeData(collectedMessage, promotion);
-          messageCollector.stop();
-        });
-      }
+      const messageCollector = new MessageCollector(message.channel, filter);
+      messageCollector.on('collect', async (collectedMessage: Message) => {
+        promotion.CotMember = await this.parseCharacterName(collectedMessage);
+        await this.summarizeData(collectedMessage, promotion);
+        messageCollector.stop();
+      });
     } else {
+      const existingPromotion = await this.sb.dbConnection
+        .getRepository(PromotionRequest)
+        .findOne({ CotMember: foundMember });
+      if (existingPromotion) {
+        await message.channel.send(
+          `You requested a promotion on ${existingPromotion.requested.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            timeZone: 'UTC',
+            year: 'numeric',
+          })}`,
+        );
+        await this.summarizeData(message, existingPromotion, true);
+        return;
+      }
       promotion.CotMember = foundMember;
       await this.summarizeData(message, promotion);
     }
   }
 
-  protected async summarizeData(message: Message, promotion: PromotionRequest): Promise<void> {
+  protected async summarizeData(message: Message, promotion: PromotionRequest, nagString = false): Promise<void> {
     let toRankName;
     switch (promotion.CotMember.rank) {
       case CotRanks.VETERAN:
@@ -179,7 +195,13 @@ export default class PromoteCommand extends ActivityCommand {
         break;
     }
     const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion, { reload: true });
-    const summary = `__Here's the data I have Stored:__ \n\n Character: ${savedPromotion.CotMember.character.name} \n Requesting Promotion To: ${toRankName} \n\n I'll make sure the officers see this request!`;
+    const summary = `__Here's the data I have Stored:__ \n\n Character: ${
+      savedPromotion.CotMember.character.name
+    } \n Requesting Promotion To: ${toRankName} \n\n ${
+      nagString
+        ? 'The officers will review it as soon as they have time.'
+        : "I'll make sure the officers see this request!"
+    }`;
     await message.reply(summary, { reply: message.author, split: true });
   }
 }
