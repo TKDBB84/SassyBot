@@ -50,8 +50,9 @@ export default class ClaimCommand extends SassybotCommand {
       await message.member.roles.remove(CotRanks.GUEST, 'claimed member');
     }
     if (!message.member.roles.cache.has(rankRole.id)) {
+      const memberRank = memberByUserId.rank;
       // noinspection FallThroughInSwitchStatementJS
-      switch (memberByUserId.rank) {
+      switch (memberRank) {
         case CotRanks.OFFICER:
           await message.channel.send(
             "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
@@ -63,7 +64,7 @@ export default class ClaimCommand extends SassybotCommand {
               this.sb.logger.warn('unable to add role', {
                 error,
                 member: message.member,
-                rankRole,
+                rankRole: memberRank,
               });
             });
           }
@@ -73,7 +74,7 @@ export default class ClaimCommand extends SassybotCommand {
         case CotRanks.RECRUIT:
         default:
           await message.member.roles.add(rankRole, 'user claimed member').catch((error) => {
-            this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole });
+            this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole: memberRank });
           });
           break;
       }
