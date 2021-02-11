@@ -59,34 +59,30 @@ export default class DaysCommand extends SassybotCommand {
     const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
     let daysInFc: string = '';
     const isMinfi = charName.includes('Minfilia');
+    let daysNum: number = 0;
 
     if (firstSeen.isAfter(firstPull)) {
-      daysInFc = `${charName} has been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
+      daysNum = moment().diff(firstSeen, 'd');
+      daysInFc = `${charName} has been in the FC for approx ${daysNum} days`;
       if (isMinfi) {
-        daysInFc = `${charName} has been locked in the Waking Sands for ${moment().diff(firstSeen, 'd')} days`;
+        daysInFc = `${charName} has been locked in the Waking Sands for ${daysNum} days`;
       }
     } else if (firstSeen.isBefore(beginningOfTime)) {
-      daysInFc = `Sorry, ${charName} has been in the FC for longer than Sassybot has been tracking memberships, so more than ${moment().diff(
-        beginningOfTime,
-        'd',
-      )} days`;
+      daysNum = moment().diff(beginningOfTime, 'd');
+      daysInFc = `Sorry, ${charName} has been in the FC for longer than Sassybot has been tracking memberships, so more than ${daysNum} days`;
       if (isMinfi) {
-        daysInFc = `Sorry, ${charName} has been locked in the Waking Sands for more than ${moment().diff(
-          beginningOfTime,
-          'd',
-        )} days`;
+        daysInFc = `Sorry, ${charName} has been locked in the Waking Sands for more than ${daysNum} days`;
       }
     } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
-      daysInFc = `I lost track at one point, but ${charName} has been in the FC somewhere between ${moment().diff(
-        firstPull,
-        'd',
-      )} and ${moment().diff(beginningOfTime, 'd')} days`;
+      const daysNumLow = moment().diff(firstPull, 'd');
+      daysNum = moment().diff(beginningOfTime, 'd');
+      daysInFc = `I lost track at one point, but ${charName} has been in the FC somewhere between ${daysNumLow} and ${daysNum} days`;
       if (isMinfi) {
-        daysInFc = `I lost track at one point, but ${charName} has been locked in the Waking Sands somewhere between ${moment().diff(
-          firstPull,
-          'd',
-        )} and ${moment().diff(beginningOfTime, 'd')} days`;
+        daysInFc = `I lost track at one point, but ${charName} has been locked in the Waking Sands somewhere between ${daysNumLow} and ${daysNum} days`;
       }
+    }
+    if (daysNum >= 500) {
+      daysInFc = `${charName} has been in the FC for too damn long.`;
     }
     await message.channel.send(daysInFc);
   }
