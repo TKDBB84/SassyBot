@@ -215,6 +215,7 @@ export class Sassybot extends EventEmitter {
       'messageReceived',
       'sassybotCommandPreprocess',
       'sassybotCommand',
+      'sassybotHelpCommand',
       'sassybotCommandPostprocess',
       'messageEnd',
       'messageReactionAdd',
@@ -245,8 +246,10 @@ export class Sassybot extends EventEmitter {
       });
       const command = sbEvent.commands[0].toLowerCase();
       this.registeredCommands.add(command);
+      this.on('sassybotHelpCommand', sbEvent.displayHelpText.bind(sbEvent));
     }
     this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
+
   }
 
   private async login() {
@@ -294,6 +297,8 @@ export class Sassybot extends EventEmitter {
           split: true,
         },
       );
+    } else {
+      this.emit('sassybotHelpCommand', {message, params})
     }
   }
 
