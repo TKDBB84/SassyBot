@@ -260,14 +260,6 @@ export class Sassybot extends EventEmitter {
     if (message.author.bot) {
       return;
     }
-    if (message.cleanContent === '!sb do you love me?') {
-      if (message.author.id === UserIds.SASNER) {
-        await message.reply('No, Go Fuck Yourself');
-      } else {
-        await message.reply('I Love All Of You <3');
-      }
-      return;
-    }
 
     this.emit('messageReceived', { message });
     if (Sassybot.isSassybotCommand(message)) {
