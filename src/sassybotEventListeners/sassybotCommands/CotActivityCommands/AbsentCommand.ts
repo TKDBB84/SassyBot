@@ -80,9 +80,17 @@ export default class AbsentCommand extends ActivityCommand {
           }
           switch (messageCount) {
             case 0:
-              foundMember = await this.parseCharacterName(collectedMessage);
-              absent.CotMember = foundMember;
-              await this.requestStartDate(collectedMessage, absent);
+              try {
+                foundMember = await this.parseCharacterName(collectedMessage);
+                absent.CotMember = foundMember;
+                await this.requestStartDate(collectedMessage, absent);
+              } catch (error) {
+                this.sb.logger.error('Could not Find Member', error)
+                AbsentCommand.runningUsers.delete(messageAuthorId);
+                clearTimeout(expiration);
+                messageCount = 0;
+                messageCollector.stop();
+              }
               break;
             case 1:
               const startDate = await this.parseDate(collectedMessage);

@@ -3,6 +3,7 @@ import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../co
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
 import SassybotEventListener from './SassybotEventListener';
+import SbUser from '../entity/SbUser';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
@@ -64,6 +65,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
+    const sbUser = await SbUser.findOrCreateUser(member.id);
     await newMemberChannel.send(
       'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
       {
@@ -80,11 +82,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       switch (messageCount) {
         case 0:
           declaredName = message.cleanContent;
-          await this.declaringCharacterName(message);
+          await this.declaringCharacterName(message, sbUser);
           await CoTNewMemberListener.requestRuleAgreement(message);
           break;
         case 1:
-          const agreed = await this.acceptingTerms(declaredName, message);
+          const agreed = await this.acceptingTerms(message);
           if (agreed) {
             messageCollector.stop();
           } else {
@@ -96,7 +98,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     });
   }
 
-  private async declaringCharacterName(message: Message) {
+  private async declaringCharacterName(message: Message, sbUser: SbUser) {
     if (!message.guild || !message.member) {
       return;
     }
@@ -119,9 +121,10 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
       .getOne();
 
+    const ffXivChar = await FFXIVChar.findOrCreateCharacter(declaredName.toLowerCase(), sbUser);
     if (nameMatch) {
       // found in API before
-      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id, CotRanks.NEW);
+      const cotMember = await COTMember.findOrCreateCotMember(ffXivChar);
       if (cotMember.rank !== CotRanks.NEW) {
         await message.channel.send(
           `I've found your FC membership, it looks like you're currently a ${
@@ -133,30 +136,30 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
   }
 
-  private async acceptingTerms(declaredName: string, message: Message): Promise<boolean> {
+  private async acceptingTerms(message: Message): Promise<boolean> {
     if (!message.guild || !message.member) {
       return false;
     }
+    const [newRole, guestRole] = await Promise.all([
+      this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW),
+      this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST),
+    ]);
 
     const messageContent = message.cleanContent
       .replace(/[^a-z-A-Z ]/g, '')
       .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
-    const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
-    if (messageContent === 'i agree') {
-      const nameMatch = await this.sb.dbConnection
-        .getRepository(FFXIVChar)
-        .createQueryBuilder()
-        .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
-        .getOne();
 
-      if (nameMatch) {
-        const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
+    if (messageContent === 'i agree') {
+      const ffXivChar = await this.sb.dbConnection
+        .getRepository<FFXIVChar>(FFXIVChar)
+        .findOneOrFail({ user: { discordUserId: message.author.id } });
+      const cotMember = await this.sb.dbConnection
+        .getRepository<COTMember>(COTMember)
+        .findOne({ character: { id: ffXivChar.id } });
+      if (cotMember) {
         cotMember.firstSeenDiscord = new Date();
-        if (cotMember.rank === CotRanks.NEW) {
-          await cotMember.promote();
-        }
         if (newRole) {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
@@ -181,7 +184,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           return true;
         }
       } else {
-        const guest = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST);
         if (newRole) {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
@@ -193,11 +195,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
           return true;
         }
-        if (guest) {
+        if (guestRole) {
           try {
-            await message.member.roles.add(guest, 'User not found in COT from API');
+            await message.member.roles.add(guestRole, 'User not found in COT from API');
           } catch (e) {
-            await this.couldNotAddRole(message, guest, e);
+            await this.couldNotAddRole(message, guestRole, e);
             return true;
           }
         } else {

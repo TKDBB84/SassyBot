@@ -3,6 +3,8 @@ import { CotRanks, GuildIds, UserIds } from '../../../consts';
 import COTMember from '../../../entity/COTMember';
 import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
+import SbUser from "../../../entity/SbUser";
+import FFXIVChar from "../../../entity/FFXIVChar";
 
 export default abstract class ActivityCommand extends SassybotCommand {
   public getHelpText(): string {
@@ -30,7 +32,14 @@ export default abstract class ActivityCommand extends SassybotCommand {
 
   protected async parseCharacterName(message: Message): Promise<COTMember> {
     const declaredName = message.cleanContent;
-    return await COTMember.getCotMemberByName(declaredName, message.author.id);
+    const sbUser = await SbUser.findOrCreateUser(message.author.id)
+    const ffXivCharacter = await FFXIVChar.findOrCreateCharacter(declaredName, sbUser)
+    let cotMember = await this.sb.dbConnection.getRepository<COTMember>(COTMember).findOne({where: {character: { id: ffXivCharacter.id}}})
+    if (!cotMember) {
+      await message.channel.send("I dont see you as a CoT Member, maybe lodestone hasn't updated yet? @Sasner#1337 can probably help too.")
+      throw new Error('Cannot_Find_Member')
+    }
+    return cotMember
   }
 
   protected abstract activityListener({ message }: { message: Message }): Promise<void>;

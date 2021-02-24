@@ -133,9 +133,14 @@ export default class PromoteCommand extends ActivityCommand {
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
       const messageCollector = new MessageCollector(message.channel, filter);
       messageCollector.on('collect', async (collectedMessage: Message) => {
-        promotion.CotMember = await this.parseCharacterName(collectedMessage);
-        await this.summarizeData(collectedMessage, promotion);
-        messageCollector.stop();
+        try {
+          promotion.CotMember = await this.parseCharacterName(collectedMessage);
+          await this.summarizeData(collectedMessage, promotion);
+        } catch (error) {
+          this.sb.logger.error('could not find cot member', error)
+        } finally {
+          messageCollector.stop();
+        }
       });
     } else {
       const existingPromotion = await this.sb.dbConnection
