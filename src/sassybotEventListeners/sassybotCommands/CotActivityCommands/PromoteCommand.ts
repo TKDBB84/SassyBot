@@ -72,10 +72,10 @@ export default class PromoteCommand extends ActivityCommand {
             }
             const firstItem = collection.first();
             if (firstItem && firstItem.emoji.name === '✅') {
-              const previousRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, promotion.CotMember.rank);
+              const previousRole = promotion.CotMember.rank;
               const updatedMember = await promotion.CotMember.promote();
               await promotionsRepo.delete(promotion.id);
-              const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, updatedMember.rank);
+              const newRole = updatedMember.rank;
 
               const member = await this.sb.getMember(GuildIds.COT_GUILD_ID, updatedMember.character.user.discordUserId);
               if (member && newRole) {
@@ -85,9 +85,7 @@ export default class PromoteCommand extends ActivityCommand {
                 }
                 try {
                   await member.roles.add(newRole, reason);
-                  if (previousRole) {
-                    await member.roles.remove(previousRole, reason);
-                  }
+                  await member.roles.remove(previousRole, reason);
                 } catch (error) {
                   this.sb.logger.warn('error promoting member, adding/removing rank:', {
                     error,

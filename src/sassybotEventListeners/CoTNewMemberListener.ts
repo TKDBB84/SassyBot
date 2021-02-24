@@ -40,13 +40,12 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
     const isCotMember = await this.sb.findCoTMemberByDiscordId(member.id);
     if (isCotMember && isCotMember.firstSeenDiscord) {
-      const knownRank = isCotMember.rank;
-      const role = await this.sb.getRole(GuildIds.COT_GUILD_ID, knownRank);
-      if (role) {
-        await member.roles.add(role, 'Added Known Rank To User');
-        if (isCotMember.character.name && (knownRank === CotRanks.MEMBER || knownRank === CotRanks.RECRUIT)) {
-          await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
-        }
+      await member.roles.add(isCotMember.rank, 'Added Known Rank To User');
+      if (
+        isCotMember.character.name &&
+        (isCotMember.rank === CotRanks.MEMBER || isCotMember.rank === CotRanks.RECRUIT)
+      ) {
+        await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
       }
       return;
     }
@@ -57,13 +56,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
-    if (newRole) {
-      await member.roles.add(newRole, 'User Joined Server');
-    } else {
-      this.sb.logger.warn(`Unable to find CoT New Rank`, { newRole });
-      return;
-    }
+    await member.roles.add(CotRanks.NEW, 'User Joined Server');
 
     const sbUser = await SbUser.findOrCreateUser(member.id);
     await newMemberChannel.send(
@@ -137,16 +130,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     if (!message.guild || !message.member) {
       return false;
     }
-
-    const [newRole, guestRole] = await Promise.all([
-      this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW),
-      this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST),
-    ]);
-    if (!newRole) {
-      await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
-      return true;
-    }
-
     const messageContent = message.cleanContent
       .replace(/[^a-z-A-Z ]/g, '')
       .replace(/ +/, ' ')
@@ -157,9 +140,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return false;
     }
     try {
-      await message.member.roles.remove(newRole, 'agreed to rules');
+      await message.member.roles.remove(CotRanks.NEW, 'agreed to rules');
     } catch (e) {
-      await this.couldNotRemoveRole(message, newRole, e);
+      await this.couldNotRemoveRole(message, CotRanks.NEW, e);
       return true;
     }
 
@@ -168,7 +151,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       where: { character: { user: { discordUserId: message.author.id } } },
     });
 
-    let roleToAdd = guestRole;
+    let roleToAdd = CotRanks.GUEST;
     if (cotMember) {
       if (!cotMember.firstSeenDiscord) {
         try {
@@ -178,17 +161,13 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           this.sb.logger.warning('unable to save member', error);
         }
       }
-      roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
+      roleToAdd = cotMember.rank;
     }
 
-    if (roleToAdd) {
-      try {
-        await message.member.roles.add(roleToAdd, 'added best-guess rank');
-      } catch (e) {
-        await this.couldNotAddRole(message, roleToAdd, e);
-      }
-    } else {
-      await this.couldNotAddRole(message, roleToAdd, 'unable to get role from client');
+    try {
+      await message.member.roles.add(roleToAdd, 'added best-guess rank');
+    } catch (e) {
+      await this.couldNotAddRole(message, roleToAdd, e);
     }
     await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
     return true;
