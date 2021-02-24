@@ -27,7 +27,6 @@ import SbUser from './entity/SbUser';
 import { logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import {UserIds} from "./consts";
 
 export interface ISassybotEventListener {
   event: string;
@@ -249,7 +248,6 @@ export class Sassybot extends EventEmitter {
       this.on('sassybotHelpCommand', sbEvent.displayHelpText.bind(sbEvent));
     }
     this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
-
   }
 
   private async login() {
@@ -298,7 +296,7 @@ export class Sassybot extends EventEmitter {
         },
       );
     } else {
-      this.emit('sassybotHelpCommand', {message, params})
+      this.emit('sassybotHelpCommand', { message, params });
     }
   }
 
