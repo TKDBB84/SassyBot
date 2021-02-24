@@ -137,7 +137,7 @@ export default class PromoteCommand extends ActivityCommand {
           promotion.CotMember = await this.parseCharacterName(collectedMessage);
           await this.summarizeData(collectedMessage, promotion);
         } catch (error) {
-          this.sb.logger.error('could not find cot member', error)
+          this.sb.logger.error('could not find cot member', error);
         } finally {
           messageCollector.stop();
         }

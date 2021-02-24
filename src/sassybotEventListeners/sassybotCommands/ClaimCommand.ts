@@ -4,7 +4,7 @@ import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import SbUser from "../../entity/SbUser";
+import SbUser from '../../entity/SbUser';
 
 export default class ClaimCommand extends SassybotCommand {
   public readonly commands = ['claim'];
@@ -23,19 +23,19 @@ export default class ClaimCommand extends SassybotCommand {
       return;
     }
 
-    const sbUser = await SbUser.findOrCreateUser(message.author.id)
+    const sbUser = await SbUser.findOrCreateUser(message.author.id);
     const charRepository = this.sb.dbConnection.getRepository(FFXIVChar);
-    let character = await charRepository.findOne({where: {user: sbUser.discordUserId}})
+    let character = await charRepository.findOne({ where: { user: sbUser.discordUserId } });
     if (character) {
       await message.channel.send(
         `I already have you as: ${character.name}, if this isn't correct, please contact Sasner`,
       );
       return;
     } else {
-      character = await FFXIVChar.findOrCreateCharacter(name, sbUser)
+      character = await FFXIVChar.findOrCreateCharacter(name, sbUser);
     }
     const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    let cotMember = await CoTMemberRepo.findOne({ where: { character: character.id } });
+    const cotMember = await CoTMemberRepo.findOne({ where: { character: character.id } });
 
     if (cotMember) {
       let rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
@@ -74,7 +74,7 @@ export default class ClaimCommand extends SassybotCommand {
           case CotRanks.RECRUIT:
           default:
             await message.member.roles.add(rankRole, 'user claimed member').catch((error) => {
-              this.sb.logger.warn('unable to add role (2)', {error, member: message.member, rankRole: memberRank});
+              this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole: memberRank });
             });
             break;
         }

@@ -85,7 +85,7 @@ export default class AbsentCommand extends ActivityCommand {
                 absent.CotMember = foundMember;
                 await this.requestStartDate(collectedMessage, absent);
               } catch (error) {
-                this.sb.logger.error('Could not Find Member', error)
+                this.sb.logger.error('Could not Find Member', error);
                 AbsentCommand.runningUsers.delete(messageAuthorId);
                 clearTimeout(expiration);
                 messageCount = 0;
