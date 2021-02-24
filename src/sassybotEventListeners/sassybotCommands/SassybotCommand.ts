@@ -11,8 +11,31 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   }
 
   protected abstract listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void>;
-
   protected abstract getHelpText(): string;
+
+  public async displayHelpText({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void> {
+    const helpText = this.getHelpText().trim();
+    if (helpText === '') {
+      // dont bother
+      return;
+    }
+
+    const invokedCommand = params.command.toLowerCase();
+    const commandsListenedFor = this.commands.map((c) => c.toLowerCase());
+    if (invokedCommand === 'help' && commandsListenedFor.includes(params.args.toLowerCase().trim())) {
+      await message.channel.send(helpText, {
+        split: {
+          char: ' ',
+        },
+      });
+    }
+  }
 
   private async onEventCallback({
     message,
