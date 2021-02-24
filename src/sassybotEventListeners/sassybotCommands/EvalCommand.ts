@@ -7,7 +7,7 @@ export default class EvalCommand extends SassybotCommand {
   public readonly commands = ['eval'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} eval [your valid JS string here]`';
+    return 'usage: `!{sassybot|sb} eval [your valid JS string here] --- only available to Sasner`';
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {

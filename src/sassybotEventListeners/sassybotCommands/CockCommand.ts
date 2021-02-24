@@ -6,7 +6,7 @@ export default class CockCommand extends SassybotCommand {
   public readonly commands = ['cock'];
 
   public getHelpText(): string {
-    return 'yeah, you do need help.';
+    return 'yeah, you do really need help.';
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
