@@ -44,7 +44,7 @@ export default class PromoteCommand extends ActivityCommand {
         const daysAgo = moment().diff(promotion.requested, 'd');
         const response = `${promotion.CotMember.character.name}\t${
           CoTRankValueToString[promotion.CotMember.rank]
-        } -> ${toRankName}\tDays In FC: ${getNumberOFDays(
+        } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(
           promotion.CotMember.character.firstSeenApi,
         )}\tRequested ${daysAgo} days ago`;
 
