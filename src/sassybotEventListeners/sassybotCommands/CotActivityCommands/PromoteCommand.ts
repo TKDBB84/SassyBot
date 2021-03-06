@@ -42,11 +42,11 @@ export default class PromoteCommand extends ActivityCommand {
         }
 
         const daysAgo = moment().diff(promotion.requested, 'd');
-        const response = `${promotion.CotMember.character.name}\t-From ${
+        const response = `${promotion.CotMember.character.name}\t${
           CoTRankValueToString[promotion.CotMember.rank]
-        }\t-To ${toRankName}\t-Days Ago ${daysAgo}\t- Days In FC: ${getNumberOFDays(
+        }->${toRankName}\t- Days In FC: ${getNumberOFDays(
           promotion.CotMember.character.firstSeenApi,
-        )}`;
+        )}\t-Requested ${daysAgo} days ago`;
 
         let sentMessageArray: Message[];
         const sentMessages = await message.channel.send(response, { split: false });
