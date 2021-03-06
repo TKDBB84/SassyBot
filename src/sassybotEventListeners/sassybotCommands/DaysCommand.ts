@@ -56,18 +56,14 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
-    const daysNum = getNumberOFDays(firstSeen);
-    let daysInFc = `${charName} has been in the FC for approximately ${daysNum} days`;
+    let daysInFc = `${charName} has been `;
     if (charName.includes('Minfilia')) {
-      daysInFc = `${charName} has been locked in the Waking Sands for approximately ${daysNum} days`;
+      daysInFc = `locked in the Waking Sands `;
+    } else {
+      daysInFc += 'in the FC '
     }
+    daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`
 
-    if (daysNum >= 500) {
-      daysInFc = `${charName} has been in the FC for too damn long.`;
-      if (charName.includes('Minfilia')) {
-        daysInFc = `${charName} has been locked in the Waking Sands for too damn long`;
-      }
-    }
     await message.channel.send(daysInFc);
   }
 }
