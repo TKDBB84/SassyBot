@@ -25,12 +25,6 @@ export default class PromoteCommand extends ActivityCommand {
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
     await message.channel.send('__Current Promotion Requests:__\n');
-    let longestNameLength = 0
-    allPromotions.forEach(promotion => {
-      if (longestNameLength < promotion.CotMember.character.name.length) {
-        longestNameLength = promotion.CotMember.character.name.length
-      }
-    })
 
     await Promise.all(
       allPromotions.map(async (promotion) => {
@@ -49,7 +43,7 @@ export default class PromoteCommand extends ActivityCommand {
         }
 
         const daysAgo = moment().diff(promotion.requested, 'd');
-        const response = `${promotion.CotMember.character.name.padEnd(longestNameLength+1, ' ')}\t${
+        const response = `${promotion.CotMember.character.name}\t${
           CoTRankValueToString[promotion.CotMember.rank]
         } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(
           promotion.CotMember.character.firstSeenApi,
