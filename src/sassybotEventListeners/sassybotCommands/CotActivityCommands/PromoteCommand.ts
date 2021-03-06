@@ -46,7 +46,7 @@ export default class PromoteCommand extends ActivityCommand {
           CoTRankValueToString[promotion.CotMember.rank]
         } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(
           promotion.CotMember.character.firstSeenApi,
-        )}\tRequested ${daysAgo} days ago`;
+        )}\tRequested ${daysAgo > 0 ? `${daysAgo} days ago` : 'today'}`;
 
         let sentMessageArray: Message[];
         const sentMessages = await message.channel.send(response, { split: false });
