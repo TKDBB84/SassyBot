@@ -4,6 +4,7 @@ import 'moment-timezone';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
+import getNumberOFDays from '../lib/GetNumberOfDays';
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly commands = ['promote', 'promotion'];
@@ -20,11 +21,7 @@ export default class PromoteCommand extends ActivityCommand {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
 
-    const promotingMemberId = message.member?.id;
-    if (!promotingMemberId) {
-      await message.channel.send("You must have dm'd me, dont do that");
-      return;
-    }
+    const promotingMemberId = message.author.id;
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
     await message.channel.send('__Current Promotion Requests:__\n');
@@ -44,32 +41,15 @@ export default class PromoteCommand extends ActivityCommand {
             break;
         }
 
-        const firstSeen = moment(promotion.CotMember.character.firstSeenApi);
-        const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
-        const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
-        let daysInFc: string = '';
-        if (firstSeen.isAfter(firstPull)) {
-          daysInFc = `\tand has been in the FC for approx ${moment().diff(firstSeen, 'd')} days`;
-        } else if (firstSeen.isBefore(beginningOfTime)) {
-          daysInFc = '\tand was in the FC before Sassybot';
-        } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
-          daysInFc = `\tand has been in the FC somewhere between ${moment().diff(firstPull, 'd')} and ${moment().diff(
-            beginningOfTime,
-            'd',
-          )} days`;
-        }
-
-        const response = `${promotion.CotMember.character.name} From ${
+        const daysAgo = moment().diff(promotion.requested, 'd');
+        const response = `${promotion.CotMember.character.name}\t-From ${
           CoTRankValueToString[promotion.CotMember.rank]
-        } To ${toRankName} on ${promotion.requested.toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          timeZone: 'UTC',
-          year: 'numeric',
-        })}${daysInFc}`;
+        }\t-To ${toRankName}\t-Days Ago ${daysAgo}\t- Days In FC: ${getNumberOFDays(
+          promotion.CotMember.character.firstSeenApi,
+        )}`;
 
         let sentMessageArray: Message[];
-        const sentMessages = await message.channel.send(response, { split: true });
+        const sentMessages = await message.channel.send(response, { split: false });
         if (!Array.isArray(sentMessages)) {
           sentMessageArray = [sentMessages];
         } else {

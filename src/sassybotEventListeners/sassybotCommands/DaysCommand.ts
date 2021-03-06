@@ -5,6 +5,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import { CotRanks, GuildIds, UserIds } from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
+import getNumberOFDays from './lib/GetNumberOfDays';
 
 export default class DaysCommand extends SassybotCommand {
   public readonly commands = ['days', 'day'];
@@ -55,35 +56,14 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
-    const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
-    const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
-    let daysInFc: string = '';
-    const isMinfi = charName.includes('Minfilia');
-    let daysNum: number = 0;
+    let daysInFc = `${charName} has been `;
+    if (charName.includes('Minfilia')) {
+      daysInFc = `locked in the Waking Sands `;
+    } else {
+      daysInFc += 'in the FC '
+    }
+    daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`
 
-    if (firstSeen.isAfter(firstPull)) {
-      daysNum = moment().diff(firstSeen, 'd');
-      daysInFc = `${charName} has been in the FC for approx ${daysNum} days`;
-      if (isMinfi) {
-        daysInFc = `${charName} has been locked in the Waking Sands for ${daysNum} days`;
-      }
-    } else if (firstSeen.isBefore(beginningOfTime)) {
-      daysNum = moment().diff(beginningOfTime, 'd');
-      daysInFc = `Sorry, ${charName} has been in the FC for longer than Sassybot has been tracking memberships, so more than ${daysNum} days`;
-      if (isMinfi) {
-        daysInFc = `Sorry, ${charName} has been locked in the Waking Sands for more than ${daysNum} days`;
-      }
-    } else if (firstSeen.isAfter(beginningOfTime) && firstSeen.isBefore(firstPull)) {
-      const daysNumLow = moment().diff(firstPull, 'd');
-      daysNum = moment().diff(beginningOfTime, 'd');
-      daysInFc = `I lost track at one point, but ${charName} has been in the FC somewhere between ${daysNumLow} and ${daysNum} days`;
-      if (isMinfi) {
-        daysInFc = `I lost track at one point, but ${charName} has been locked in the Waking Sands somewhere between ${daysNumLow} and ${daysNum} days`;
-      }
-    }
-    if (daysNum >= 500) {
-      daysInFc = `${charName} has been in the FC for too damn long.`;
-    }
     await message.channel.send(daysInFc);
   }
 }
