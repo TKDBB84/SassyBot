@@ -1,9 +1,18 @@
-import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
+import {
+  GuildMember,
+  Message,
+  MessageCollector,
+  MessageEmbed,
+  TextChannel
+} from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../consts';
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
 import SassybotEventListener from './SassybotEventListener';
 import SbUser from '../entity/SbUser';
+import {XIVAPISearchResponse} from '../Sassybot'
+// @ts-ignore
+import * as XIVApi from 'xivapi-js';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
@@ -97,8 +106,33 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
 
     const declaredName = message.cleanContent.trim();
-    const characterMatchingName = await FFXIVChar.findOrCreateCharacter(declaredName.toLowerCase(), sbUser);
+    const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
 
+    const matchingToon = await this.sb.dbConnection.getRepository<FFXIVChar>(FFXIVChar).createQueryBuilder()
+      .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
+      .getOne();
+
+    if (!matchingToon || !matchingToon.apiId) {
+      const { Results }: XIVAPISearchResponse = await xiv.character.search(declaredName, {server: 'Jenova'})
+      const apiChars = Results.filter(result => result.Name.trim().toLowerCase() !== declaredName.toLowerCase())
+      if (apiChars.length === 1) {
+        const apiCharacter = apiChars[0]
+        const embed = new MessageEmbed({
+          title: 'This You?',
+          description: 'Is this your character?',
+          image: {url: apiCharacter.Avatar },
+          footer: {
+            text: 'Yes/No'
+          }
+        })
+        await message.reply(embed)
+      } else {
+        // ?!?!?! multi match
+      }
+    }
+
+
+    const characterMatchingName = await FFXIVChar.findOrCreateCharacter(declaredName.toLowerCase(), sbUser);
     if (message.member.displayName.toLowerCase().trim() !== declaredName.toLowerCase().trim()) {
       try {
         await message.member.setNickname(declaredName, 'Declared Character Name');
