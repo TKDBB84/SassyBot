@@ -63,8 +63,8 @@
 
 "@discordjs/opus@discordjs/opus":
   version "0.4.0"
-  uid d9fdfd392a09fcd5f863bbce5feab333098c348a
-  resolved "https://codeload.github.com/discordjs/opus/tar.gz/d9fdfd392a09fcd5f863bbce5feab333098c348a"
+  uid "49756e83ed27650f6c5dc5d4ae9cf4cf5eb5ea38"
+  resolved "https://codeload.github.com/discordjs/opus/tar.gz/49756e83ed27650f6c5dc5d4ae9cf4cf5eb5ea38"
   dependencies:
     "@discordjs/node-pre-gyp" "^0.2.0"
     node-addon-api "^3.1.0"
