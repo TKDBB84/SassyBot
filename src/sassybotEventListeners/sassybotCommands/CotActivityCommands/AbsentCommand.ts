@@ -63,6 +63,12 @@ export default class AbsentCommand extends ActivityCommand {
     // @ts-ignore
     const dateComponents: [string, string, timeUnit] | null = params.args.trim().match(diffDateFormat)
     if (dateComponents && dateComponents.length === 3) {
+      const amount = parseInt(dateComponents[1], 10)
+      const unit = dateComponents[2]
+      if (amount <= 0) {
+        await message.reply('Cannot request absenteeism for 0 or negative days');
+        return
+      }
       if (!foundMember) {
         await this.requestCharacterName(message);
         try {
@@ -78,8 +84,6 @@ export default class AbsentCommand extends ActivityCommand {
           return
         }
       }
-      const amount = parseInt(dateComponents[1], 10)
-      const unit = dateComponents[2]
       absent.CotMember = foundMember
       absent.startDate = moment().toDate()
       absent.endDate =  moment().add(amount, unit).toDate()
