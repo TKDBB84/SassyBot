@@ -64,7 +64,7 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
       }
     }
 
-    if (outMessage !== '' && Math.random() >= 0.95) {
+    if (outMessage !== '' && Math.random() >= 0.05) {
       await message.channel.send(outMessage);
     }
   }

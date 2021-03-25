@@ -2,8 +2,8 @@ import * as moment from 'moment';
 
 export default function getNumberOFDays(firstSeenApi: string | Date | moment.Moment): number {
   const firstSeen = moment(firstSeenApi);
-  const firstPull = moment(new Date(2019, 10, 11, 23, 59, 59));
-  const beginningOfTime = moment(new Date(2019, 9, 2, 23, 59, 59));
+  const firstPull = moment(new Date(2019, 9, 11, 23, 59, 59));
+  const beginningOfTime = moment(new Date(2019, 8, 2, 23, 59, 59));
 
   if (firstSeen.isBefore(beginningOfTime)) {
     return moment().diff(beginningOfTime, 'd');

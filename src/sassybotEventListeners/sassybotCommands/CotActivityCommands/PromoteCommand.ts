@@ -165,9 +165,8 @@ export default class PromoteCommand extends ActivityCommand {
     let toRankName;
     switch (promotion.CotMember.rank) {
       case CotRanks.VETERAN:
-        promotion.toRank = CotRanks.OFFICER;
-        toRankName = CoTRankValueToString[CotRanks.OFFICER];
-        break;
+        await message.reply("You're currently a Veteran already, there are no remaining promotions. Officer Ranks are handled as one-off special cases by FC leads.")
+        return
       case CotRanks.MEMBER:
         promotion.toRank = CotRanks.VETERAN;
         toRankName = CoTRankValueToString[CotRanks.VETERAN];

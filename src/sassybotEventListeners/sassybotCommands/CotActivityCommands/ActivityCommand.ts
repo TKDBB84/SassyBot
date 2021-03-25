@@ -22,7 +22,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
     ) {
       await this.listAll(message);
     } else {
-      await this.activityListener({ message });
+      await this.activityListener({ message, params });
     }
   }
 
@@ -46,7 +46,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
     return cotMember;
   }
 
-  protected abstract activityListener({ message }: { message: Message }): Promise<void>;
+  protected abstract activityListener({ message, params }: { message: Message, params: ISassybotCommandParams }): Promise<void>;
 
   protected abstract listAll(message: Message): Promise<void>;
 }

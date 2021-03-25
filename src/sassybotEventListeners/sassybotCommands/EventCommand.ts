@@ -95,6 +95,19 @@ export default class EventCommand extends SassybotCommand {
         user: { discordUserId: '0' },
         eventTime: nextSaturday.toDate(),
       });
+    } else if (guildId === GuildIds.GAMEZZZ_GUILD_ID) {
+      let nextSaturday = moment().startOf('isoWeek').day('saturday').add(11, 'hours');
+      const now = moment();
+      if (now.isAfter(nextSaturday)) {
+        nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(11, 'hours');
+      }
+      allEvents.push({
+        id: 123456789,
+        eventName: 'Ashkeeper',
+        // @ts-ignore
+        user: { discordUserId: '0' },
+        eventTime: nextSaturday.toDate(),
+      });
     }
     if (allEvents && allEvents.length) {
       for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
