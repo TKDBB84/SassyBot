@@ -39,6 +39,30 @@ export interface ISassybotCommandParams {
   mentions: MessageMentions | false;
 }
 
+export type XIVAPIPagination = {
+  Page: number,
+  PageNext: string | null,
+  PagePrev: string | null,
+  PageTotal: number,
+  Results: number,
+  ResultsPerPage: number,
+  ResultsTotal: number,
+}
+export type XIVAPICharacterSearchResult = {
+  Avatar: string,
+  FeastMatches: number,
+  ID: number,
+  Lang: string,
+  Name: string,
+  Rank: string | null,
+  RankIcon: string | null,
+  Server: string
+}
+export type XIVAPISearchResponse = {
+  Pagination: XIVAPIPagination,
+  Results: XIVAPICharacterSearchResult[]
+}
+
 export class Sassybot extends EventEmitter {
   private static isSassybotCommand(message: Message): boolean {
     return (

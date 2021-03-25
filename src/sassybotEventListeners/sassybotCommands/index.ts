@@ -14,12 +14,15 @@ import RollCommand from './RollCommand';
 import SpamCommand from './SpamCommand';
 import TzCommand from './TzCommand';
 
+import EmbedCommand from './EmbedCommand';
+
 export default [
   AbsentCommand,
   ClaimCommand,
   CockCommand,
   DaysCommand,
   EchoCommand,
+  EmbedCommand,
   EvalCommand,
   EventCommand,
   PingCommand,

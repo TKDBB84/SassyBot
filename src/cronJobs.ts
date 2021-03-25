@@ -8,7 +8,7 @@ import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 import { GuildMember, Role } from 'discord.js';
 // @ts-ignore
-import * as XIVAPI from 'xivapi-js';
+import * as XIVApi from '@xivapi/js';
 import AbsentRequest from './entity/AbsentRequest';
 
 export interface IScheduledJob {
@@ -27,7 +27,7 @@ interface IFreeCompanyMember {
   exactRecruit: boolean;
 }
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
-  const xiv = new XIVAPI({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
+  const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
   try {
     const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
     if (memberList && memberList.FreeCompanyMembers) {
