@@ -3,7 +3,7 @@ import { UserIds } from '../../consts';
 import { ISassybotCommandParams, XIVAPISearchResponse } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 // @ts-ignore
-import * as XIVApi from 'xivapi-js';
+import * as XIVApi from '@xivapi/js';
 
 export default class EmbedCommand extends SassybotCommand {
   public readonly commands = ['embed'];
