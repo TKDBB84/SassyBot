@@ -20,7 +20,7 @@
     "@types/winston": "^2.4.4",
     "@types/ws": "^7.4.0",
     "@xivapi/js": "^0.3.2",
-    "discord.js": "^12.5.1",
+    "discord.js": "^12.5.2",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
     "mysql": "^2.18.1",
