@@ -5,7 +5,7 @@ import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
 import ActivityCommand from './ActivityCommand';
 import { CotRanks } from '../../../consts';
-import {ISassybotCommandParams} from "../../../Sassybot";
+import { ISassybotCommandParams } from '../../../Sassybot';
 
 export default class AbsentCommand extends ActivityCommand {
   public readonly commands = ['absent', 'absence'];
@@ -45,7 +45,13 @@ export default class AbsentCommand extends ActivityCommand {
     return;
   }
 
-  protected async activityListener({ message, params }: { message: Message, params: ISassybotCommandParams }): Promise<void> {
+  protected async activityListener({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void> {
     const messageAuthorId = message.author.id;
     if (!this.sb.isTextChannel(message.channel)) {
       return;
@@ -58,41 +64,44 @@ export default class AbsentCommand extends ActivityCommand {
     const absent = new AbsentRequest();
     absent.requested = new Date();
 
-    const diffDateFormat = /(\d+)\s+(\bdays?\b|\bweeks?\b|\bmonths?\b)/i
-    type timeUnit = 'day' | 'days' | 'week' | 'weeks' | 'month' | 'months'
+    const diffDateFormat = /(\d+)\s+(\bdays?\b|\bweeks?\b|\bmonths?\b)/i;
+    type timeUnit = 'day' | 'days' | 'week' | 'weeks' | 'month' | 'months';
     // @ts-ignore
-    const dateComponents: [string, string, timeUnit] | null = params.args.trim().match(diffDateFormat)
+    const dateComponents: [string, string, timeUnit] | null = params.args.trim().match(diffDateFormat);
     if (dateComponents && dateComponents.length === 3) {
-      const amount = parseInt(dateComponents[1], 10)
-      const unit = dateComponents[2]
+      const amount = parseInt(dateComponents[1], 10);
+      const unit = dateComponents[2];
       if (amount <= 0) {
         await message.reply('Cannot request absenteeism for 0 or negative days');
-        return
+        return;
       }
       if (!foundMember) {
         await this.requestCharacterName(message);
         try {
-          const collectedMessage = await message.channel.awaitMessages(filter, {max: 1, time: 30000, errors: ['time']})
-          const declaredName = collectedMessage.first()
+          const collectedMessage = await message.channel.awaitMessages(filter, {
+            max: 1,
+            time: 30000,
+            errors: ['time'],
+          });
+          const declaredName = collectedMessage.first();
           if (declaredName) {
-            foundMember = await this.parseCharacterName(declaredName)
+            foundMember = await this.parseCharacterName(declaredName);
           } else {
-            return
+            return;
           }
-        }catch (e) {
+        } catch (e) {
           // do nothing
-          return
+          return;
         }
       }
-      absent.CotMember = foundMember
-      absent.startDate = moment().toDate()
-      absent.endDate =  moment().add(amount, unit).toDate()
+      absent.CotMember = foundMember;
+      absent.startDate = moment().toDate();
+      absent.endDate = moment().add(amount, unit).toDate();
       if (await AbsentCommand.checkDuration(message, absent)) {
-        await this.summarizeData(message, absent)
+        await this.summarizeData(message, absent);
       }
-      return
+      return;
     }
-
 
     AbsentCommand.runningUsers.add(messageAuthorId);
     const expiration = setTimeout(() => {

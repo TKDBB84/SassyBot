@@ -33,7 +33,13 @@ export default abstract class ActivityCommand extends SassybotCommand {
     return await COTMember.getCotMemberByName(declaredName, message.author.id);
   }
 
-  protected abstract activityListener({ message, params }: { message: Message, params: ISassybotCommandParams }): Promise<void>;
+  protected abstract activityListener({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }): Promise<void>;
 
   protected abstract listAll(message: Message): Promise<void>;
 }

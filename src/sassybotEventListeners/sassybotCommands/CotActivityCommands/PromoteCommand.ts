@@ -45,9 +45,9 @@ export default class PromoteCommand extends ActivityCommand {
         const daysAgo = moment().diff(promotion.requested, 'd');
         const response = `${promotion.CotMember.character.name}\t${
           CoTRankValueToString[promotion.CotMember.rank]
-        } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(
-          promotion.CotMember.character.firstSeenApi,
-        )}\tRequested ${daysAgo > 0 ? `${daysAgo} days ago` : 'today'}`;
+        } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(promotion.CotMember.character.firstSeenApi)}\tRequested ${
+          daysAgo > 0 ? `${daysAgo} days ago` : 'today'
+        }`;
 
         let sentMessageArray: Message[];
         const sentMessages = await message.channel.send(response, { split: false });
@@ -162,8 +162,10 @@ export default class PromoteCommand extends ActivityCommand {
     let toRankName;
     switch (promotion.CotMember.rank) {
       case CotRanks.VETERAN:
-        await message.reply("You're currently a Veteran already, there are no remaining promotions. Officer Ranks are handled as one-off special cases by FC leads.")
-        return
+        await message.reply(
+          "You're currently a Veteran already, there are no remaining promotions. Officer Ranks are handled as one-off special cases by FC leads.",
+        );
+        return;
       case CotRanks.MEMBER:
         promotion.toRank = CotRanks.VETERAN;
         toRankName = CoTRankValueToString[CotRanks.VETERAN];
