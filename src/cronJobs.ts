@@ -250,9 +250,9 @@ const deletePastAbsences = async (sb: Sassybot) => {
 
 const cleanUpOldMembers = async (sb: Sassybot) => {
   const nowMoment = moment();
-  // const FIFTEEN_DAYS_AGO = nowMoment.subtract(15, 'days').toDate();
-  // const NINETY_DAYS_AGO = nowMoment.subtract(90, 'days').toDate();
-  const TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO = nowMoment.subtract(275, 'days').toDate();
+  const THIRTY_ONE_DAYS_AGO = nowMoment.subtract(31, 'days').toDate();
+  const NINETY_ONE_DAYS_AGO = nowMoment.subtract(91, 'days').toDate();
+  const ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO = nowMoment.subtract(181, 'days').toDate();
 
   const charRepo = sb.dbConnection.getRepository(FFXIVChar);
   const memberRepo = sb.dbConnection.getRepository(COTMember);
@@ -261,12 +261,19 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
     where: { rank: In<CotRanks>([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT]) },
   });
 
-  const lostMembers = relevantMembers.filter(
-    (member) => !!member.character.lastSeenApi && member.character.lastSeenApi < TWO_HUNDRED_SEVENTY_FIVE_DAYS_AGO,
-  );
+  const allLostMembers = relevantMembers.filter((member) => {
+    switch (member.rank) {
+      case CotRanks.VETERAN:
+        return !!member.character.lastSeenApi && member.character.lastSeenApi < ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO;
+      case CotRanks.MEMBER:
+        return !!member.character.lastSeenApi && member.character.lastSeenApi < NINETY_ONE_DAYS_AGO;
+      default:
+        return !!member.character.lastSeenApi && member.character.lastSeenApi < THIRTY_ONE_DAYS_AGO;
+    }
+  });
 
-  for (let i = 0, iMax = lostMembers.length; i < iMax; i++) {
-    const member = lostMembers[i];
+  for (let i = 0, iMax = allLostMembers.length; i < iMax; i++) {
+    const member = allLostMembers[i];
     const discordId = member.character.user?.discordUserId;
     const promises: Promise<any>[] = [];
     if (discordId) {
