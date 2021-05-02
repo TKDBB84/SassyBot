@@ -51,11 +51,11 @@ export default class EmbedCommand extends SassybotCommand {
       for (let i = 0; i < apiChars.length; i++) {
         const apiCharacter = apiChars[i];
         const embed = new MessageEmbed({
-          title: 'Is this your character?',
-          description: `You can type "${i}" to select this character`,
+          title: apiCharacter.Name,
+          description: `You can type "${i + 1}" to select this character`,
           image: { url: apiCharacter.Avatar },
           footer: {
-            text: apiCharacter.Name,
+            text: apiCharacter.Rank || '',
           },
         });
         await message.reply(embed);
@@ -67,16 +67,17 @@ export default class EmbedCommand extends SassybotCommand {
         if (collected.size > 0) {
           const collectedMessage = collected.first();
           if (collectedMessage) {
-            const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10);
+            const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
             const chosenCharacter = apiChars[chosenInt];
             const embed = new MessageEmbed({
               title: 'You picked',
               description: `this one`,
               image: { url: chosenCharacter.Avatar },
               footer: {
-                text: chosenCharacter.Name,
+                text: apiChars[chosenInt].Rank || '',
               },
             });
+            message.reply(embed);
           }
         }
       });
