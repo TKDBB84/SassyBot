@@ -1,5 +1,5 @@
 import { Message, MessageCollector, MessageEmbed } from 'discord.js';
-import { UserIds } from '../../consts';
+import { affirmativeResponses, UserIds } from '../../consts';
 import { ISassybotCommandParams, XIVAPISearchResponse } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 // @ts-ignore
@@ -36,7 +36,23 @@ export default class EmbedCommand extends SassybotCommand {
           text: apiCharacter.Name,
         },
       });
+      const collector: MessageCollector = new MessageCollector(
+        message.channel,
+        (collectedMessage: Message) => collectedMessage.author.id === message.author.id,
+        { max: 1 },
+      );
       await message.reply(embed);
+      collector.on('end', (collected) => {
+        if (collected) {
+          const collectedMessage = collected.first();
+          if (collectedMessage) {
+            if (affirmativeResponses.includes(collectedMessage.cleanContent.trim().toLowerCase())) {
+              const chosenCharacter = apiCharacter;
+
+            }
+          }
+        }
+      });
     } else {
       // many characters match, going to have to get them to tell me which one:
       await message.reply('Multiple Characters match your name, please choose which character is yours');
@@ -45,6 +61,10 @@ export default class EmbedCommand extends SassybotCommand {
           return false;
         }
         const collectedValue = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10);
+        if (isNaN(collectedValue)) {
+          return false;
+        }
+
         return !(collectedValue <= 0 || collectedValue > apiChars.length);
       };
       let collector: MessageCollector;
@@ -74,7 +94,7 @@ export default class EmbedCommand extends SassybotCommand {
               description: `this one`,
               image: { url: chosenCharacter.Avatar },
               footer: {
-                text: apiChars[chosenInt].Rank || '',
+                text: chosenCharacter.Rank || '',
               },
             });
             message.reply(embed);

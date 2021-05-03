@@ -85,3 +85,5 @@ export enum EVENT_REPEATING_TYPE {
   BIWEEKLY,
   MONTHLY,
 }
+
+export const affirmativeResponses = ['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea', 'yi', 'ye']
