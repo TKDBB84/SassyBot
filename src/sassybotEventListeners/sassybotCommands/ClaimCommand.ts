@@ -1,9 +1,10 @@
 import { Message } from 'discord.js';
-import { CotRanks, GuildIds } from '../../consts';
+import { CotRanks, CoTRankValueToString, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
+import SbUser from '../../entity/SbUser';
 
 export default class ClaimCommand extends SassybotCommand {
   public readonly commands = ['claim'];
@@ -13,71 +14,65 @@ export default class ClaimCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (!message.guild || !message.member) {
+    if (!message.guild || !message.member || message.guild.id !== GuildIds.COT_GUILD_ID) {
       return;
     }
-    const charRepository = this.sb.dbConnection.getRepository(FFXIVChar);
-    const character = await charRepository.findOne({ where: { user: message.member.id } });
-    const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
-    let memberByUserId = await CoTMemberRepo.findOne({ where: { character } });
-    if (memberByUserId) {
-      await message.channel.send(
-        `I already have you as: ${memberByUserId.character.name}, if this isn't correct, please contact Sasner`,
-      );
-      return;
-    }
-
     const name = params.args.trim().toLowerCase();
     if (!name) {
       await message.channel.send(this.getHelpText());
       return;
     }
-    memberByUserId = await COTMember.getCotMemberByName(name, message.member.id);
-    if (memberByUserId.rank === CotRanks.NEW) {
-      // falling back to recruit
-      memberByUserId.rank = CotRanks.RECRUIT;
-    }
-    await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
-    let rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, memberByUserId.rank);
-    if (!rankRole) {
-      this.sb.logger.warn('unable to fetch rank', { rank: memberByUserId.rank });
+
+    const sbUser = await SbUser.findOrCreateUser(message.author.id);
+    const charRepository = this.sb.dbConnection.getRepository(FFXIVChar);
+    let character = await charRepository.findOne({ where: { user: sbUser.discordUserId } });
+    if (character) {
       await message.channel.send(
-        'However, I was unable to check your discord rank, one of the officers can help if needed.',
+        `I already have you as: ${character.name}, if this isn't correct, please contact Sasner`,
       );
       return;
+    } else {
+      character = await FFXIVChar.findOrCreateCharacter(name, sbUser);
+      await message.channel.send(`Thank you, I now have you as: ${character.name}`);
     }
-    if (message.member.roles.cache.has(CotRanks.GUEST)) {
-      await message.member.roles.remove(CotRanks.GUEST, 'claimed member');
+    const CoTMemberRepo = this.sb.dbConnection.getRepository(COTMember);
+    const cotMember = await CoTMemberRepo.findOne({ where: { character: character.id } });
+    if (!cotMember) {
+      await message.member.roles.add(CotRanks.GUEST, 'claimed non-COT character');
+      return;
     }
-    if (!message.member.roles.cache.has(rankRole.id)) {
-      const memberRank = memberByUserId.rank;
-      // noinspection FallThroughInSwitchStatementJS
-      switch (memberRank) {
-        case CotRanks.OFFICER:
-          await message.channel.send(
-            "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
-          );
-          rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN);
-        case CotRanks.VETERAN:
-          if (rankRole) {
-            await message.member.roles.add(rankRole, 'user claimed Veteran member').catch((error) => {
-              this.sb.logger.warn('unable to add role', {
-                error,
-                member: message.member,
-                rankRole: memberRank,
-              });
-            });
-          }
-          break;
-        case CotRanks.OTHER:
-        case CotRanks.MEMBER:
-        case CotRanks.RECRUIT:
-        default:
-          await message.member.roles.add(rankRole, 'user claimed member').catch((error) => {
-            this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole: memberRank });
+
+    await message.member.roles.remove(CotRanks.GUEST, 'claimed COT member');
+    await message.channel.send(
+      `I've found your COT Membership, setting you rank to ${CoTRankValueToString[cotMember.rank]}`,
+    );
+
+    // noinspection FallThroughInSwitchStatementJS
+    switch (cotMember.rank) {
+      case CotRanks.OFFICER:
+        await message.channel.send(
+          "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
+        );
+      case CotRanks.VETERAN:
+        try {
+          await message.member.roles.add(CotRanks.VETERAN, 'user claimed Veteran member');
+        } catch (error) {
+          this.sb.logger.warn('unable to add role', {
+            error,
+            member: message.member,
+            rank: cotMember.rank,
           });
-          break;
-      }
+        }
+      case CotRanks.OTHER:
+      case CotRanks.MEMBER:
+      case CotRanks.RECRUIT:
+      default:
+        try {
+          await message.member.roles.add(cotMember.rank, 'user claimed member');
+        } catch (error) {
+          this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole: cotMember.rank });
+        }
+        break;
     }
   }
 }

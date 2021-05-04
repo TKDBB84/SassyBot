@@ -4,50 +4,23 @@ import { logger } from '../log';
 import AbsentRequest from './AbsentRequest';
 import FFXIVChar from './FFXIVChar';
 import PromotionRequest from './PromotionRequest';
-import SbUser from './SbUser';
 
 @Entity()
 export default class COTMember {
-  public static async getCotMemberByName(
-    charName: string,
-    discordUserId: string,
+  public static async findOrCreateCotMember(
+    cotCharacter: FFXIVChar,
     rank: CotRanks = CotRanks.NEW,
   ): Promise<COTMember> {
-    const cotPlayerRepo = getManager().getRepository(FFXIVChar);
     const cotMemberRepo = getManager().getRepository(COTMember);
-    const sbUserRepo = getManager().getRepository(SbUser);
 
-    let sbUser = await sbUserRepo.findOne(discordUserId);
-    if (!sbUser) {
-      sbUser = new SbUser();
-      sbUser.discordUserId = discordUserId;
-      sbUser = await sbUserRepo.save(sbUser, { reload: true });
-    }
-    let cotPlayer = await cotPlayerRepo.findOne({
-      where: { user: { discordUserId } },
-    });
-
-    if (!cotPlayer) {
-      const nameMatch = await cotPlayerRepo
-        .createQueryBuilder()
-        .where(`LOWER(name) = LOWER(:name)`, { name: charName.toLowerCase() })
-        .getOne();
-      if (!nameMatch) {
-        cotPlayer = new FFXIVChar();
-        cotPlayer.user = sbUser;
-        cotPlayer.name = charName;
-        cotPlayer = await cotPlayerRepo.save(cotPlayer, { reload: true });
-      } else {
-        cotPlayer = nameMatch;
-        await cotPlayerRepo.update(cotPlayer.id, { user: sbUser });
-      }
-    }
-
-    let cotMember = await cotMemberRepo.createQueryBuilder().where('characterId = :id', { id: cotPlayer.id }).getOne();
+    let cotMember = await cotMemberRepo
+      .createQueryBuilder()
+      .where('characterId = :id', { id: cotCharacter.id })
+      .getOne();
     const foundMember = cotMember;
     if (!cotMember) {
       cotMember = new COTMember();
-      cotMember.character = cotPlayer;
+      cotMember.character = cotCharacter;
       cotMember.rank = rank;
       cotMember.firstSeenDiscord = new Date();
       try {
@@ -58,10 +31,9 @@ export default class COTMember {
       }
     } else {
       const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();
-      await cotMemberRepo.update(cotMember.id, { firstSeenDiscord, character: cotPlayer });
+      await cotMemberRepo.update(cotMember.id, { firstSeenDiscord, character: cotCharacter });
     }
-    cotPlayer.user = sbUser;
-    cotMember.character = cotPlayer;
+    cotMember.character = cotCharacter;
     return cotMember;
   }
 
