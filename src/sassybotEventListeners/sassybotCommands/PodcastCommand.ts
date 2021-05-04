@@ -1,7 +1,7 @@
 import { Message, MessageCollector } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import { PodcastRoleId, GuildIds } from '../../consts';
+import {PodcastRoleId, GuildIds, affirmativeResponses} from '../../consts';
 
 export default class EchoCommand extends SassybotCommand {
   public readonly commands = ['podcast', 'podcasts'];
@@ -27,7 +27,7 @@ export default class EchoCommand extends SassybotCommand {
       await message.reply('Are you sure you want to leave?');
       messageCollector.on('collect', async (collectedMessage: Message) => {
         const text = collectedMessage.cleanContent.toLowerCase();
-        if (['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea'].includes(text)) {
+        if (affirmativeResponses.includes(text)) {
           await member.roles.remove(PodcastRoleId, 'requested to leave forward & back');
           await message.reply('Done! You have been removed.');
         } else {

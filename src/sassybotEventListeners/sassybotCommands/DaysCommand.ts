@@ -60,9 +60,9 @@ export default class DaysCommand extends SassybotCommand {
     if (charName.includes('Minfilia')) {
       daysInFc = `locked in the Waking Sands `;
     } else {
-      daysInFc += 'in the FC '
+      daysInFc += 'in the FC ';
     }
-    daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`
+    daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`;
 
     await message.channel.send(daysInFc);
   }
