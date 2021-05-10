@@ -86,4 +86,4 @@ export enum EVENT_REPEATING_TYPE {
   MONTHLY,
 }
 
-export const affirmativeResponses = ['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea', 'yi', 'ye']
+export const affirmativeResponses = ['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea', 'yi', 'ye'];
