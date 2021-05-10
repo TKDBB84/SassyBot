@@ -121,7 +121,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
     if (nameMatch) {
       // found in API before
-      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id, CotRanks.NEW);
+      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
       if (cotMember.rank !== CotRanks.NEW) {
         await message.channel.send(
           `I've found your FC membership, it looks like you're currently a ${
