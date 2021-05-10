@@ -153,10 +153,10 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
       if (nameMatch) {
         const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
-        cotMember.firstSeenDiscord = new Date();
-        if (cotMember.rank === CotRanks.NEW) {
-          await cotMember.promote();
-        }
+        const roleToAdd = await this.sb.getRole(
+          GuildIds.COT_GUILD_ID,
+          cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank,
+        );
         if (newRole) {
           try {
             await message.member.roles.remove(newRole, 'agreed to rules');
@@ -168,7 +168,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
           return true;
         }
-        const roleToAdd = await this.sb.getRole(GuildIds.COT_GUILD_ID, cotMember.rank);
         if (roleToAdd) {
           try {
             await message.member.roles.add(roleToAdd, 'added best-guess rank');
