@@ -18,7 +18,7 @@
     "@types/node-fetch": "^2.5.10",
     "@types/shortid": "0.0.29",
     "@types/winston": "^2.4.4",
-    "@types/ws": "^7.4.2",
+    "@types/ws": "^7.4.4",
     "@xivapi/js": "^0.3.2",
     "discord.js": "^12.5.3",
     "moment": "^2.29.1",
