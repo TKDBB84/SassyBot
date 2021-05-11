@@ -1,15 +1,28 @@
 import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
 import * as moment from 'moment';
 import 'moment-timezone';
-import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
+import { CoTAPIId, CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 import getNumberOFDays from '../lib/GetNumberOfDays';
+// @ts-ignore
+import * as XIVApi from '@xivapi/js';
+interface IFreeCompanyMember {
+  Avatar: string;
+  FeastMatches: number;
+  ID: number;
+  Name: string;
+  Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
+  RankIcon: string;
+  Server: string;
+  exactRecruit: boolean;
+}
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly commands = ['promote', 'promotion'];
 
   protected async listAll(message: Message): Promise<void> {
+    const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
     const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
     const allPromotions = await promotionsRepo.find({ order: { requested: 'ASC' } });
     if (allPromotions.length === 0) {
@@ -25,9 +38,17 @@ export default class PromoteCommand extends ActivityCommand {
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
     await message.channel.send('__Current Promotion Requests:__\n');
+    const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    let includeApiIds: number[] = [];
+    if (memberList && memberList.FreeCompanyMembers) {
+      includeApiIds = memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => member.ID);
+    }
 
     await Promise.all(
       allPromotions.map(async (promotion) => {
+        if (includeApiIds.length && !includeApiIds.includes(promotion.CotMember.character.apiId)) {
+          return promotionsRepo.delete(promotion.id);
+        }
         let toRankName;
         switch (promotion.CotMember.rank) {
           case CotRanks.VETERAN:
