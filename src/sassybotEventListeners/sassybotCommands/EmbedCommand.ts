@@ -48,7 +48,6 @@ export default class EmbedCommand extends SassybotCommand {
           if (collectedMessage) {
             if (affirmativeResponses.includes(collectedMessage.cleanContent.trim().toLowerCase())) {
               const chosenCharacter = apiCharacter;
-
             }
           }
         }

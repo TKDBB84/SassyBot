@@ -109,17 +109,13 @@ export class Sassybot extends EventEmitter {
     return this.discordClient.guilds.resolve(guildId);
   }
 
-  public async getRole(guildId: string, roleId: string): Promise<Role | null | undefined> {
+  public async getRole(guildId: string, roleId: string): Promise<Role | null> {
     try {
-      let role;
       const guild = this.discordClient.guilds.cache.get(guildId);
-      if (guild) {
-        role = guild.roles.cache.get(roleId);
-        if (!role) {
-          role = await guild.roles.fetch(roleId);
-        }
+      if (!guild) {
+        return null;
       }
-      return role;
+      return await guild.roles.fetch(roleId, true);
     } catch (error) {
       logger.warn('could not fetch role', { roleId, guildId, error });
       throw error;
@@ -170,20 +166,20 @@ export class Sassybot extends EventEmitter {
       throw error;
     }
   }
-  public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | false> {
+  public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null> {
     const sbUserRepo = this.dbConnection.getRepository(SbUser);
     let sbUser = await sbUserRepo.findOne(discordId);
     if (!sbUser) {
       sbUser = new SbUser();
       sbUser.discordUserId = discordId;
       await sbUserRepo.save(sbUser);
-      return false;
+      return null;
     }
     const char = await this.dbConnection
       .getRepository(FFXIVChar)
       .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
     if (!char) {
-      return false;
+      return null;
     }
 
     const member = await this.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } } });
@@ -192,7 +188,7 @@ export class Sassybot extends EventEmitter {
       member.character = char;
       return member;
     }
-    return false;
+    return null;
   }
 
   public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {

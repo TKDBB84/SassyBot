@@ -39,13 +39,10 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
     const isCotMember = await this.sb.findCoTMemberByDiscordId(member.id);
     if (isCotMember && isCotMember.firstSeenDiscord) {
-      const knownRank = isCotMember.rank;
-      const role = await this.sb.getRole(GuildIds.COT_GUILD_ID, knownRank);
-      if (role) {
-        await member.roles.add(role, 'Added Known Rank To User');
-        if (isCotMember.character.name && (knownRank === CotRanks.MEMBER || knownRank === CotRanks.RECRUIT)) {
-          await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
-        }
+      const role = isCotMember.rank;
+      await member.roles.add(role, 'Added Known Rank To User');
+      if (isCotMember.character.name && (role === CotRanks.MEMBER || role === CotRanks.RECRUIT)) {
+        await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
       }
       return;
     }
@@ -56,13 +53,9 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
-    if (newRole) {
-      await member.roles.add(newRole, 'User Joined Server');
-    } else {
-      this.sb.logger.warn(`Unable to find CoT New Rank`, { newRole });
-      return;
-    }
+    const newRole = CotRanks.NEW;
+
+    await member.roles.add(newRole, 'User Joined Server');
 
     await newMemberChannel.send(
       'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
@@ -143,7 +136,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
-    const newRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.NEW);
+    const newRole = CotRanks.NEW;
     if (messageContent === 'i agree') {
       const nameMatch = await this.sb.dbConnection
         .getRepository(FFXIVChar)
@@ -153,54 +146,31 @@ export default class CoTNewMemberListener extends SassybotEventListener {
 
       if (nameMatch) {
         const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
-        const roleToAdd = await this.sb.getRole(
-          GuildIds.COT_GUILD_ID,
-          cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank,
-        );
-        if (newRole) {
-          try {
-            await message.member.roles.remove(newRole, 'agreed to rules');
-          } catch (e) {
-            await this.couldNotRemoveRole(message, newRole, e);
-            return true;
-          }
-        } else {
-          await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+        const roleToAdd = cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank;
+        try {
+          await message.member.roles.remove(newRole, 'agreed to rules');
+        } catch (e) {
+          await this.couldNotRemoveRole(message, newRole, e);
           return true;
         }
-        if (roleToAdd) {
-          try {
-            await message.member.roles.add(roleToAdd, 'added best-guess rank');
-          } catch (e) {
-            await this.couldNotAddRole(message, roleToAdd, e);
-            return true;
-          }
-        } else {
-          await this.couldNotAddRole(message, CoTRankValueToString[cotMember.rank], 'unable to get role from client');
+        try {
+          await message.member.roles.add(roleToAdd, 'added best-guess rank');
+        } catch (e) {
+          await this.couldNotAddRole(message, roleToAdd, e);
           return true;
         }
       } else {
-        const guest = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST);
-        if (newRole) {
-          try {
-            await message.member.roles.remove(newRole, 'agreed to rules');
-          } catch (e) {
-            await this.couldNotRemoveRole(message, newRole, e);
-            return true;
-          }
-        } else {
-          await this.couldNotRemoveRole(message, 'new role', 'unable to get role from client');
+        const guest = CotRanks.GUEST;
+        try {
+          await message.member.roles.remove(newRole, 'agreed to rules');
+        } catch (e) {
+          await this.couldNotRemoveRole(message, newRole, e);
           return true;
         }
-        if (guest) {
-          try {
-            await message.member.roles.add(guest, 'User not found in COT from API');
-          } catch (e) {
-            await this.couldNotAddRole(message, guest, e);
-            return true;
-          }
-        } else {
-          await this.couldNotAddRole(message, 'Guest', 'unable to get role from client');
+        try {
+          await message.member.roles.add(CotRanks.GUEST, 'User not found in COT from API');
+        } catch (e) {
+          await this.couldNotAddRole(message, guest, e);
           return true;
         }
       }

@@ -30,9 +30,9 @@ export default class DaysCommand extends SassybotCommand {
     let firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
     let charName = cotMember.character.name;
 
-    const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      ((OfficerRole && message.member.roles.highest.comparePositionTo(OfficerRole) >= 0) ||
+      ((officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
         message.author.id === UserIds.SASNER) &&
       !!params.args.trim()
     ) {

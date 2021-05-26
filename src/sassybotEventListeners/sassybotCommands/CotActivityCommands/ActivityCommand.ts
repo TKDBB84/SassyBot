@@ -13,9 +13,9 @@ export default abstract class ActivityCommand extends SassybotCommand {
     if (!message.guild || !message.member) {
       return;
     }
-    const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      (OfficerRole && message.member.roles.highest.comparePositionTo(OfficerRole) >= 0) ||
+      (officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
       message.author.id === UserIds.SASNER
     ) {
       await this.listAll(message);

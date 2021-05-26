@@ -6,7 +6,7 @@ import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
-import { GuildMember, Role } from 'discord.js';
+import { GuildMember } from 'discord.js';
 // @ts-ignore
 import * as XIVApi from '@xivapi/js';
 import AbsentRequest from './entity/AbsentRequest';
@@ -33,6 +33,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
     if (memberList && memberList.FreeCompanyMembers) {
       return memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
+        let exactRecruit = false;
         switch (Rank) {
           case 'FOUNDER':
           case 'FCM':
@@ -43,7 +44,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             return {
               ...member,
               Rank: 'OFFICER',
-              exactRecruit: false,
+              exactRecruit,
             };
           case 'VETERAN':
           case 'STEWARDS':
@@ -51,26 +52,22 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             return {
               ...member,
               Rank: 'VETERAN',
-              exactRecruit: false,
+              exactRecruit,
             };
           case 'DIGNITARY':
           case 'MEMBER':
             return {
               ...member,
               Rank: 'MEMBER',
-              exactRecruit: false,
+              exactRecruit,
             };
           case 'RECRUIT':
-            return {
-              ...member,
-              Rank: 'RECRUIT',
-              exactRecruit: true,
-            };
+            exactRecruit = true;
           default:
             return {
               ...member,
               Rank: 'RECRUIT',
-              exactRecruit: false,
+              exactRecruit,
             };
         }
       });
@@ -89,13 +86,11 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
 
-  const [OFFICER, VETERAN, MEMBER, RECRUIT, GUEST] = await Promise.all([
-    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER),
-    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN),
-    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.MEMBER),
-    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.RECRUIT),
-    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.GUEST),
-  ]);
+  const OFFICER = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+  if (!OFFICER) {
+    sb.logger.error('could not fetch officer role', { OFFICER });
+    throw new Error('Could not fetch officer role');
+  }
 
   const membersByApiId = lodestoneMembers.reduce((carry: { [key: string]: IFreeCompanyMember }, member) => {
     if (!carry[member.ID]) {
@@ -140,35 +135,20 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
 
     cotMember = await cotMemberRepo.findOne({ where: { character: { id: character.id } } });
 
-    let targetRank;
-    let discordRemove: Role[];
-    let discordAdd: Role | null | undefined;
-    switch (CotRanks[lodestoneMember.Rank]) {
-      case CotRanks.OFFICER:
-        targetRank = CotRanks.OFFICER;
-        // don't touch officers
+    const targetRank = CotRanks[lodestoneMember.Rank];
+    let discordRemove: CotRanks[] = [CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT, CotRanks.GUEST].filter(
+      (rank) => rank !== targetRank,
+    );
+    let discordAdd: CotRanks | null = CotRanks[lodestoneMember.Rank];
+    if (targetRank === CotRanks.OFFICER) {
+      discordRemove = [];
+    } else if (targetRank === CotRanks.RECRUIT) {
+      if (lodestoneMember.exactRecruit) {
+        discordAdd = CotRanks.RECRUIT;
+      } else {
+        discordAdd = null;
         discordRemove = [];
-        break;
-      case CotRanks.VETERAN:
-        targetRank = CotRanks.VETERAN;
-        discordAdd = VETERAN;
-        discordRemove = [MEMBER, RECRUIT, GUEST].filter((role): role is Role => !!role);
-        break;
-      case CotRanks.MEMBER:
-        targetRank = CotRanks.MEMBER;
-        discordAdd = MEMBER;
-        discordRemove = [VETERAN, RECRUIT, GUEST].filter((role): role is Role => !!role);
-        break;
-      default:
-      case CotRanks.RECRUIT:
-        targetRank = CotRanks.RECRUIT;
-        if (lodestoneMember.exactRecruit) {
-          discordAdd = RECRUIT;
-          discordRemove = [VETERAN, MEMBER, GUEST].filter((role): role is Role => !!role);
-        } else {
-          discordRemove = [];
-        }
-        break;
+      }
     }
 
     if (!cotMember) {
@@ -188,7 +168,7 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
       try {
         const discordMember = await sb.getMember(GuildIds.COT_GUILD_ID, sbUser.discordUserId);
         if (discordMember) {
-          const isDiscordOfficer = OFFICER && discordMember.roles.highest.comparePositionTo(OFFICER) >= 0;
+          const isDiscordOfficer = CotRanks.OFFICER && discordMember.roles.highest.comparePositionTo(OFFICER) >= 0;
           const possiblyOfficer = isLocalOfficer || isDiscordOfficer;
           if (discordAdd && !possiblyOfficer) {
             await discordMember.roles.add(discordAdd, 'updated in lodestone');
@@ -210,27 +190,23 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
 const checkForReminders = async (sb: Sassybot) => {
   const TWENTY_DAYS_AGO = new Date();
   TWENTY_DAYS_AGO.setTime(new Date().getTime() - 480 * (60 * 60 * 1000));
-  const oldPromotionCount = await sb.dbConnection
-    .getRepository(PromotionRequest)
-    .count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } });
-  sb.logger.info(`${oldPromotionCount} old promotions found`);
+  const [oldPromotionCount, officeRole] = await Promise.all([
+    sb.dbConnection.getRepository(PromotionRequest).count({ where: { requested: LessThan<Date>(TWENTY_DAYS_AGO) } }),
+    sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER),
+  ]);
+
   if (oldPromotionCount >= 1) {
     const officerChat = await sb.getTextChannel(CoTOfficerChannelId);
-    if (officerChat) {
-      const officeRole = await sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-      try {
-        const areIs = oldPromotionCount === 1 ? 'is' : 'are';
-        await officerChat.send(
-          `Hi ${
-            officeRole ? officeRole : 'Officers'
-          }, I'm just here to let you know that there ${areIs} currently ${oldPromotionCount} promotion request${
-            oldPromotionCount > 1 ? 's' : ''
-          } that ${areIs} more than 20 days old.`,
-        );
-      } catch (error) {
-        sb.logger.error("couldn't report to officers channel", { error, CoTOfficerChannelId });
-      }
+    if (!officerChat || !officeRole) {
+      sb.logger.error("couldn't report to officers channel", { officeRole, officerChat });
+      return;
     }
+
+    const isAre = oldPromotionCount === 1 ? 'is' : 'are';
+    const sOrEmpty = oldPromotionCount > 1 ? 's' : '';
+    await officerChat.send(
+      `Hi ${officeRole}, I'm just here to let you know that there ${isAre} currently ${oldPromotionCount} promotion request${sOrEmpty} that ${isAre} more than 20 days old.`,
+    );
   }
 };
 
@@ -281,6 +257,14 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
         .getMember(GuildIds.COT_GUILD_ID, discordId)
         .catch(() => false);
 
+      const promotionsRepo = sb.dbConnection.getRepository<PromotionRequest>(PromotionRequest);
+      const promotions = await promotionsRepo.find({ where: { CotMember: member.id } });
+      if (promotions) {
+        promotions.forEach((promotion) => {
+          promises.push(promotionsRepo.delete(promotion));
+        });
+      }
+
       if (discordMember) {
         promises.push(
           discordMember.roles.remove([CotRanks.VETERAN, CotRanks.MEMBER, CotRanks.RECRUIT], 'No longer seen in FC'),
@@ -288,41 +272,13 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
         promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
       }
     }
-    promises.push(memberRepo.query(`DELETE FROM cot_member WHERE id = ${member.id}`));
+    promises.push(memberRepo.delete(member));
     promises.push(
       charRepo.query(`UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`),
     );
     await Promise.all(promises);
   }
 };
-
-// const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-// const annoyRyk = async (sb: Sassybot) => {
-//   const guild = await sb.getGuild(GuildIds.GAMEZZZ_GUILD_ID);
-//   const SassyBot = await sb.getMember(GuildIds.GAMEZZZ_GUILD_ID, UserIds.SASSYBOT);
-//   if (guild && SassyBot) {
-//     const textChannels = guild.channels.cache.array();
-//     const mixedChannels: (null | TextChannel)[] = await Promise.all(
-//       textChannels.map(async (channel) => {
-//         if (sb.isTextChannel(channel)) {
-//           const permissions = await channel.permissionsFor(SassyBot);
-//           if (permissions && permissions.has('SEND_MESSAGES')) {
-//             return channel;
-//           }
-//         }
-//         return null;
-//       }),
-//     );
-//     const allowableChannels = mixedChannels.filter(sb.isTextChannel);
-//     const randomTextChannel = allowableChannels[Math.floor(Math.random() * allowableChannels.length)];
-//     await randomTextChannel.startTyping();
-//     sb.logger.info('start typing', { name: randomTextChannel.name });
-//     await delay(30000);
-//     sb.logger.info('stop typing', { name: randomTextChannel.name });
-//     randomTextChannel.stopTyping(true);
-//   }
-// };
 
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
@@ -350,10 +306,6 @@ const jobs: IScheduledJob[] = [
     job: deletePastAbsences,
     schedule: twiceADay,
   },
-  // {
-  //   job: annoyRyk,
-  //   schedule: every15Min,
-  // },
 ];
 
 export default jobs;

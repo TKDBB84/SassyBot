@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { CotRanks, GuildIds } from '../../consts';
+import { CotRanks } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
@@ -38,7 +38,7 @@ export default class ClaimCommand extends SassybotCommand {
       memberByUserId.rank = CotRanks.RECRUIT;
     }
     await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
-    let rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, memberByUserId.rank);
+    let rankRole: CotRanks = memberByUserId.rank;
     if (!rankRole) {
       this.sb.logger.warn('unable to fetch rank', { rank: memberByUserId.rank });
       await message.channel.send(
@@ -49,7 +49,7 @@ export default class ClaimCommand extends SassybotCommand {
     if (message.member.roles.cache.has(CotRanks.GUEST)) {
       await message.member.roles.remove(CotRanks.GUEST, 'claimed member');
     }
-    if (!message.member.roles.cache.has(rankRole.id)) {
+    if (!message.member.roles.cache.has(rankRole)) {
       const memberRank = memberByUserId.rank;
       // noinspection FallThroughInSwitchStatementJS
       switch (memberRank) {
@@ -57,7 +57,7 @@ export default class ClaimCommand extends SassybotCommand {
           await message.channel.send(
             "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
           );
-          rankRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.VETERAN);
+          rankRole = CotRanks.VETERAN;
         case CotRanks.VETERAN:
           if (rankRole) {
             await message.member.roles.add(rankRole, 'user claimed Veteran member').catch((error) => {
