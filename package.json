@@ -32,7 +32,8 @@
     "tsd": "^0.15.1",
     "typeorm": "^0.2.32",
     "typescript": "^4.3.2",
-    "winston": "^3.3.3"
+    "winston": "^3.3.3",
+    "winston-discord-transport": "^1.3.0"
   },
   "devDependencies": {
     "prettier": "^2.3.0",
