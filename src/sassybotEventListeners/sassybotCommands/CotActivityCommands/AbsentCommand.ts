@@ -8,6 +8,9 @@ import { CotRanks } from '../../../consts';
 import { ISassybotCommandParams } from '../../../Sassybot';
 
 export default class AbsentCommand extends ActivityCommand {
+  protected getHelpText(): string {
+    return `Usage: \`!sb absent [## days|weeks|months] -- you can specify a number of days, weeks or months to be gone, or I will prompt you for start and end dates.`;
+  }
   public readonly commands = ['absent', 'absence'];
 
   private static runningUsers = new Set();

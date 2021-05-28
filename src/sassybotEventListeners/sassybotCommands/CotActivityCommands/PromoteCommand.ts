@@ -19,6 +19,10 @@ interface IFreeCompanyMember {
 }
 
 export default class PromoteCommand extends ActivityCommand {
+  protected getHelpText(): string {
+    return `Usage: \`!sb promote -- I will mark you as requesting a promotion, the Officers review promotions when they can, and will finalize things.`;
+  }
+
   public readonly commands = ['promote', 'promotion'];
 
   protected async listAll(message: Message): Promise<void> {
@@ -164,12 +168,12 @@ export default class PromoteCommand extends ActivityCommand {
         .findOne({ CotMember: foundMember });
       if (existingPromotion) {
         await message.channel.send(
-          `You requested a promotion on ${existingPromotion.requested.toLocaleDateString('en-US', {
+          `You already requested a promotion on ${existingPromotion.requested.toLocaleDateString('en-US', {
             day: 'numeric',
             month: 'short',
             timeZone: 'UTC',
             year: 'numeric',
-          })}`,
+          })} that is waiting for review, the officers will get to it as soon as they can.`,
         );
         await this.summarizeData(message, existingPromotion, true);
         return;

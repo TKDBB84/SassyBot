@@ -5,7 +5,6 @@ import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
 
 export default abstract class ActivityCommand extends SassybotCommand {
-
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     if (!message.guild || !message.member) {
       return;
