@@ -6,8 +6,8 @@ export const enum GuildIds {
 
 export const NewUserChannels = {
   [GuildIds.COT_GUILD_ID]: '601971412000833556',
-  [GuildIds.GAMEZZZ_GUILD_ID]: '',
-  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: '',
+  [GuildIds.GAMEZZZ_GUILD_ID]: 'xx',
+  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: 'xx',
 };
 export const ONE_HOUR = 3600000;
 export const CoTOfficerChannelId = '331196148079394836';

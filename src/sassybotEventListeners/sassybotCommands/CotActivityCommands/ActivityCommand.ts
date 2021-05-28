@@ -5,9 +5,6 @@ import { ISassybotCommandParams } from '../../../Sassybot';
 import SassybotCommand from '../SassybotCommand';
 
 export default abstract class ActivityCommand extends SassybotCommand {
-  public getHelpText(): string {
-    return `usage: \`!{sassybot|sb} ${this.commands.join(', ')}\` -- @Sasner#1337 you should really fill this out`;
-  }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     if (!message.guild || !message.member) {

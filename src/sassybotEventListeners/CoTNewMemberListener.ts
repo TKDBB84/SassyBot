@@ -14,19 +14,14 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private async couldNotRemoveRole(message: Message, role: any, error: any) {
+    const sasner = await this.sb.getSasner();
     this.sb.logger.warn('could not remove role', { role, error });
     await message.channel.send(
-      "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact @Sasner#1337 for help.",
+      `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner} for help.`,
       { reply: message.author },
     );
   }
-  private async couldNotAddRole(message: Message, role: any, error: any) {
-    this.sb.logger.warn('could not add role', { role, error });
-    await message.channel.send(
-      `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 for help.`,
-      { reply: message.author },
-    );
-  }
+
   public readonly event = 'guildMemberAdd';
   public getEventListener() {
     return this.listener.bind(this);
@@ -53,9 +48,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    const newRole = CotRanks.NEW;
-
-    await member.roles.add(newRole, 'User Joined Server');
+    await member.roles.add(CotRanks.NEW, 'User Joined Server');
 
     await newMemberChannel.send(
       'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
@@ -136,7 +129,6 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
-    const newRole = CotRanks.NEW;
     if (messageContent === 'i agree') {
       const nameMatch = await this.sb.dbConnection
         .getRepository(FFXIVChar)
@@ -144,35 +136,19 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
         .getOne();
 
+      let roleToAdd = CotRanks.GUEST;
       if (nameMatch) {
         const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
-        const roleToAdd = cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank;
-        try {
-          await message.member.roles.remove(newRole, 'agreed to rules');
-        } catch (e) {
-          await this.couldNotRemoveRole(message, newRole, e);
-          return true;
-        }
-        try {
-          await message.member.roles.add(roleToAdd, 'added best-guess rank');
-        } catch (e) {
-          await this.couldNotAddRole(message, roleToAdd, e);
-          return true;
-        }
-      } else {
-        const guest = CotRanks.GUEST;
-        try {
-          await message.member.roles.remove(newRole, 'agreed to rules');
-        } catch (e) {
-          await this.couldNotRemoveRole(message, newRole, e);
-          return true;
-        }
-        try {
-          await message.member.roles.add(CotRanks.GUEST, 'User not found in COT from API');
-        } catch (e) {
-          await this.couldNotAddRole(message, guest, e);
-          return true;
-        }
+        roleToAdd = cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank;
+      }
+      try {
+        await Promise.all([
+          message.member.roles.remove(CotRanks.NEW, 'agreed to rules'),
+          message.member.roles.add(roleToAdd, nameMatch ? 'added best-guess rank' : 'User not found in COT from API'),
+        ]);
+      } catch (e) {
+        await this.couldNotRemoveRole(message, CotRanks.NEW, e);
+        return true;
       }
       await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
       return true;

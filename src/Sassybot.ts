@@ -27,6 +27,7 @@ import SbUser from './entity/SbUser';
 import { logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
+import { NewUserChannels, UserIds } from './consts';
 
 export interface ISassybotEventListener {
   event: string;
@@ -65,10 +66,11 @@ export type XIVAPISearchResponse = {
 
 export class Sassybot extends EventEmitter {
   private static isSassybotCommand(message: Message): boolean {
-    return (
+    const hasCommandPrefix =
       message.cleanContent.toLowerCase().startsWith('!sb ') ||
-      message.cleanContent.toLowerCase().startsWith('!sassybot ')
-    );
+      message.cleanContent.toLowerCase().startsWith('!sassybot ');
+    const isNewUserChannel = Object.values(NewUserChannels).includes(message.channel.id);
+    return hasCommandPrefix && !isNewUserChannel;
   }
 
   private static getCommandParameters(message: Message): ISassybotCommandParams {
@@ -97,12 +99,25 @@ export class Sassybot extends EventEmitter {
   public logger: typeof logger;
   protected discordClient: Client;
   private registeredCommands = new Set<string>();
+  private sasner: User | undefined;
 
   constructor(connection: Connection) {
     super();
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
     this.logger = logger;
+  }
+
+  public async getSasner(): Promise<User> {
+    if (this.sasner) {
+      return this.sasner;
+    }
+    const sasner = await this.getUser(UserIds.SASNER);
+    if (sasner) {
+      this.sasner = sasner;
+      return sasner;
+    }
+    throw new Error('Could Not Fetch Sasner?');
   }
 
   public async getGuild(guildId: string): Promise<Guild | null> {
