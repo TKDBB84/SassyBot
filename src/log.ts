@@ -1,6 +1,6 @@
 import winston from 'winston';
 import DiscordTransport from 'winston-discordjs';
-import { Client } from 'discord.js';
+import { Client, TextChannel } from 'discord.js';
 
 let winLogger;
 const config: any = {
@@ -41,7 +41,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-export function createLogger(discordClient: Client) {
+export function createLogger(discordClient: Client, discordChannel: TextChannel) {
   const withDiscord: any = {
     exceptionHandlers: [
       new winston.transports.Console({
@@ -59,7 +59,7 @@ export function createLogger(discordClient: Client) {
     transports: [
       new DiscordTransport({
         discordClient,
-        discordChannel: '848648942740963338',
+        discordChannel,
       }),
       new winston.transports.Console({
         format: winston.format.combine(

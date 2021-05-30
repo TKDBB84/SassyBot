@@ -105,7 +105,7 @@ export class Sassybot extends EventEmitter {
     super();
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
-    this.logger = createLogger(this.discordClient);
+    this.logger = logger;
   }
 
   public async getSasner(): Promise<User> {
@@ -289,6 +289,8 @@ export class Sassybot extends EventEmitter {
     this.emit('preLogin');
     await this.discordClient.login(process.env.DISCORD_TOKEN);
     this.logger.info('Bot Restarted');
+    const logChannel = (await this.discordClient.channels.fetch('848648942740963338')) as TextChannel;
+    this.logger = createLogger(this.discordClient, logChannel);
     this.emit('postLogin');
   }
 
