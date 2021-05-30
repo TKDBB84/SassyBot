@@ -17,7 +17,7 @@ import {
   VoiceState,
 } from 'discord.js';
 import { EventEmitter } from 'events';
-import * as cron from 'node-cron';
+import cron from 'node-cron';
 import 'reflect-metadata';
 import { Connection, createConnection } from 'typeorm';
 import jobs from './cronJobs';

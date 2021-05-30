@@ -1,5 +1,5 @@
 import { Message, MessageOptions, TextChannel, VoiceState } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import { GuildIds } from '../consts';
 import SpamChannel from '../entity/SpamChannel';

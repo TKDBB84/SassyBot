@@ -1,5 +1,5 @@
 import { Collection, CollectorFilter, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';

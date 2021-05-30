@@ -1,12 +1,12 @@
 import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import { CoTAPIId, CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 import getNumberOFDays from '../lib/GetNumberOfDays';
 // @ts-ignore
-import * as XIVApi from '@xivapi/js';
+import XIVApi from '@xivapi/js';
 interface IFreeCompanyMember {
   Avatar: string;
   FeastMatches: number;

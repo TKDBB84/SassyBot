@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+import moment from 'moment';
 import { In, LessThan } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
@@ -8,7 +8,7 @@ import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 import { GuildMember } from 'discord.js';
 // @ts-ignore
-import * as XIVApi from '@xivapi/js';
+import XIVApi from '@xivapi/js';
 import AbsentRequest from './entity/AbsentRequest';
 
 export interface IScheduledJob {

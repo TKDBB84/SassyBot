@@ -1,4 +1,4 @@
-import * as moment from 'moment';
+import moment from 'moment';
 
 export default function getNumberOFDays(firstSeenApi: string | Date | moment.Moment): number {
   const firstSeen = moment(firstSeenApi);

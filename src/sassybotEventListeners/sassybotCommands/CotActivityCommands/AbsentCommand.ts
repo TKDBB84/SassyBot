@@ -1,5 +1,5 @@
 import { Message, MessageCollector } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import { MoreThan } from 'typeorm';
 import AbsentRequest from '../../../entity/AbsentRequest';
