@@ -27,7 +27,7 @@ import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import { NewUserChannels, UserIds } from './consts';
+import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 
 export interface ISassybotEventListener {
   event: string;
@@ -288,7 +288,7 @@ export class Sassybot extends EventEmitter {
   private async login() {
     this.emit('preLogin');
     await this.discordClient.login(process.env.DISCORD_TOKEN);
-    const logChannel = (await this.discordClient.channels.fetch('848648942740963338')) as TextChannel;
+    const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
     this.logger = createLogger(this.discordClient, logChannel);
     this.logger.info('Bot Restarted');
     this.emit('postLogin');
