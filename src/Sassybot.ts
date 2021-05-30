@@ -24,7 +24,7 @@ import jobs from './cronJobs';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
-import { logger } from './log';
+import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { NewUserChannels, UserIds } from './consts';
@@ -105,7 +105,7 @@ export class Sassybot extends EventEmitter {
     super();
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
-    this.logger = logger;
+    this.logger = createLogger(this.discordClient);
   }
 
   public async getSasner(): Promise<User> {
@@ -132,7 +132,7 @@ export class Sassybot extends EventEmitter {
       }
       return await guild.roles.fetch(roleId, true);
     } catch (error) {
-      logger.warn('could not fetch role', { roleId, guildId, error });
+      this.logger.warn('could not fetch role', { roleId, guildId, error });
       throw error;
     }
   }
@@ -145,7 +145,7 @@ export class Sassybot extends EventEmitter {
         channel = await this.discordClient.channels.fetch(channelId);
       }
     } catch (error) {
-      logger.error('could not fetch channel', { channelId, error });
+      this.logger.error('could not fetch channel', { channelId, error });
     }
     return channel || null;
   }
@@ -177,7 +177,7 @@ export class Sassybot extends EventEmitter {
       }
       return user;
     } catch (error) {
-      logger.error('could not fetch user', { userId, error });
+      this.logger.error('could not fetch user', { userId, error });
       throw error;
     }
   }
@@ -218,7 +218,7 @@ export class Sassybot extends EventEmitter {
       }
       return member;
     } catch (e) {
-      logger.error('could not fetch member', { userResolvable, guildId, error: e });
+      this.logger.error('could not fetch member', { userResolvable, guildId, error: e });
       throw e;
     }
   }
@@ -287,8 +287,8 @@ export class Sassybot extends EventEmitter {
 
   private async login() {
     this.emit('preLogin');
-    const loginResult = await this.discordClient.login(process.env.DISCORD_TOKEN);
-    logger.info('login Complete', { loginResult });
+    await this.discordClient.login(process.env.DISCORD_TOKEN);
+    this.logger.info('Bot Restarted');
     this.emit('postLogin');
   }
 

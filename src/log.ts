@@ -1,15 +1,10 @@
 import * as winston from 'winston';
-// import DiscordTransport from 'winston-discord-transport';
+import DiscordTransport from 'winston-discordjs';
+import { Client } from 'discord.js';
 
 let winLogger;
-const config = {
+const config: any = {
   exceptionHandlers: [
-    // new DiscordTransport({
-    //   webhook:
-    //     'https://discord.com/api/webhooks/367794012406415360/e_L9nHvvj1_nZYN1sb3pKsk0p2nP_EwE4bMnAlWCMkTotmTAU4R6rrw7H5KJNQT-EpI3',
-    //   defaultMeta: { service: 'Sassybot' },
-    //   level: 'error',
-    // }),
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.timestamp(),
@@ -46,4 +41,22 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+export function createLogger(discordClient: Client) {
+  config.transports.push(
+    new DiscordTransport({
+      discordClient,
+      discordChannel: '848648942740963338',
+    }),
+  );
+  if (process.env.NODE_ENV === 'production') {
+    return winston.createLogger({
+      level: 'info',
+      ...config,
+    });
+  }
+  return winston.createLogger({
+    level: 'silly',
+    ...config,
+  });
+}
 export const logger = winLogger;
