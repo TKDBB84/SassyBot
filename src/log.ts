@@ -1,5 +1,5 @@
 import * as winston from 'winston';
-import DiscordTransport from 'winston-discordjs';
+const DiscordTransport = require('winston-discordjs');
 import { Client } from 'discord.js';
 
 let winLogger;
