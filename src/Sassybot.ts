@@ -288,9 +288,9 @@ export class Sassybot extends EventEmitter {
   private async login() {
     this.emit('preLogin');
     await this.discordClient.login(process.env.DISCORD_TOKEN);
-    this.logger.info('Bot Restarted');
     const logChannel = (await this.discordClient.channels.fetch('848648942740963338')) as TextChannel;
     this.logger = createLogger(this.discordClient, logChannel);
+    this.logger.info('Bot Restarted');
     this.emit('postLogin');
   }
 

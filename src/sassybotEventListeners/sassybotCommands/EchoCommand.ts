@@ -13,8 +13,5 @@ export default class EchoCommand extends SassybotCommand {
     await message.channel.send(params.args, {
       split: true,
     });
-    this.sb.logger.info(`info level echo ${params.args}`, { meta: 'data2' });
-    this.sb.logger.warn(`warn level echo ${params.args}`, { meta: 'data3' });
-    this.sb.logger.error(`error level echo ${params.args}`, { meta: 'data5' });
   }
 }
