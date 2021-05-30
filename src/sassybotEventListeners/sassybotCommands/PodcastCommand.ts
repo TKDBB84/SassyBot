@@ -3,7 +3,7 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import { PodcastRoleId, GuildIds, affirmativeResponses } from '../../consts';
 
-export default class EchoCommand extends SassybotCommand {
+export default class PodcastCommand extends SassybotCommand {
   public readonly commands = ['podcast', 'podcasts'];
 
   public getHelpText(): string {
