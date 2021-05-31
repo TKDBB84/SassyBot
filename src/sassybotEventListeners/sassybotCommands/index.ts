@@ -10,6 +10,7 @@ import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
 import PunCommand from './PunCommand';
 import QuoteCommand from './QuoteCommand';
+import RestartCommand from './RestartCommand';
 import RollCommand from './RollCommand';
 import SpamCommand from './SpamCommand';
 import TzCommand from './TzCommand';
@@ -30,6 +31,7 @@ export default [
   PromoteCommand,
   PunCommand,
   QuoteCommand,
+  RestartCommand,
   RollCommand,
   SpamCommand,
   TzCommand,
