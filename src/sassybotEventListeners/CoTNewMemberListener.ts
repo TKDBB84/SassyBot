@@ -1,4 +1,4 @@
-import { GuildMember, Message, MessageCollector, TextChannel } from 'discord.js';
+import { GuildMember, Message, MessageCollector } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../consts';
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
@@ -42,8 +42,8 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    const newMemberChannel = (await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID])) as TextChannel;
-    if (!newMemberChannel) {
+    const newMemberChannel = await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID]);
+    if (!newMemberChannel || !this.sb.isTextChannel(newMemberChannel)) {
       this.sb.logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
       return;
     }
