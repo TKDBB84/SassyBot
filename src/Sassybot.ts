@@ -27,7 +27,7 @@ import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
+import {CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds} from './consts';
 
 export interface ISassybotEventListener {
   event: string;
@@ -291,6 +291,10 @@ export class Sassybot extends EventEmitter {
     const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
     this.logger = createLogger(this.discordClient, logChannel);
     this.logger.info('Bot Restarted');
+    const restartMessageChannel = await this.discordClient.channels.fetch(CoTButtStuffChannelId)
+    if (restartMessageChannel && this.isTextChannel(restartMessageChannel)) {
+      await restartMessageChannel.send('Bot Restarted');
+    }
     this.emit('postLogin');
   }
 
