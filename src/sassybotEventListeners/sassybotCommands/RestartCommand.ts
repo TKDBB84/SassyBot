@@ -14,8 +14,8 @@ export default class RestartCommand extends SassybotCommand {
     if ([UserIds.SASNER.toString(), UserIds.CAIT.toString()].includes(message.author.id.toString())) {
       await message.channel.send('restarting...');
       process.exit(1); // exit w/ error so PM2 restarts us.
-      return
+      return;
     }
-    await message.channel.send('Sorry Only Admins are allow to restart the bot.')
+    await message.channel.send('Sorry Only Admins are allow to restart the bot.');
   }
 }
