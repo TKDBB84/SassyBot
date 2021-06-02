@@ -30,7 +30,7 @@
     "node-opus": "^0.3.3",
     "reflect-metadata": "^0.1.13",
     "tsd": "^0.16.0",
-    "typeorm": "^0.2.32",
+    "typeorm": "^0.2.33",
     "typescript": "^4.3.2",
     "winston": "^3.3.3",
     "winston-discordjs": "^2.1.1"
