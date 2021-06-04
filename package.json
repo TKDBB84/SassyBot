@@ -13,7 +13,7 @@
   "dependencies": {
     "@discordjs/opus": "discordjs/opus",
     "@types/moment": "^2.13.0",
-    "@types/node": "^15.6.1",
+    "@types/node": "^15.12.0",
     "@types/node-cron": "^2.0.3",
     "@types/node-fetch": "^2.5.10",
     "@types/shortid": "0.0.29",
@@ -29,8 +29,8 @@
     "node-gyp": "^8.1.0",
     "node-opus": "^0.3.3",
     "reflect-metadata": "^0.1.13",
-    "tsd": "^0.16.0",
-    "typeorm": "^0.2.32",
+    "tsd": "^0.17.0",
+    "typeorm": "^0.2.34",
     "typescript": "^4.3.2",
     "winston": "^3.3.3",
     "winston-discordjs": "^2.1.1"
