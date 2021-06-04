@@ -62,8 +62,9 @@
     tar "^6.1.0"
 
 "@discordjs/opus@discordjs/opus":
-  version "0.5.0"
-  resolved "https://codeload.github.com/discordjs/opus/tar.gz/534f56c3e41dcf56a3c53bf21ec527b1cfb31c18"
+  version "0.5.1"
+  uid d275e04192a7c701d061d8e91e68443e783d16f5
+  resolved "https://codeload.github.com/discordjs/opus/tar.gz/d275e04192a7c701d061d8e91e68443e783d16f5"
   dependencies:
     "@discordjs/node-pre-gyp" "^0.3.2"
     node-addon-api "^3.1.0"
