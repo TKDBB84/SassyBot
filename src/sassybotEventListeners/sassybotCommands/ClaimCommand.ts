@@ -42,7 +42,8 @@ export default class ClaimCommand extends SassybotCommand {
       .where(`LOWER(name) = LOWER(:name)`, { name })
       .getOne();
 
-    if (charByName?.user.discordUserId && charByName.user.discordUserId !== message.member.id) {
+    const charDiscordId = charByName?.user?.discordUserId;
+    if (charByName && charDiscordId && charDiscordId !== message.member.id) {
       const sasner = await this.sb.getSasner();
       await message.channel.send(
         `${charByName.name} has already been claimed by another user. Please contact ${sasner} for help.`,
