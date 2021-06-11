@@ -46,28 +46,28 @@
     combined-stream "^1.0.8"
     mime-types "^2.1.12"
 
-"@discordjs/node-pre-gyp@^0.3.2":
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/@discordjs/node-pre-gyp/-/node-pre-gyp-0.3.2.tgz#e882e803b2be444fb557c3b46d9bbe75a053bc9c"
-  integrity sha512-NqRvPz0X+/3h+6ClElrSfvsD5XEG9ljYzXhzyo81DslVkVKzmmxX9FLs3MUr9qI7p53DG1eYru633qosrOqMyA==
+"@discordjs/node-pre-gyp@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@discordjs/node-pre-gyp/-/node-pre-gyp-0.4.0.tgz#32740b1ff362c86a280877df9637313c7bf250ee"
+  integrity sha512-CXLpoM2hgS94i9+EAVowR92y8o3KdKc9fmoe8/FTp5XTzvoXzJln3+Ctl0oBpE6c9+11zd9oJnZPdkkOBkDPSA==
   dependencies:
     detect-libc "^1.0.3"
-    http-proxy-agent "^4.0.1"
+    https-proxy-agent "^5.0.0"
     make-dir "^3.1.0"
     node-fetch "^2.6.1"
     nopt "^5.0.0"
     npmlog "^4.1.2"
     rimraf "^3.0.2"
-    semver "^7.3.4"
+    semver "^7.3.5"
     tar "^6.1.0"
 
 "@discordjs/opus@discordjs/opus":
-  version "0.5.1"
-  uid d275e04192a7c701d061d8e91e68443e783d16f5
-  resolved "https://codeload.github.com/discordjs/opus/tar.gz/d275e04192a7c701d061d8e91e68443e783d16f5"
+  version "0.5.3"
+  uid "3ca4341ffdd81cf83cec57045e59e228e6017590"
+  resolved "https://codeload.github.com/discordjs/opus/tar.gz/3ca4341ffdd81cf83cec57045e59e228e6017590"
   dependencies:
-    "@discordjs/node-pre-gyp" "^0.3.2"
-    node-addon-api "^3.1.0"
+    "@discordjs/node-pre-gyp" "^0.4.0"
+    node-addon-api "^3.2.1"
 
 "@nodelib/fs.scandir@2.1.3":
   version "2.1.3"
@@ -1570,10 +1570,10 @@ nan@2, nan@^2.14.0:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.1.tgz#d7be34dfa3105b91494c3147089315eff8874b01"
   integrity sha512-isWHgVjnFjh2x2yuJ/tj3JbwoHu3UC2dX5G/88Cm24yB6YopVgxvBObDY7n5xW6ExmFhJpSEQqFPvq9zaXc8Jw==
 
-node-addon-api@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.1.0.tgz#98b21931557466c6729e51cb77cd39c965f42239"
-  integrity sha512-flmrDNB06LIl5lywUz7YlNGZH/5p0M7W28k8hzd9Lshtdh1wshD2Y+U4h9LD6KObOy1f+fEVdgprPrEymjM5uw==
+node-addon-api@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
+  integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
 
 node-cron@^3.0.0:
   version "3.0.0"
