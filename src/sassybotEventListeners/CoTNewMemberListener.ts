@@ -38,7 +38,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     await member.roles.add(CotRanks.NEW, 'User Joined Server');
 
     const declaredName = await this.getDeclaredName(newMemberChannel, member);
-    await this.getAgreement(newMemberChannel, member, declaredName);
+    await this.getAgreement(newMemberChannel, member, declaredName, true);
   }
 
   private async getDeclaredName(newMemberChannel: TextChannel, member: GuildMember): Promise<string> {
@@ -49,11 +49,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     const collectedNameMessages = await newMemberChannel.awaitMessages(CoTNewMemberListener.messageFilter(member), {
       max: 1,
     });
-    const declaredName = collectedNameMessages.first();
-    return this.declaringCharacterName(declaredName!);
+    const declaredName: Message | undefined = collectedNameMessages.first();
+    return this.declaringCharacterName(declaredName);
   }
-  private async declaringCharacterName(message: Message): Promise<string> {
-    if (!message.guild || !message.member) {
+  private async declaringCharacterName(message: Message | undefined): Promise<string> {
+    if (!message || !message.guild || !message.member) {
       return '';
     }
     const declaredName = message.cleanContent.trim();
@@ -67,7 +67,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
           { reply: message.author },
         );
-        this.sb.logger.warn('unable to update nickname', { error });
+        this.sb.logger.warn('unable to update nickname', error);
       }
     }
     const nameMatch = await this.sb.dbConnection
@@ -94,7 +94,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     newMemberChannel: TextChannel,
     member: GuildMember,
     declaredName: string,
-    firstRun: boolean = true,
+    firstRun = true,
   ): Promise<void> {
     if (firstRun) {
       await newMemberChannel.send(
@@ -128,35 +128,35 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       .replace(/ +/, ' ')
       .trim()
       .toLowerCase();
-    if (messageContent === 'i agree') {
-      const nameMatch = await this.sb.dbConnection
-        .getRepository(FFXIVChar)
-        .createQueryBuilder()
-        .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
-        .getOne();
+    if (messageContent !== 'i agree') {
+      return false;
+    }
+    const nameMatch = await this.sb.dbConnection
+      .getRepository(FFXIVChar)
+      .createQueryBuilder()
+      .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
+      .getOne();
 
-      let roleToAdd = CotRanks.GUEST;
-      if (nameMatch) {
-        const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
-        roleToAdd = cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank;
-      }
-      try {
-        await Promise.all([
-          message.member.roles.remove(CotRanks.NEW, 'agreed to rules'),
-          message.member.roles.add(roleToAdd, nameMatch ? 'added best-guess rank' : 'User not found in COT from API'),
-        ]);
-      } catch (e) {
-        const sasner = await this.sb.getSasner();
-        this.sb.logger.warn('could not remove role', { rank: CotRanks.NEW, error: e });
-        await message.channel.send(
-          `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner} for help.`,
-          { reply: message.author },
-        );
-        return true;
-      }
-      await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
+    let roleToAdd = CotRanks.GUEST;
+    if (nameMatch) {
+      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
+      roleToAdd = cotMember.rank === CotRanks.NEW ? CotRanks.GUEST : cotMember.rank;
+    }
+    try {
+      await Promise.all([
+        message.member.roles.remove(CotRanks.NEW, 'agreed to rules'),
+        message.member.roles.add(roleToAdd, nameMatch ? 'added best-guess rank' : 'User not found in COT from API'),
+      ]);
+    } catch (error) {
+      const sasner = await this.sb.getSasner();
+      this.sb.logger.warn('could not remove role', [{ rank: CotRanks.NEW }, error]);
+      await message.channel.send(
+        `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner.toString()} for help.`,
+        { reply: message.author },
+      );
       return true;
     }
-    return false;
+    await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
+    return true;
   }
 }
