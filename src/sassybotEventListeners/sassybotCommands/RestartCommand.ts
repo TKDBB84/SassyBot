@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import { CotRanks, GuildIds, UserIds } from '../../consts';
 
@@ -10,7 +9,7 @@ export default class RestartCommand extends SassybotCommand {
     return 'usage: `!{sassybot|sb} restart` -- I force a bot restart';
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  protected async listener({ message }: { message: Message }): Promise<void> {
     let isDiscordOfficer = [UserIds.SASNER.toString(), UserIds.CAIT.toString()].includes(message.author.id.toString());
     if (!isDiscordOfficer && message.guild?.id === GuildIds.COT_GUILD_ID && message.member) {
       const OFFICER = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);

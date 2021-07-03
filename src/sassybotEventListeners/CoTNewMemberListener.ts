@@ -10,7 +10,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   };
 
   public readonly event = 'guildMemberAdd';
-  public getEventListener() {
+  public getEventListener(): ({ member }: { member: GuildMember }) => Promise<void> {
     return this.listener.bind(this);
   }
 

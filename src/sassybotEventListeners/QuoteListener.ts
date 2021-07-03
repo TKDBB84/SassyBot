@@ -5,7 +5,7 @@ import SassybotEventListener from './SassybotEventListener';
 
 export default class QuoteListener extends SassybotEventListener {
   public readonly event = 'messageReactionAdd';
-  public getEventListener() {
+  public getEventListener(): ({ messageReaction }: { messageReaction: MessageReaction }) => Promise<void> {
     return this.listener.bind(this);
   }
 

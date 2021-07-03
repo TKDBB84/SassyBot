@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class CockCommand extends SassybotCommand {
@@ -9,7 +8,7 @@ export default class CockCommand extends SassybotCommand {
     return 'yeah, you do really need help.';
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  protected async listener({ message }: { message: Message }): Promise<void> {
     const phrases = [
       '8/10, a little firm but gets the job done',
       '10/10, nice cock bro',

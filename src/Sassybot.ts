@@ -31,7 +31,8 @@ import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds }
 
 export interface ISassybotEventListener {
   event: string;
-  getEventListener: () => (...args: any) => Promise<void>;
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getEventListener: () => (...args: any[]) => Promise<void>;
 }
 
 export interface ISassybotCommandParams {
@@ -80,7 +81,7 @@ export class Sassybot extends EventEmitter {
       mentions: false,
     };
     const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s*(?<args>.*)$/i;
-    const matches = message.cleanContent.match(patternMatch);
+    const matches = patternMatch.exec(message.cleanContent);
     if (matches && matches.groups) {
       if (matches.groups.command) {
         result.command = matches.groups.command.toLowerCase();
@@ -120,7 +121,7 @@ export class Sassybot extends EventEmitter {
     throw new Error('Could Not Fetch Sasner?');
   }
 
-  public async getGuild(guildId: string): Promise<Guild | null> {
+  public getGuild(guildId: string): Guild | null {
     return this.discordClient.guilds.resolve(guildId);
   }
 
@@ -132,7 +133,7 @@ export class Sassybot extends EventEmitter {
       }
       return await guild.roles.fetch(roleId, true);
     } catch (error) {
-      this.logger.warn('could not fetch role', { roleId, guildId, error });
+      this.logger.warn('could not fetch role', [{ roleId, guildId }, error]);
       throw error;
     }
   }
@@ -145,7 +146,7 @@ export class Sassybot extends EventEmitter {
         channel = await this.discordClient.channels.fetch(channelId);
       }
     } catch (error) {
-      this.logger.error('could not fetch channel', { channelId, error });
+      this.logger.error('could not fetch channel', [{ channelId }, error]);
     }
     return channel || null;
   }
@@ -177,7 +178,7 @@ export class Sassybot extends EventEmitter {
       }
       return user;
     } catch (error) {
-      this.logger.error('could not fetch user', { userId, error });
+      this.logger.error('could not fetch user', [{ userId }, error]);
       throw error;
     }
   }
@@ -217,9 +218,9 @@ export class Sassybot extends EventEmitter {
         }
       }
       return member;
-    } catch (e) {
-      this.logger.error('could not fetch member', { userResolvable, guildId, error: e });
-      throw e;
+    } catch (error) {
+      this.logger.error('could not fetch member', [{ userResolvable, guildId }, error]);
+      throw error;
     }
   }
 
@@ -258,17 +259,29 @@ export class Sassybot extends EventEmitter {
   }
 
   public async run(): Promise<void> {
-    this.discordClient.on('message', this.onMessageHandler.bind(this));
-    this.discordClient.on('voiceStateUpdate', this.onVoiceStateUpdate.bind(this));
-    this.discordClient.on('messageReactionAdd', this.onMessageReactionAdd.bind(this));
-    this.discordClient.on('guildMemberAdd', this.onGuildMemberAdd.bind(this));
-    this.discordClient.on('disconnect', async () => {
-      setTimeout(async () => await this.login(), 30000);
+    this.discordClient.on('message', (...args) => {
+      void this.onMessageHandler.bind(this)(...args);
+    });
+
+    this.discordClient.on('voiceStateUpdate', (...args) => {
+      void this.onVoiceStateUpdate.bind(this)(...args);
+    });
+
+    this.discordClient.on('messageReactionAdd', (...args) => {
+      void this.onMessageReactionAdd.bind(this)(...args);
+    });
+    this.discordClient.on('guildMemberAdd', (...args) => {
+      void this.onGuildMemberAdd.bind(this)(...args);
+    });
+    this.discordClient.on('disconnect', () => {
+      setTimeout(() => {
+        void this.login();
+      }, 30000);
     });
     await this.login();
   }
 
-  public registerSassybotEventListener(sbEvent: ISassybotEventListener) {
+  public registerSassybotEventListener(sbEvent: ISassybotEventListener): void {
     const uniqueCommands = new Set();
     if (this.isSassyBotCommand(sbEvent)) {
       sbEvent.commands.forEach((eachCommand) => {
@@ -280,9 +293,13 @@ export class Sassybot extends EventEmitter {
       });
       const command = sbEvent.commands[0].toLowerCase();
       this.registeredCommands.add(command);
-      this.on('sassybotHelpCommand', sbEvent.displayHelpText.bind(sbEvent));
+      this.on('sassybotHelpCommand', ({ message, params }: { message: Message; params: ISassybotCommandParams }) => {
+        void sbEvent.displayHelpText.bind(sbEvent)({ message, params });
+      });
     }
-    this.on(sbEvent.event, sbEvent.getEventListener().bind(sbEvent));
+    this.on(sbEvent.event, (...args) => {
+      void sbEvent.getEventListener().bind(sbEvent)(...args);
+    });
   }
 
   private async login() {
@@ -298,7 +315,7 @@ export class Sassybot extends EventEmitter {
     this.emit('postLogin');
   }
 
-  private async onMessageHandler(message: Message) {
+  private async onMessageHandler(message: Message): Promise<void> {
     if (message.author.bot) {
       return;
     }
@@ -341,20 +358,20 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  private async onGuildMemberAdd(member: GuildMember | PartialGuildMember) {
+  private onGuildMemberAdd(member: GuildMember | PartialGuildMember) {
     if (member && member.user && member.user.bot) {
       return;
     }
     this.emit('guildMemberAdd', { member });
   }
 
-  private async onVoiceStateUpdate(previousMemberState: VoiceState, currentMemberState: VoiceState) {
+  private onVoiceStateUpdate(previousMemberState: VoiceState, currentMemberState: VoiceState) {
     if (previousMemberState.member?.user.bot || currentMemberState.member?.user.bot) {
       return;
     }
     this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
-  private async onMessageReactionAdd(messageReaction: MessageReaction, user: User | PartialUser) {
+  private onMessageReactionAdd(messageReaction: MessageReaction, user: User | PartialUser) {
     if (messageReaction.message.author.bot || user.bot) {
       return;
     }
@@ -385,10 +402,13 @@ dbConnection
     sb.setMaxListeners(30);
     SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
     jobs.forEach(({ job, schedule }) => {
-      cron.schedule(schedule, job.bind(null, sb));
+      const jobFunction = job.bind(null, sb);
+      cron.schedule(schedule, () => {
+        void jobFunction();
+      });
     });
     await sb.run();
   })
   .catch((e) => {
-    logger.error('error connecting to database', { e });
+    logger.error('error connecting to database', e);
   });

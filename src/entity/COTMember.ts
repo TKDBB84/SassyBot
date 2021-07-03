@@ -53,8 +53,8 @@ export default class COTMember {
       if (rank !== CotRanks.NEW) {
         try {
           cotMember = await cotMemberRepo.save(cotMember, { reload: true });
-        } catch (error) {
-          logger.warn('error saving member', { error, foundMember, cotMember });
+        } catch (error: unknown) {
+          logger.warn('error saving member', [{ foundMember, cotMember }, error]);
           throw error;
         }
       }

@@ -1,5 +1,4 @@
 import { Message, MessageCollector } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import { PodcastRoleId, GuildIds, affirmativeResponses } from '../../consts';
 
@@ -10,7 +9,7 @@ export default class PodcastCommand extends SassybotCommand {
     return "usage: `!{sassybot|sb} podcast` -- toggle whether you're interested in participating in the podcast";
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  protected async listener({ message }: { message: Message }): Promise<void> {
     const messageChannel = message.channel;
     if (
       !message.guild ||
@@ -29,13 +28,14 @@ export default class PodcastCommand extends SassybotCommand {
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
       const messageCollector = new MessageCollector(messageChannel, filter, { max: 1, time: 60000 });
       await message.reply('Are you sure you want to leave?');
-      messageCollector.on('collect', async (collectedMessage: Message) => {
+      messageCollector.on('collect', (collectedMessage: Message) => {
         const text = collectedMessage.cleanContent.toLowerCase();
         if (affirmativeResponses.includes(text)) {
-          await member.roles.remove(PodcastRoleId, 'requested to leave forward & back');
-          await message.reply('Done! You have been removed.');
+          void member.roles
+            .remove(PodcastRoleId, 'requested to leave forward & back')
+            .then(() => message.reply('Done! You have been removed.'));
         } else {
-          await message.reply('Not confirmed. No Change Made.');
+          void message.reply('Not confirmed. No Change Made.');
         }
       });
     } else {

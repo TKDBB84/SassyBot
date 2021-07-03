@@ -6,5 +6,6 @@ export default abstract class SassybotEventListener implements ISassybotEventLis
   constructor(sb: Sassybot) {
     this.sb = sb;
   }
-  public abstract getEventListener(): (...args: any) => Promise<void>;
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public abstract getEventListener(): (...args: any[]) => Promise<void>;
 }
