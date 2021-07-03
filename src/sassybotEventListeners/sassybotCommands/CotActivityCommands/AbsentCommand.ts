@@ -69,8 +69,9 @@ export default class AbsentCommand extends ActivityCommand {
 
     const diffDateFormat = /(\d+)\s+(\bdays?\b|\bweeks?\b|\bmonths?\b)/i;
     type timeUnit = 'day' | 'days' | 'week' | 'weeks' | 'month' | 'months';
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const dateComponents: [string, string, timeUnit] | null = params.args.trim().match(diffDateFormat);
+    const dateComponents: [string, string, timeUnit] | null = diffDateFormat.exec(params.args.trim());
     if (dateComponents && dateComponents.length === 3) {
       const amount = parseInt(dateComponents[1], 10);
       const unit = dateComponents[2];
@@ -120,50 +121,56 @@ export default class AbsentCommand extends ActivityCommand {
     }
     const messageCollector = new MessageCollector(message.channel, filter, { time: 300000 });
     messageCollector
-      .on('collect', async (collectedMessage: Message) => {
-        const messageText = collectedMessage.cleanContent.toLowerCase();
-        if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
-          AbsentCommand.runningUsers.delete(messageAuthorId);
-          clearTimeout(expiration);
-          messageCount = 0;
-          messageCollector.stop();
-          await collectedMessage.reply("I've canceled everything, you can just start over now");
-          return;
-        }
-        switch (messageCount) {
-          case 0:
-            foundMember = await this.parseCharacterName(collectedMessage);
-            absent.CotMember = foundMember;
-            await this.requestStartDate(collectedMessage, absent);
-            break;
-          case 1:
-            const startDate = await this.parseDate(collectedMessage);
-            if (!startDate) {
+      .on('collect', (collectedMessage: Message) => {
+        const asyncWork = async () => {
+          const messageText = collectedMessage.cleanContent.toLowerCase();
+          if (['no', 'stop', 'reset', 'clear', 'cancel'].includes(messageText)) {
+            AbsentCommand.runningUsers.delete(messageAuthorId);
+            clearTimeout(expiration);
+            messageCount = 0;
+            messageCollector.stop();
+            await collectedMessage.reply("I've canceled everything, you can just start over now");
+            return;
+          }
+          switch (messageCount) {
+            case 0: {
+              foundMember = await this.parseCharacterName(collectedMessage);
+              absent.CotMember = foundMember;
               await this.requestStartDate(collectedMessage, absent);
-              messageCount--;
-            } else {
-              absent.startDate = startDate;
-              await this.requestEndDate(collectedMessage, absent);
+              break;
             }
-            break;
-          case 2:
-            const endDate = await this.parseDate(collectedMessage);
-            if (!endDate) {
-              await this.requestEndDate(collectedMessage, absent);
-              messageCount--;
-            } else {
-              absent.endDate = endDate;
-              const durationAllowed = await AbsentCommand.checkDuration(collectedMessage, absent);
-              if (durationAllowed) {
-                await this.summarizeData(collectedMessage, absent);
+            case 1: {
+              const startDate = await this.parseDate(collectedMessage);
+              if (!startDate) {
+                await this.requestStartDate(collectedMessage, absent);
+                messageCount--;
+              } else {
+                absent.startDate = startDate;
+                await this.requestEndDate(collectedMessage, absent);
               }
-              AbsentCommand.runningUsers.delete(messageAuthorId);
-              clearTimeout(expiration);
-              messageCollector.stop();
+              break;
             }
-            break;
-        }
-        messageCount++;
+            case 2: {
+              const endDate = await this.parseDate(collectedMessage);
+              if (!endDate) {
+                await this.requestEndDate(collectedMessage, absent);
+                messageCount--;
+              } else {
+                absent.endDate = endDate;
+                const durationAllowed = await AbsentCommand.checkDuration(collectedMessage, absent);
+                if (durationAllowed) {
+                  await this.summarizeData(collectedMessage, absent);
+                }
+                AbsentCommand.runningUsers.delete(messageAuthorId);
+                clearTimeout(expiration);
+                messageCollector.stop();
+              }
+              break;
+            }
+          }
+          messageCount++;
+        };
+        void asyncWork();
       })
       .on('end', () => {
         AbsentCommand.runningUsers.delete(messageAuthorId);
@@ -171,7 +178,7 @@ export default class AbsentCommand extends ActivityCommand {
       });
   }
 
-  protected async requestStartDate(message: Message, absentRequest: AbsentRequest) {
+  protected async requestStartDate(message: Message, absentRequest: AbsentRequest): Promise<Message> {
     return await message.reply(
       `Ok, ${absentRequest.CotMember.character.name}, What is the first day you'll be gone?  (because i'm a dumb bot please use YYYY-MM-DD format)`,
     );
@@ -188,7 +195,7 @@ export default class AbsentCommand extends ActivityCommand {
     return false;
   }
 
-  protected async requestEndDate(message: Message, absentRequest: AbsentRequest) {
+  protected async requestEndDate(message: Message, absentRequest: AbsentRequest): Promise<Message> {
     return await message.reply(
       `Ok, ${absentRequest.CotMember.character.name}, When do you think you'll be back? If you're not sure, just add a few days to the end.  (because i'm a dumb bot please use YYYY-MM-DD format)`,
     );

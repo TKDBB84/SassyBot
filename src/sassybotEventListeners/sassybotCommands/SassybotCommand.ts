@@ -6,7 +6,13 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   public abstract readonly commands: string[];
   public readonly event = 'sassybotCommand';
 
-  public getEventListener(): (...args: any) => Promise<void> {
+  public getEventListener(): ({
+    message,
+    params,
+  }: {
+    message: Message;
+    params: ISassybotCommandParams;
+  }) => Promise<void> {
     return this.onEventCallback.bind(this);
   }
 
@@ -49,7 +55,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     if (commands.includes(invoked)) {
       try {
         await this.listener({ message, params });
-      } catch (e) {
+      } catch (e: unknown) {
         this.sb.logger.error(`Error Processing ${invoked}`, { e, message, params });
       }
     }

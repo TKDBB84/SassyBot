@@ -4,7 +4,7 @@ import SassybotCommand from './SassybotCommand';
 
 export default class RollCommand extends SassybotCommand {
   private static parseDice(args: string): { num: number; sides: number } {
-    const result = args.match(/^\s*(\d+)d(\d+).*$/i);
+    const result = /^\s*(\d+)d(\d+).*$/i.exec(args);
 
     let ret = {
       num: 0,
@@ -37,7 +37,7 @@ export default class RollCommand extends SassybotCommand {
       return [];
     }
     if (numberOfSides === 0) {
-      return Array(numberOfDice).fill(0);
+      return Array(numberOfDice).fill(0) as number[];
     }
 
     const diceRolls = [];
@@ -48,7 +48,7 @@ export default class RollCommand extends SassybotCommand {
   }
 
   private static parseKeepOrDrops(args: string): { drop: boolean; keep: boolean; numDice: number } {
-    const result = args.match(/^\s*\d+d\d+([d|k])(\d+).*$/i);
+    const result = /^\s*\d+d\d+([d|k])(\d+).*$/i.exec(args);
 
     let ret = {
       drop: false,
@@ -67,7 +67,7 @@ export default class RollCommand extends SassybotCommand {
   }
 
   private static parseStaticAdditions(args: string): { minus: boolean; constant: number; plus: boolean } {
-    const result = args.match(/^.*([+\-])\s*(\d+)$/i);
+    const result = /^.*([+-])\s*(\d+)$/i.exec(args);
 
     let ret = {
       constant: 0,
@@ -165,7 +165,7 @@ export default class RollCommand extends SassybotCommand {
     replyMessage += ' ] ';
 
     if (additions.constant > 0 && (additions.plus || additions.minus)) {
-      replyMessage += (additions.plus ? ' + ' : '') + (additions.minus ? ' - ' : '') + additions.constant;
+      replyMessage += `${additions.plus ? ' + ' : ''}${additions.minus ? ' - ' : ''}${additions.constant}`;
       if (additions.minus) {
         additions.constant *= -1;
       }
@@ -180,8 +180,8 @@ export default class RollCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    const response = await RollCommand.rollFunction(params.args);
-    message.channel.send(response, {
+    const response = RollCommand.rollFunction(params.args);
+    await message.channel.send(response, {
       reply: message.author,
       split: {
         char: ',',

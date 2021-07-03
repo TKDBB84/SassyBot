@@ -46,7 +46,7 @@ export default class ClaimCommand extends SassybotCommand {
     if (charByName && charDiscordId && charDiscordId !== message.member.id) {
       const sasner = await this.sb.getSasner();
       await message.channel.send(
-        `${charByName.name} has already been claimed by another user. Please contact ${sasner} for help.`,
+        `${charByName.name} has already been claimed by another user. Please contact ${sasner.toString()} for help.`,
       );
       return;
     }
@@ -68,10 +68,12 @@ export default class ClaimCommand extends SassybotCommand {
             "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
           );
         }
-      } catch (error) {
-        const sasner = this.sb.getSasner();
-        await message.channel.send(`I'm a terrible bot, I could not add your rank: ${sasner} please come help me.`);
-        this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole });
+      } catch (error: unknown) {
+        const sasner = await this.sb.getSasner();
+        await message.channel.send(
+          `I'm a terrible bot, I could not add your rank: ${sasner.toString()} please come help me.`,
+        );
+        this.sb.logger.warn('unable to add role (2)', [{ member: message.member, rankRole }, error]);
       }
     }
   }

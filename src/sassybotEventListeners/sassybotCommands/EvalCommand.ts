@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import { UserIds } from '../../consts';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
+import { inspect } from 'util';
 
 export default class EvalCommand extends SassybotCommand {
   public readonly commands = ['eval'];
@@ -23,9 +24,10 @@ export default class EvalCommand extends SassybotCommand {
         this.sb.logger.warn(log, { message, params, forUser });
       }
       // tslint:disable-next-line:no-eval
+      // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
       let result = eval(params.args);
       if (typeof result !== 'string') {
-        result = require('util').inspect(result);
+        result = inspect(result);
       }
       await message.channel.send(result);
     }

@@ -1,6 +1,6 @@
 import moment from 'moment';
 
-export default function getNumberOFDays(firstSeenApi: string | Date | moment.Moment): number {
+const getNumberOFDays = (firstSeenApi: string | Date | moment.Moment): number => {
   const firstSeen = moment(firstSeenApi);
   const firstPull = moment(new Date(2019, 9, 11, 23, 59, 59));
   const beginningOfTime = moment(new Date(2019, 8, 2, 23, 59, 59));
@@ -12,4 +12,5 @@ export default function getNumberOFDays(firstSeenApi: string | Date | moment.Mom
   } else {
     return moment().diff(firstSeen, 'd');
   }
-}
+};
+export default getNumberOFDays;

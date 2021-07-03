@@ -25,7 +25,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     channel: TextChannel,
     channelName: string,
     charName: string,
-    timezone: string = 'UTC',
+    timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
     return await channel.send(
       `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} left: ${channelName}`,
@@ -37,7 +37,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     channel: TextChannel,
     channelName: string,
     charName: string,
-    timezone: string = 'UTC',
+    timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
     return await channel.send(
       `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} joined: ${channelName}`,
@@ -50,7 +50,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     fromChannelName: string,
     toChannelName: string,
     charName: string,
-    timezone: string = 'UTC',
+    timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
     return await channel.send(
       `(${moment()
@@ -60,7 +60,13 @@ export default class VoiceLogListener extends SassybotEventListener {
     );
   }
   public readonly event = 'voiceStateUpdate';
-  public getEventListener() {
+  public getEventListener(): ({
+    previousMemberState,
+    currentMemberState,
+  }: {
+    previousMemberState: VoiceState;
+    currentMemberState: VoiceState;
+  }) => Promise<void> {
     return this.listener.bind(this);
   }
 

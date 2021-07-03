@@ -1,4 +1,6 @@
-import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+// disable because non-ts XIVApi
+import { CollectorFilter, Message, MessageCollector, MessageReaction, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import { CoTAPIId, CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
@@ -34,7 +36,7 @@ export default class PromoteCommand extends ActivityCommand {
       return;
     }
 
-    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+    const reactionFilter: CollectorFilter = (reaction: MessageReaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
 
@@ -42,7 +44,9 @@ export default class PromoteCommand extends ActivityCommand {
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
     await message.channel.send('__Current Promotion Requests:__\n');
-    const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    const memberList = (await xiv.freecompany.get(CoTAPIId, { data: 'FCM' })) as {
+      FreeCompanyMembers: IFreeCompanyMember[];
+    };
     let includeApiIds: number[] = [];
     if (memberList && memberList.FreeCompanyMembers) {
       includeApiIds = memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => member.ID);
@@ -157,10 +161,13 @@ export default class PromoteCommand extends ActivityCommand {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
       const messageCollector = new MessageCollector(message.channel, filter);
-      messageCollector.on('collect', async (collectedMessage: Message) => {
-        promotion.CotMember = await this.parseCharacterName(collectedMessage);
-        await this.summarizeData(collectedMessage, promotion);
-        messageCollector.stop();
+      messageCollector.on('collect', (collectedMessage: Message) => {
+        const asyncWork = async () => {
+          promotion.CotMember = await this.parseCharacterName(collectedMessage);
+          await this.summarizeData(collectedMessage, promotion);
+          messageCollector.stop();
+        };
+        void asyncWork();
       });
     } else {
       const existingPromotion = await this.sb.dbConnection

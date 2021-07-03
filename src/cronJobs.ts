@@ -1,18 +1,22 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+// disabled for XIVApi
 import moment from 'moment';
-import { In, LessThan } from 'typeorm';
+import { DeleteResult, In, LessThan } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
 import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
-import { GuildMember } from 'discord.js';
+import { DiscordAPIError, GuildMember } from 'discord.js';
 // @ts-ignore
 import XIVApi from '@xivapi/js';
 import AbsentRequest from './entity/AbsentRequest';
 
+export type IJob = (sb: Sassybot) => Promise<void>;
+
 export interface IScheduledJob {
-  job: (sb: Sassybot) => Promise<void>;
+  job: IJob;
   schedule: string;
 }
 
@@ -33,7 +37,6 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
     if (memberList && memberList.FreeCompanyMembers) {
       return memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
-        let exactRecruit = false;
         switch (Rank) {
           case 'FOUNDER':
           case 'FCM':
@@ -44,7 +47,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             return {
               ...member,
               Rank: 'OFFICER',
-              exactRecruit,
+              exactRecruit: false,
             };
           case 'VETERAN':
           case 'STEWARDS':
@@ -52,25 +55,29 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             return {
               ...member,
               Rank: 'VETERAN',
-              exactRecruit,
+              exactRecruit: false,
             };
           case 'DIGNITARY':
           case 'MEMBER':
             return {
               ...member,
               Rank: 'MEMBER',
-              exactRecruit,
+              exactRecruit: false,
             };
           case 'RECRUIT':
-            exactRecruit = true;
+            return {
+              ...member,
+              Rank: 'RECRUIT',
+              exactRecruit: true,
+            };
           default:
             return {
               ...member,
               Rank: 'RECRUIT',
-              exactRecruit,
+              exactRecruit: false,
             };
         }
-      });
+      }) as IFreeCompanyMember[];
     } else {
       sb.logger.error('Could not fetch member list');
     }
@@ -80,7 +87,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
   return [];
 };
 
-const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
+const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
   const pullTime = new Date();
   const lodestoneMembers = await getLatestMemberList(sb);
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
@@ -177,17 +184,23 @@ const updateCotMembersFromLodeStone = async (sb: Sassybot) => {
             await discordMember.roles.remove(discordRemove, 'updated in lodestone');
           }
         }
-      } catch (e) {
+      } catch (e: unknown) {
         // user no longer in discord
-        if (e.message === 'Unknown Member' && e.httpStatus === 404 && character.id) {
-          await characterRepo.query(`UPDATE ffxiv_char SET userDiscordUserId = NULL WHERE id = ${character.id}`);
+        if (e instanceof DiscordAPIError) {
+          if (e.message === 'Unknown Member' && e.httpStatus === 404 && character.id) {
+            await characterRepo.query(`UPDATE ffxiv_char
+                                       SET userDiscordUserId = NULL
+                                       WHERE id = ${character.id}`);
+          } else {
+            sb.logger.error('message', e);
+          }
         }
       }
     }
   }
 };
 
-const checkForReminders = async (sb: Sassybot) => {
+const checkForReminders: IJob = async (sb: Sassybot) => {
   const TWENTY_DAYS_AGO = new Date();
   TWENTY_DAYS_AGO.setTime(new Date().getTime() - 480 * (60 * 60 * 1000));
   const [oldPromotionCount, officeRole] = await Promise.all([
@@ -205,26 +218,26 @@ const checkForReminders = async (sb: Sassybot) => {
     const isAre = oldPromotionCount === 1 ? 'is' : 'are';
     const sOrEmpty = oldPromotionCount > 1 ? 's' : '';
     await officerChat.send(
-      `Hi ${officeRole}, I'm just here to let you know that there ${isAre} currently ${oldPromotionCount} promotion request${sOrEmpty} that ${isAre} more than 20 days old.`,
+      `Hi ${officeRole.toString()}, I'm just here to let you know that there ${isAre} currently ${oldPromotionCount} promotion request${sOrEmpty} that ${isAre} more than 20 days old.`,
     );
   }
 };
 
-const deletePastEvents = async (sb: Sassybot) => {
+const deletePastEvents: IJob = async (sb: Sassybot) => {
   const eventRepo = sb.dbConnection.getRepository(Event);
   const YESTERDAY = new Date();
   YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
   await eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) });
 };
 
-const deletePastAbsences = async (sb: Sassybot) => {
+const deletePastAbsences: IJob = async (sb: Sassybot) => {
   const absentRepo = sb.dbConnection.getRepository(AbsentRequest);
   const YESTERDAY = new Date();
   YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
   await absentRepo.delete({ endDate: LessThan<Date>(YESTERDAY) });
 };
 
-const cleanUpOldMembers = async (sb: Sassybot) => {
+const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
   const nowMoment = moment();
   const FIFTEEN_DAYS_AGO = nowMoment.subtract(15, 'days').toDate();
   const THIRTY_ONE_DAYS_AGO = nowMoment.subtract(31, 'days').toDate();
@@ -253,7 +266,7 @@ const cleanUpOldMembers = async (sb: Sassybot) => {
   for (let i = 0, iMax = allLostMembers.length; i < iMax; i++) {
     const member = allLostMembers[i];
     const discordId = member.character.user?.discordUserId;
-    const promises: Promise<any>[] = [];
+    const promises: Promise<DeleteResult | GuildMember>[] = [];
     if (discordId) {
       const discordMember: GuildMember | undefined | false = await sb
         .getMember(GuildIds.COT_GUILD_ID, discordId)

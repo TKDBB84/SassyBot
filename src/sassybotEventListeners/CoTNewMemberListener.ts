@@ -13,17 +13,17 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     );
   }
 
-  private async couldNotRemoveRole(message: Message, role: any, error: any) {
+  private async couldNotRemoveRole(message: Message, role: CotRanks, error: unknown) {
     const sasner = await this.sb.getSasner();
-    this.sb.logger.warn('could not remove role', { role, error });
+    this.sb.logger.warn('could not remove role', [role, error]);
     await message.channel.send(
-      `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner} for help.`,
+      `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner.toString()} for help.`,
       { reply: message.author },
     );
   }
 
   public readonly event = 'guildMemberAdd';
-  public getEventListener() {
+  public getEventListener(): ({ member }: { member: GuildMember }) => Promise<void> {
     return this.listener.bind(this);
   }
 
@@ -62,23 +62,27 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     const messageCollector = new MessageCollector(newMemberChannel, messageFilter);
     let messageCount = 0;
     let declaredName = '';
-    messageCollector.on('collect', async (message) => {
-      switch (messageCount) {
-        case 0:
-          declaredName = message.cleanContent;
-          await this.declaringCharacterName(message);
-          await CoTNewMemberListener.requestRuleAgreement(message);
-          break;
-        case 1:
-          const agreed = await this.acceptingTerms(declaredName, message);
-          if (agreed) {
-            messageCollector.stop();
-          } else {
-            messageCount = 0;
+    messageCollector.on('collect', (message: Message) => {
+      const asyncWork = async () => {
+        switch (messageCount) {
+          case 0:
+            declaredName = message.cleanContent;
+            await this.declaringCharacterName(message);
+            await CoTNewMemberListener.requestRuleAgreement(message);
+            break;
+          case 1: {
+            const agreed = await this.acceptingTerms(declaredName, message);
+            if (agreed) {
+              messageCollector.stop();
+            } else {
+              messageCount = 0;
+            }
+            break;
           }
-          break;
-      }
-      messageCount++;
+        }
+        messageCount++;
+      };
+      void asyncWork();
     });
   }
 
@@ -97,7 +101,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
         { reply: message.author },
       );
-      this.sb.logger.warn('unable to update nickname', { error });
+      this.sb.logger.warn('unable to update nickname', error);
     });
     const nameMatch = await this.sb.dbConnection
       .getRepository(FFXIVChar)
