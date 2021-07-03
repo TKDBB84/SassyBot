@@ -6,8 +6,8 @@ export const enum GuildIds {
 
 export const NewUserChannels = {
   [GuildIds.COT_GUILD_ID]: '601971412000833556',
-  [GuildIds.GAMEZZZ_GUILD_ID]: '',
-  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: '',
+  [GuildIds.GAMEZZZ_GUILD_ID]: 'xx',
+  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: 'xx',
 };
 export const ONE_HOUR = 3600000;
 export const CoTOfficerChannelId = '331196148079394836';
@@ -15,6 +15,7 @@ export const CoTButtStuffChannelId = '331786517041119233';
 export const CoTPromotionChannelId = '362037806178238464';
 export const CoTAPIId = '9229001536389012456';
 export const PodcastRoleId = '784239695771992065';
+export const SassybotLogChannelId = '848648942740963338';
 
 export const enum UserIds {
   BRIGIE = '189195422114381824',
@@ -86,4 +87,4 @@ export enum EVENT_REPEATING_TYPE {
   MONTHLY,
 }
 
-export const affirmativeResponses = ['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea', 'yi', 'ye']
+export const affirmativeResponses = ['yes', 'y', 'yup', 'sure', 'ye', 'yeah', 'si', 'yah', 'yea', 'yi', 'ye'];

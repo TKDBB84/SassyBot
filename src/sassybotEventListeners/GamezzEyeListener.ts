@@ -4,7 +4,7 @@ import { GuildIds, UserIds } from '../consts';
 
 export default class GamezzEyeListenerListener extends SassybotEventListener {
   public readonly event = 'messageReceived';
-  public getEventListener() {
+  public getEventListener(): ({ message }: { message: Message }) => Promise<void> {
     return this.listener.bind(this);
   }
 
@@ -26,8 +26,8 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
     const leftEyesExp = /.*<(\s*.\s*)<.*/;
     const rightEyesExp = /.*>(\s*.\s*)>.*/;
 
-    const messageLeft = message.content.match(leftEyesExp);
-    const messageRight = message.content.match(rightEyesExp);
+    const messageLeft = leftEyesExp.exec(message.content);
+    const messageRight = rightEyesExp.exec(message.content);
     let leftResponse = '';
     let leftEyes = '';
     let rightResponse = '';
@@ -55,8 +55,8 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
 
     if (outMessage === '') {
       const authorNickname = message.member.nickname ? message.member.nickname : message.author.username;
-      const authorLeft = authorNickname.match(leftEyesExp);
-      const authorRight = authorNickname.match(rightEyesExp);
+      const authorLeft = leftEyesExp.exec(authorNickname);
+      const authorRight = rightEyesExp.exec(authorNickname);
       if (authorLeft) {
         outMessage = `>${authorLeft[1]}> (but only because you named yourself that)`;
       } else if (authorRight) {

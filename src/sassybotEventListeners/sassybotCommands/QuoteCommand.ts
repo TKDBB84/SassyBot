@@ -37,10 +37,13 @@ export default class QuoteCommand extends SassybotCommand {
             .filter(RegExp.prototype.test.bind(/^\+?(0|[1-9]\d*)$/))
             .map(parseInt);
           if (quoteNumbersRequested.length && members && members.size === 1) {
-            await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
-              await previousPromise;
-              return this.getUserQuote(message, members.first()!, quoteNumber);
-            }, Promise.resolve());
+            const member = members.first();
+            if (member) {
+              await quoteNumbersRequested.reduce(async (previousPromise, quoteNumber) => {
+                await previousPromise;
+                return this.getUserQuote(message, member, quoteNumber);
+              }, Promise.resolve());
+            }
             return;
           }
         }

@@ -1,5 +1,5 @@
 import { Message, MessageOptions, TextChannel, VoiceState } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import { GuildIds } from '../consts';
 import SpamChannel from '../entity/SpamChannel';
@@ -10,6 +10,9 @@ interface IIgnoredVoiceChannelsMap {
 }
 
 export default class VoiceLogListener extends SassybotEventListener {
+  private static messageOptions: MessageOptions = {
+    split: false,
+  };
   private static readonly TIME_FORMAT = 'HH:mm z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
@@ -19,35 +22,51 @@ export default class VoiceLogListener extends SassybotEventListener {
   };
 
   private static async sendLeftMessage(
-    channel: TextChannel | null,
-    time: string,
+    channel: TextChannel,
     channelName: string,
     charName: string,
+    timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
-    if (channel) {
-      const options: MessageOptions = {
-        split: false,
-      };
-      return await channel.send(`(${time}) ${charName} left: ${channelName}`, options);
-    }
+    return await channel.send(
+      `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} left: ${channelName}`,
+      this.messageOptions,
+    );
   }
 
   private static async sendJoinedMessage(
-    channel: TextChannel | null,
-    time: string,
+    channel: TextChannel,
     channelName: string,
     charName: string,
+    timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
-    if (channel) {
-      const options: MessageOptions = {
-        split: false,
-      };
+    return await channel.send(
+      `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} joined: ${channelName}`,
+      this.messageOptions,
+    );
+  }
 
-      return await channel.send(`(${time}) ${charName} joined: ${channelName}`, options);
-    }
+  private static async sendMovedMessage(
+    channel: TextChannel,
+    fromChannelName: string,
+    toChannelName: string,
+    charName: string,
+    timezone = 'UTC',
+  ): Promise<Message | Message[] | void> {
+    return await channel.send(
+      `(${moment()
+        .tz(timezone)
+        .format(VoiceLogListener.TIME_FORMAT)}) ${charName} has moved from: ${fromChannelName}\tto: ${toChannelName}`,
+      this.messageOptions,
+    );
   }
   public readonly event = 'voiceStateUpdate';
-  public getEventListener() {
+  public getEventListener(): ({
+    previousMemberState,
+    currentMemberState,
+  }: {
+    previousMemberState: VoiceState;
+    currentMemberState: VoiceState;
+  }) => Promise<void> {
     return this.listener.bind(this);
   }
 
@@ -90,8 +109,7 @@ export default class VoiceLogListener extends SassybotEventListener {
 
     let [userLeftChannel, userJoinedChannel] = promiseResolution;
     const [, , spamChannel, timezone] = promiseResolution;
-
-    if (!userLeftChannel && !userJoinedChannel) {
+    if (!spamChannel || (!userLeftChannel && !userJoinedChannel)) {
       return;
     }
 
@@ -111,61 +129,28 @@ export default class VoiceLogListener extends SassybotEventListener {
       userJoinedChannel = null;
     }
 
-    let previousMemberName;
-    const previousMemberDisplayName = (previousMemberState.member?.displayName || '').trim();
-    const previousMemberUsername = (previousMemberState.member?.user.username || '').trim();
-    if (previousMemberDisplayName === previousMemberUsername) {
-      previousMemberName = previousMemberDisplayName;
-    } else {
-      previousMemberName = `${previousMemberDisplayName} (${previousMemberUsername})`;
-    }
-
-    let currentMemberName;
-    const currentMemberDisplayName = (currentMemberState.member?.displayName || '').trim();
-    const currentMemberUsername = (currentMemberState.member?.user.username || '').trim();
-    if (currentMemberDisplayName === currentMemberUsername) {
-      currentMemberName = currentMemberDisplayName;
-    } else {
-      currentMemberName = `${currentMemberDisplayName} (${currentMemberUsername})`;
-    }
-
-    const leftNow: moment.Moment = moment().tz(timezone || 'UTC');
-
-    const joinedNow: moment.Moment = moment().tz(timezone || 'UTC');
-
-    if (userLeftChannel && userJoinedChannel) {
-      // user moved
-      if (userJoinedChannel.id !== userLeftChannel.id) {
-        // moved within server
-        let time = `(${leftNow.format(VoiceLogListener.TIME_FORMAT)})`;
-        if (!spamChannel) {
-          time = `(${joinedNow.format(VoiceLogListener.TIME_FORMAT)})`;
-        }
-        if (spamChannel) {
-          await spamChannel.send(
-            `${time} ${currentMemberName} has moved from: ${userLeftChannel.name}\tto: ${userJoinedChannel.name}`,
-          );
-        }
-        return;
+    const [previousMemberName, currentMemberName] = [previousMemberState, currentMemberState].map((memberState) => {
+      const memberDisplayName = (memberState.member?.displayName || '').trim();
+      const memberUsername = (memberState.member?.user.username || '').trim();
+      if (memberUsername && memberUsername !== memberDisplayName) {
+        return `${memberDisplayName} (${memberUsername})`;
       }
-    }
-    if (userJoinedChannel && !userLeftChannel) {
-      await VoiceLogListener.sendJoinedMessage(
+      return memberDisplayName;
+    });
+
+    if (userLeftChannel && userJoinedChannel && userJoinedChannel.id !== userLeftChannel.id) {
+      // moved within server
+      await VoiceLogListener.sendMovedMessage(
         spamChannel,
-        joinedNow.format(VoiceLogListener.TIME_FORMAT),
+        userLeftChannel.name,
         userJoinedChannel.name,
         currentMemberName,
+        timezone,
       );
-      return;
-    }
-    if (userLeftChannel && !userJoinedChannel) {
-      await VoiceLogListener.sendLeftMessage(
-        spamChannel,
-        leftNow.format(VoiceLogListener.TIME_FORMAT),
-        userLeftChannel.name,
-        previousMemberName,
-      );
-      return;
+    } else if (userJoinedChannel && !userLeftChannel) {
+      await VoiceLogListener.sendJoinedMessage(spamChannel, userJoinedChannel.name, currentMemberName, timezone);
+    } else if (userLeftChannel && !userJoinedChannel) {
+      await VoiceLogListener.sendLeftMessage(spamChannel, userLeftChannel.name, previousMemberName, timezone);
     }
   }
 }

@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 import { UserIds } from '../../consts';
 import SpamChannel from '../../entity/SpamChannel';
-import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 
 export default class SpamCommand extends SassybotCommand {
@@ -11,7 +10,7 @@ export default class SpamCommand extends SassybotCommand {
     return 'usage: `!{sassybot|sb}` spam -- this cause me to spam users enter, leaving, or changing voice rooms into the channel this commands was specified -- only available to admins';
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  protected async listener({ message }: { message: Message }): Promise<void> {
     if (!message.guild) {
       return;
     }

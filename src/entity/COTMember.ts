@@ -23,11 +23,13 @@ export default class COTMember {
       cotMember.character = cotCharacter;
       cotMember.rank = rank;
       cotMember.firstSeenDiscord = new Date();
-      try {
-        cotMember = await cotMemberRepo.save(cotMember, { reload: true });
-      } catch (error) {
-        logger.warn('error saving member', { error, foundMember, cotMember });
-        throw error;
+      if (rank !== CotRanks.NEW) {
+        try {
+          cotMember = await cotMemberRepo.save(cotMember, { reload: true });
+        } catch (error: unknown) {
+          logger.warn('error saving member', [{ foundMember, cotMember }, error]);
+          throw error;
+        }
       }
     } else {
       const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();

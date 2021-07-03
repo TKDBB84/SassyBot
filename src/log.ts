@@ -1,7 +1,9 @@
-import * as winston from 'winston';
+import winston from 'winston';
+import DiscordTransport from 'winston-discordjs';
+import { Client, TextChannel } from 'discord.js';
 
 let winLogger;
-const config = {
+const config: winston.LoggerOptions = {
   exceptionHandlers: [
     new winston.transports.Console({
       format: winston.format.combine(
@@ -39,4 +41,48 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-export const logger = winLogger;
+const createLogger = (discordClient: Client, discordChannel: TextChannel): winston.Logger => {
+  const withDiscord: winston.LoggerOptions = {
+    exceptionHandlers: [
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.timestamp(),
+          winston.format.colorize(),
+          winston.format.splat(),
+          winston.format.simple(),
+        ),
+        level: 'error',
+        stderrLevels: ['error'],
+      }),
+    ],
+    format: winston.format.combine(winston.format.timestamp(), winston.format.simple()),
+    transports: [
+      new DiscordTransport({
+        discordClient,
+        discordChannel,
+      }),
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.timestamp(),
+          winston.format.colorize(),
+          winston.format.splat(),
+          winston.format.simple(),
+        ),
+        stderrLevels: ['error'],
+      }),
+    ],
+  };
+  if (process.env.NODE_ENV === 'production') {
+    return winston.createLogger({
+      level: 'info',
+      ...withDiscord,
+    });
+  }
+  return winston.createLogger({
+    level: 'silly',
+    ...config,
+  });
+};
+
+const logger = winLogger;
+export { createLogger, logger };

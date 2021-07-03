@@ -7,17 +7,13 @@ import SbUser from '../../../entity/SbUser';
 import FFXIVChar from '../../../entity/FFXIVChar';
 
 export default abstract class ActivityCommand extends SassybotCommand {
-  public getHelpText(): string {
-    return `usage: \`!{sassybot|sb} ${this.commands.join(', ')}\` -- @Sasner#1337 you should really fill this out`;
-  }
-
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     if (!message.guild || !message.member) {
       return;
     }
-    const OfficerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (
-      (OfficerRole && message.member.roles.highest.comparePositionTo(OfficerRole) >= 0) ||
+      (officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
       message.author.id === UserIds.SASNER
     ) {
       await this.listAll(message);
@@ -26,7 +22,7 @@ export default abstract class ActivityCommand extends SassybotCommand {
     }
   }
 
-  protected async requestCharacterName(message: Message) {
+  protected async requestCharacterName(message: Message): Promise<void> {
     await message.channel.send('First, Tell Me Your Full Character Name');
   }
 

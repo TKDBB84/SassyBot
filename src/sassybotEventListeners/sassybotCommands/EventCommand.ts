@@ -1,5 +1,5 @@
 import { Collection, CollectorFilter, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
-import * as moment from 'moment';
+import moment from 'moment';
 import 'moment-timezone';
 import Event from '../../entity/Event';
 import SbUser from '../../entity/SbUser';
@@ -49,7 +49,7 @@ export default class EventCommand extends SassybotCommand {
     }
 
     const compressedArgs = params.args.replace(/\s\s+/g, ' ').trim();
-    const matches = compressedArgs.match(/^(create)?\s?(.*)/);
+    const matches = /^(create)?\s?(.*)/.exec(compressedArgs);
     const isCreating = matches?.[1] === 'create';
     const eventName = matches?.[2];
     if (!eventName || eventName === '') {
@@ -91,6 +91,7 @@ export default class EventCommand extends SassybotCommand {
       allEvents.push({
         id: 123456789,
         eventName: "averil's mount farming",
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         user: { discordUserId: '0' },
         eventTime: nextSaturday.toDate(),
@@ -104,6 +105,7 @@ export default class EventCommand extends SassybotCommand {
       allEvents.push({
         id: 123456789,
         eventName: 'Ashkeeper',
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         user: { discordUserId: '0' },
         eventTime: nextSaturday.toDate(),
@@ -125,7 +127,7 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private listenForReaction(sentMessage: Message, authorId: string, eventIdToDelete: number) {
-    const reactionCollectorFilter: CollectorFilter = (reaction, user: User): boolean => {
+    const reactionCollectorFilter: CollectorFilter = (reaction: MessageReaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '🔁') && user.id === authorId;
     };
     const reactionCollectorOptions = {
@@ -134,25 +136,28 @@ export default class EventCommand extends SassybotCommand {
       maxUsers: 1,
       time: 300000, // 5 min
     };
-    Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
+    void Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
       ([reactionRepeat, reactionNo]: MessageReaction[]) => {
         const reactionCollector = sentMessage.createReactionCollector(
           reactionCollectorFilter,
           reactionCollectorOptions,
         );
-        reactionCollector.on('end', async (collected: Collection<Snowflake, MessageReaction>) => {
-          await EventCommand.removeReactions([reactionRepeat, reactionNo]);
-          if (collected && collected.size > 0) {
-            const reaction = collected.first();
-            if (reaction?.emoji.name === '⛔') {
-              await this.deleteEvent(sentMessage, eventIdToDelete);
-            } else if (reaction?.emoji.name === '🔁') {
-              // do repeating things
-              await sentMessage.channel.send(
-                "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
-              );
+        reactionCollector.on('end', (collected: Collection<Snowflake, MessageReaction>) => {
+          const doAsyncWork = async () => {
+            await EventCommand.removeReactions([reactionRepeat, reactionNo]);
+            if (collected && collected.size > 0) {
+              const reaction = collected.first();
+              if (reaction?.emoji.name === '⛔') {
+                await this.deleteEvent(sentMessage, eventIdToDelete);
+              } else if (reaction?.emoji.name === '🔁') {
+                // do repeating things
+                await sentMessage.channel.send(
+                  "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
+                );
+              }
             }
-          }
+          };
+          void doAsyncWork();
         });
       },
     );
@@ -163,12 +168,15 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async deleteEvent(sentMessage: Message, eventIdToDelete: number): Promise<boolean> {
-    const toResolve: Promise<any>[] = [];
-    const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', sentMessage.guild!.id);
-    if (canDelete) {
-      toResolve.push(sentMessage.delete());
+    const toResolve: Promise<Message | true>[] = [];
+    const guildId = sentMessage.guild?.id;
+    if (guildId) {
+      const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', guildId);
+      if (canDelete) {
+        toResolve.push(sentMessage.delete());
+      }
+      toResolve.push(Event.delete(eventIdToDelete));
     }
-    toResolve.push(Event.delete(eventIdToDelete));
     return !!(await Promise.all(toResolve));
   }
 
@@ -197,34 +205,37 @@ export default class EventCommand extends SassybotCommand {
       const possibleTime = filterMessage.cleanContent.toLowerCase();
       const matches = validDateFormats.some((format) => moment.tz(possibleTime, format, userTz).isValid());
       if (!matches) {
-        filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
+        void filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
       }
       return matches;
     };
 
     if (this.sb.isTextChannel(message.channel)) {
       const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
-      messageCollector.on('end', async (collected: Collection<string, Message>) => {
-        const collectedMessage = collected.first();
-        if (collectedMessage) {
-          const timeString = collectedMessage.cleanContent.toLowerCase();
-          const matchingFormat = validDateFormats.filter((format) => moment.tz(timeString, format, userTz).isValid());
+      messageCollector.on('end', (collected: Collection<string, Message>) => {
+        const doAsyncWork = async () => {
+          const collectedMessage = collected.first();
+          if (collectedMessage) {
+            const timeString = collectedMessage.cleanContent.toLowerCase();
+            const matchingFormat = validDateFormats.filter((format) => moment.tz(timeString, format, userTz).isValid());
 
-          const eventRepo = this.sb.dbConnection.getRepository(Event);
-          const event = new Event();
-          event.eventName = eventName.toLowerCase().trim();
-          event.eventTime = moment.tz(timeString, matchingFormat, userTz).utc().toDate();
-          event.guildId = guildId;
-          event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
-          const savedEvent = await eventRepo.save(event, { reload: true });
+            const eventRepo = this.sb.dbConnection.getRepository(Event);
+            const event = new Event();
+            event.eventName = eventName.toLowerCase().trim();
+            event.eventTime = moment.tz(timeString, matchingFormat, userTz).utc().toDate();
+            event.guildId = guildId;
+            event.user = await userRepo.findOneOrFail({ where: { discordUserId: message.author.id } });
+            const savedEvent = await eventRepo.save(event, { reload: true });
 
-          const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
-          await message.channel.send(
-            `I have an event: "${savedEvent.eventName}" happening on ${eventMoment
-              .tz(userTz)
-              .format('D, MMM [at] LT z')}`,
-          );
-        }
+            const eventMoment = moment.tz(savedEvent.eventTime, 'UTC');
+            await message.channel.send(
+              `I have an event: "${savedEvent.eventName}" happening on ${eventMoment
+                .tz(userTz)
+                .format('D, MMM [at] LT z')}`,
+            );
+          }
+        };
+        void doAsyncWork();
       });
     }
   }

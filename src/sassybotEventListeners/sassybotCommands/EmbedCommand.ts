@@ -1,9 +1,10 @@
+/* eslint-disable */
 import { Message, MessageCollector, MessageEmbed } from 'discord.js';
 import { affirmativeResponses, UserIds } from '../../consts';
 import { ISassybotCommandParams, XIVAPISearchResponse } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 // @ts-ignore
-import * as XIVApi from '@xivapi/js';
+import XIVApi from '@xivapi/js';
 
 export default class EmbedCommand extends SassybotCommand {
   public readonly commands = ['embed'];
@@ -48,7 +49,6 @@ export default class EmbedCommand extends SassybotCommand {
           if (collectedMessage) {
             if (affirmativeResponses.includes(collectedMessage.cleanContent.trim().toLowerCase())) {
               const chosenCharacter = apiCharacter;
-
             }
           }
         }
@@ -67,7 +67,6 @@ export default class EmbedCommand extends SassybotCommand {
 
         return !(collectedValue <= 0 || collectedValue > apiChars.length);
       };
-      let collector: MessageCollector;
       for (let i = 0; i < apiChars.length; i++) {
         const apiCharacter = apiChars[i];
         const embed = new MessageEmbed({
@@ -80,27 +79,27 @@ export default class EmbedCommand extends SassybotCommand {
         });
         await message.reply(embed);
         if (i === 0) {
-          collector = new MessageCollector(message.channel, filter, { max: 1 });
+          const collector = new MessageCollector(message.channel, filter, { max: 1 });
+          collector.on('end', (collected) => {
+            if (collected.size > 0) {
+              const collectedMessage = collected.first();
+              if (collectedMessage) {
+                const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
+                const chosenCharacter = apiChars[chosenInt];
+                const embed = new MessageEmbed({
+                  title: 'You picked',
+                  description: `this one`,
+                  image: { url: chosenCharacter.Avatar },
+                  footer: {
+                    text: chosenCharacter.Rank || '',
+                  },
+                });
+                void message.reply(embed);
+              }
+            }
+          });
         }
       }
-      collector!.on('end', (collected) => {
-        if (collected.size > 0) {
-          const collectedMessage = collected.first();
-          if (collectedMessage) {
-            const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
-            const chosenCharacter = apiChars[chosenInt];
-            const embed = new MessageEmbed({
-              title: 'You picked',
-              description: `this one`,
-              image: { url: chosenCharacter.Avatar },
-              footer: {
-                text: chosenCharacter.Rank || '',
-              },
-            });
-            message.reply(embed);
-          }
-        }
-      });
     }
   }
 }
