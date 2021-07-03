@@ -1,7 +1,6 @@
 import { Message, MessageCollector } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import {PodcastRoleId, GuildIds, affirmativeResponses} from '../../consts';
+import { PodcastRoleId, GuildIds, affirmativeResponses } from '../../consts';
 
 export default class EchoCommand extends SassybotCommand {
   public readonly commands = ['podcast', 'podcasts'];
@@ -10,7 +9,7 @@ export default class EchoCommand extends SassybotCommand {
     return "usage: `!{sassybot|sb} podcast` -- toggle whether you're interested in participating in the podcast";
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+  protected async listener({ message }: { message: Message }): Promise<void> {
     const messageChannel = message.channel;
     if (
       !message.guild ||
@@ -25,14 +24,17 @@ export default class EchoCommand extends SassybotCommand {
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
       const messageCollector = new MessageCollector(messageChannel, filter, { max: 1, time: 60000 });
       await message.reply('Are you sure you want to leave?');
-      messageCollector.on('collect', async (collectedMessage: Message) => {
-        const text = collectedMessage.cleanContent.toLowerCase();
-        if (affirmativeResponses.includes(text)) {
-          await member.roles.remove(PodcastRoleId, 'requested to leave forward & back');
-          await message.reply('Done! You have been removed.');
-        } else {
-          await message.reply('Not confirmed. No Change Made.');
-        }
+      messageCollector.on('collect', (collectedMessage: Message) => {
+        const doAsyncWork = async () => {
+          const text = collectedMessage.cleanContent.toLowerCase();
+          if (affirmativeResponses.includes(text)) {
+            await member.roles.remove(PodcastRoleId, 'requested to leave forward & back');
+            await message.reply('Done! You have been removed.');
+          } else {
+            await message.reply('Not confirmed. No Change Made.');
+          }
+        };
+        void doAsyncWork();
       });
     } else {
       await member.roles.add(PodcastRoleId, 'request to join forward & back');

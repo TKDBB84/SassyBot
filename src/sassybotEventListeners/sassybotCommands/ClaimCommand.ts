@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { GuildMember, Message } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
@@ -47,32 +47,25 @@ export default class ClaimCommand extends SassybotCommand {
       `I've found your COT Membership, setting you rank to ${CoTRankValueToString[cotMember.rank]}`,
     );
 
-    // noinspection FallThroughInSwitchStatementJS
-    switch (cotMember.rank) {
-      case CotRanks.OFFICER:
-        await message.channel.send(
-          "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
-        );
-      case CotRanks.VETERAN:
-        try {
-          await message.member.roles.add(CotRanks.VETERAN, 'user claimed Veteran member');
-        } catch (error) {
-          this.sb.logger.warn('unable to add role', {
-            error,
-            member: message.member,
-            rank: cotMember.rank,
-          });
-        }
-      case CotRanks.OTHER:
-      case CotRanks.MEMBER:
-      case CotRanks.RECRUIT:
-      default:
-        try {
-          await message.member.roles.add(cotMember.rank, 'user claimed member');
-        } catch (error) {
-          this.sb.logger.warn('unable to add role (2)', { error, member: message.member, rankRole: cotMember.rank });
-        }
-        break;
+    if (cotMember.rank === CotRanks.OFFICER) {
+      await message.channel.send(
+        "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
+      );
+      await this.addRole(message.member, CotRanks.VETERAN);
+      return;
+    }
+
+    if (cotMember.rank === CotRanks.OTHER) {
+      cotMember.rank = CotRanks.GUEST;
+    }
+    await this.addRole(message.member, cotMember.rank);
+  }
+
+  private async addRole(member: GuildMember, rank: CotRanks): Promise<void> {
+    try {
+      await member.roles.add(rank, 'user claimed member');
+    } catch (error) {
+      this.sb.logger.warn('unable to add role', [{ member, rankRole: rank }, error]);
     }
   }
 }

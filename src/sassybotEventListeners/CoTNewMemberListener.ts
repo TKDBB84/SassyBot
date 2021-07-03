@@ -1,18 +1,14 @@
-import {
-  GuildMember,
-  Message,
-  MessageCollector,
-  MessageEmbed,
-  TextChannel
-} from 'discord.js';
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+// disabled for XIVApi
+import { GuildMember, Message, MessageCollector, MessageEmbed, TextChannel } from 'discord.js';
 import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../consts';
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
 import SassybotEventListener from './SassybotEventListener';
 import SbUser from '../entity/SbUser';
-import {XIVAPISearchResponse} from '../Sassybot'
+import { XIVAPISearchResponse } from '../Sassybot';
 // @ts-ignore
-import * as XIVApi from 'xivapi-js';
+import XIVApi from 'xivapi-js';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static async requestRuleAgreement(message: Message) {
@@ -23,22 +19,22 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     );
   }
 
-  private async couldNotRemoveRole(message: Message, role: any, error: any) {
-    this.sb.logger.warn('could not remove role', { role, error });
+  private async couldNotRemoveRole(message: Message, role: CotRanks, error: unknown) {
+    this.sb.logger.warn('could not remove role', [{ role }, error]);
     await message.channel.send(
       "Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please user an @here or contact @Sasner#1337 for help.",
       { reply: message.author },
     );
   }
-  private async couldNotAddRole(message: Message, role: any, error: any) {
-    this.sb.logger.warn('could not add role', { role, error });
+  private async couldNotAddRole(message: Message, role: CotRanks, error: unknown) {
+    this.sb.logger.warn('could not add role', [{ role }, error]);
     await message.channel.send(
       `Sorry I'm a terrible bot, I wasn't able to add your Proper Rank, please contact @Sasner#1337 for help.`,
       { reply: message.author },
     );
   }
   public readonly event = 'guildMemberAdd';
-  public getEventListener() {
+  public getEventListener(): ({ member }: { member: GuildMember }) => Promise<void> {
     return this.listener.bind(this);
   }
 
@@ -74,29 +70,32 @@ export default class CoTNewMemberListener extends SassybotEventListener {
         reply: member,
       },
     );
-    const messageFilter = (message: Message) => {
-      return message.author.id === member.user.id && message.cleanContent.trim().length > 0;
+    const messageFilter = (filterMessage: Message) => {
+      return filterMessage.author.id === member.user.id && filterMessage.cleanContent.trim().length > 0;
     };
     const messageCollector = new MessageCollector(newMemberChannel, messageFilter);
     let messageCount = 0;
-    let declaredName = '';
-    messageCollector.on('collect', async (message) => {
+    const messageCollectorProcessor = async (collectedMessage: Message) => {
       switch (messageCount) {
-        case 0:
-          declaredName = message.cleanContent;
-          await this.declaringCharacterName(message, sbUser);
-          await CoTNewMemberListener.requestRuleAgreement(message);
+        case 0: {
+          await this.declaringCharacterName(collectedMessage, sbUser);
+          await CoTNewMemberListener.requestRuleAgreement(collectedMessage);
           break;
-        case 1:
-          const agreed = await this.acceptingTerms(message);
+        }
+        case 1: {
+          const agreed = await this.acceptingTerms(collectedMessage);
           if (agreed) {
             messageCollector.stop();
           } else {
             messageCount = 0;
           }
           break;
+        }
       }
       messageCount++;
+    };
+    messageCollector.on('collect', (_message: Message) => {
+      void messageCollectorProcessor(_message);
     });
   }
 
@@ -108,30 +107,30 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     const declaredName = message.cleanContent.trim();
     const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
 
-    const matchingToon = await this.sb.dbConnection.getRepository<FFXIVChar>(FFXIVChar).createQueryBuilder()
+    const matchingToon = await this.sb.dbConnection
+      .getRepository<FFXIVChar>(FFXIVChar)
+      .createQueryBuilder()
       .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
       .getOne();
 
     if (!matchingToon || !matchingToon.apiId) {
-      const { Results }: XIVAPISearchResponse = await xiv.character.search(declaredName, {server: 'Jenova'})
-      const apiChars = Results.filter(result => result.Name.trim().toLowerCase() !== declaredName.toLowerCase())
+      const { Results }: XIVAPISearchResponse = await xiv.character.search(declaredName, { server: 'Jenova' });
+      const apiChars = Results.filter((result) => result.Name.trim().toLowerCase() !== declaredName.toLowerCase());
       if (apiChars.length === 1) {
-        const apiCharacter = apiChars[0]
+        const apiCharacter = apiChars[0];
         const embed = new MessageEmbed({
           title: 'This You?',
           description: 'Is this your character?',
-          image: {url: apiCharacter.Avatar },
+          image: { url: apiCharacter.Avatar },
           footer: {
-            text: 'Yes/No'
-          }
-        })
-        await message.reply(embed)
+            text: 'Yes/No',
+          },
+        });
+        await message.reply(embed);
       } else {
-
         // ?!?!?! multi match
       }
     }
-
 
     const characterMatchingName = await FFXIVChar.findOrCreateCharacter(declaredName.toLowerCase(), sbUser);
     if (message.member.displayName.toLowerCase().trim() !== declaredName.toLowerCase().trim()) {
@@ -142,7 +141,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
           'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
           { reply: message.author },
         );
-        this.sb.logger.warn('unable to update nickname', { error });
+        this.sb.logger.warn('unable to update nickname', error);
       }
     }
 

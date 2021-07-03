@@ -1,5 +1,5 @@
-import { CollectorFilter, Message, MessageCollector, User } from 'discord.js';
-import * as moment from 'moment';
+import { CollectorFilter, Message, MessageCollector, MessageReaction, User } from 'discord.js';
+import moment from 'moment';
 import 'moment-timezone';
 import { CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
@@ -8,6 +8,9 @@ import getNumberOFDays from '../lib/GetNumberOfDays';
 
 export default class PromoteCommand extends ActivityCommand {
   public readonly commands = ['promote', 'promotion'];
+  protected getHelpText(): string {
+    return `Usage: \`!sb promote -- I will mark you as requesting a promotion, the Officers review promotions when they can, and will finalize things.`;
+  }
 
   protected async listAll(message: Message): Promise<void> {
     const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
@@ -17,7 +20,7 @@ export default class PromoteCommand extends ActivityCommand {
       return;
     }
 
-    const reactionFilter: CollectorFilter = (reaction, user: User): boolean => {
+    const reactionFilter: CollectorFilter = (reaction: MessageReaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
 
@@ -87,12 +90,14 @@ export default class PromoteCommand extends ActivityCommand {
                   await member.roles.add(newRole, reason);
                   await member.roles.remove(previousRole, reason);
                 } catch (error) {
-                  this.sb.logger.warn('error promoting member, adding/removing rank:', {
+                  this.sb.logger.warn('error promoting member, adding/removing rank:', [
+                    {
+                      member,
+                      newRole,
+                      previousRole,
+                    },
                     error,
-                    member,
-                    newRole,
-                    previousRole,
-                  });
+                  ]);
                   await message.reply(
                     `I was unable to change ${promotion.CotMember.character.name}'s rank, please update it when you have a moment.`,
                   );
@@ -130,15 +135,18 @@ export default class PromoteCommand extends ActivityCommand {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
       const messageCollector = new MessageCollector(message.channel, filter);
-      messageCollector.on('collect', async (collectedMessage: Message) => {
-        try {
-          promotion.CotMember = await this.parseCharacterName(collectedMessage);
-          await this.summarizeData(collectedMessage, promotion);
-        } catch (error) {
-          this.sb.logger.error('could not find cot member', error);
-        } finally {
-          messageCollector.stop();
-        }
+      messageCollector.on('collect', (collectedMessage: Message) => {
+        const asyncWork = async () => {
+          try {
+            promotion.CotMember = await this.parseCharacterName(collectedMessage);
+            await this.summarizeData(collectedMessage, promotion);
+          } catch (error) {
+            this.sb.logger.error('could not find cot member', error);
+          } finally {
+            messageCollector.stop();
+          }
+        };
+        void asyncWork();
       });
     } else {
       const existingPromotion = await this.sb.dbConnection
