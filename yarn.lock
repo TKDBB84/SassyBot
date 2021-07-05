@@ -322,10 +322,10 @@
     "@typescript-eslint/types" "4.28.1"
     eslint-visitor-keys "^2.0.0"
 
-"@xivapi/js@^0.3.2":
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/@xivapi/js/-/js-0.3.2.tgz#ff02facd3f491c0d2d86a828e3245042a9beb310"
-  integrity sha512-ZWyBx8COg1gM9zF+xo9v9tIwCHznNjS0PHC7JO6aFY6gBGjubjzLClxQLaVLXkxZDsUQu8QZrWq4/i7eR8Yx7g==
+"@xivapi/js@^0.3.3":
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/@xivapi/js/-/js-0.3.3.tgz#3fa103f5a6f87130d1f89bc32fdfc104c584e1cf"
+  integrity sha512-pcx6+6Kn/oAcneqyM0bZH2AFB4oBEngsiDajrMTpWyzbS8ZrSmUYQmjzKl/A46DXhV+1J8r2Ng3BqDFpV3YpiA==
   dependencies:
     request "^2.88.2"
     request-promise-native "^1.0.9"
