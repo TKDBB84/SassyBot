@@ -54,7 +54,7 @@ export default class COTMember {
         try {
           cotMember = await cotMemberRepo.save(cotMember, { reload: true });
         } catch (error: unknown) {
-          logger.warn('error saving member', [{ foundMember, cotMember }, error]);
+          logger.warn('error saving member', [error, foundMember, cotMember]);
           throw error;
         }
       }

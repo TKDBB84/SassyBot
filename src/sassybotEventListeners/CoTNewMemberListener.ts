@@ -149,7 +149,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       ]);
     } catch (error) {
       const sasner = await this.sb.getSasner();
-      this.sb.logger.warn('could not remove role', [{ rank: CotRanks.NEW }, error]);
+      this.sb.logger.warn('could not remove role', [error, CotRanks.NEW]);
       await message.channel.send(
         `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner.toString()} for help.`,
         { reply: message.author },
