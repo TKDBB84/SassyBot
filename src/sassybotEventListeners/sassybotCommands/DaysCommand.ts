@@ -31,11 +31,11 @@ export default class DaysCommand extends SassybotCommand {
     let charName = cotMember.character.name;
 
     const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-    if (
+    const isOfficerQuery =
       ((officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
         message.author.id === UserIds.SASNER) &&
-      !!params.args.trim()
-    ) {
+      !!params.args.trim();
+    if (isOfficerQuery) {
       const targetMember = params.args.trim().toLowerCase();
       const charByName = await this.sb.dbConnection
         .getRepository(FFXIVChar)
@@ -64,25 +64,29 @@ export default class DaysCommand extends SassybotCommand {
     }
     daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`;
 
-    const randNum = Math.random()
-    if (randNum <= 0.01) {
-      await message.channel.send(`${charName} been in the FC for ${DaysCommand.randomIntFromInterval(1000, 9000)} days`);
+    const randNum = Math.random();
+    if (randNum <= 0.01 && !isOfficerQuery) {
+      await message.channel.send(
+        `${charName} been in the FC for ${DaysCommand.randomIntFromInterval(1000, 9000)} days`,
+      );
       await DaysCommand.sleep(10);
-      await message.channel.send('No... Wait, I did the math wrong')
+      await message.channel.send('No... Wait, I did the math wrong');
       await DaysCommand.sleep(15);
-      await message.channel.send(`It's definitely ${DaysCommand.randomIntFromInterval(1, 20)} days`)
+      await message.channel.send(`It's definitely ${DaysCommand.randomIntFromInterval(1, 20)} days`);
       await DaysCommand.sleep(10);
-      await message.channel.send('NO NO NO NO NO that can\'t be right either... I can do this... I am a bot, I can do basic Math...')
+      await message.channel.send(
+        "NO NO NO NO NO that can't be right either... I can do this... I am a bot, I can do basic Math...",
+      );
       await DaysCommand.sleep(5);
-      await message.channel.send('carry the 3... the sum of the negative hypotenuse...')
-      await DaysCommand.sleep(10)
-      daysInFc += '.. final answer!'
+      await message.channel.send('carry the 3... the sum of the negative hypotenuse...');
+      await DaysCommand.sleep(10);
+      daysInFc += '.. final answer!';
     }
     await message.channel.send(daysInFc);
   }
 
   private static randomIntFromInterval(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1) + min)
+    return Math.floor(Math.random() * (max - min + 1) + min);
   }
 
   private static sleep(seconds: number): Promise<void> {
@@ -90,5 +94,4 @@ export default class DaysCommand extends SassybotCommand {
       setTimeout(resolve, seconds * 1000);
     });
   }
-
 }
