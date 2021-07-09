@@ -3,9 +3,9 @@ import moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import { CotRanks, GuildIds, UserIds } from '../../consts';
+import { CotRanks, GuildIds } from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
-import getNumberOFDays from './lib/GetNumberOfDays';
+import { getNumberOFDays, isMessageFromAdmin } from './lib';
 
 export default class DaysCommand extends SassybotCommand {
   public readonly commands = ['days', 'day'];
@@ -31,10 +31,7 @@ export default class DaysCommand extends SassybotCommand {
     let charName = cotMember.character.name;
 
     const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-    const isOfficerQuery =
-      ((officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
-        message.author.id === UserIds.SASNER) &&
-      !!params.args.trim();
+    const isOfficerQuery = isMessageFromAdmin(message, officerRole) && !!params.args.trim();
     if (isOfficerQuery) {
       const targetMember = params.args.trim().toLowerCase();
       const charByName = await this.sb.dbConnection

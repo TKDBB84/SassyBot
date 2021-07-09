@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import SassybotCommand from './SassybotCommand';
-import { CotRanks, GuildIds, UserIds } from '../../consts';
+import { isMessageFromAdmin } from './lib';
+import { CotRanks, GuildIds } from '../../consts';
 
 export default class RestartCommand extends SassybotCommand {
   public readonly commands = ['restart', 'reboot'];
@@ -10,15 +11,9 @@ export default class RestartCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
-    let isDiscordOfficer = [UserIds.SASNER.toString(), UserIds.CAIT.toString()].includes(message.author.id.toString());
-    if (!isDiscordOfficer && message.guild?.id === GuildIds.COT_GUILD_ID && message.member) {
-      const OFFICER = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-      if (OFFICER) {
-        isDiscordOfficer = CotRanks.OFFICER && message.member?.roles.highest.comparePositionTo(OFFICER) >= 0;
-      }
-    }
+    const officer = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
 
-    if (isDiscordOfficer) {
+    if (isMessageFromAdmin(message, officer)) {
       await message.channel.send('restarting...');
       process.exit(1); // exit w/ error so PM2 restarts us.
       return;
