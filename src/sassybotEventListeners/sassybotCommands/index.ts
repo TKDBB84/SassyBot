@@ -12,6 +12,7 @@ import PunCommand from './PunCommand';
 import QuoteCommand from './QuoteCommand';
 import RestartCommand from './RestartCommand';
 import RollCommand from './RollCommand';
+import SetDaysCommand from './SetDaysCommand';
 import SpamCommand from './SpamCommand';
 import TzCommand from './TzCommand';
 
@@ -33,6 +34,7 @@ export default [
   QuoteCommand,
   RestartCommand,
   RollCommand,
+  SetDaysCommand,
   SpamCommand,
   TzCommand,
 ];
