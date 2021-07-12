@@ -1,9 +1,11 @@
 import { Message } from 'discord.js';
-import { CotRanks } from '../../consts';
+import { CotRanks, GuildIds } from '../../consts';
 import COTMember from '../../entity/COTMember';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
+import SbUser from '../../entity/SbUser';
+import { isMessageFromAdmin } from './lib';
 
 export default class ClaimCommand extends SassybotCommand {
   public readonly commands = ['claim'];
@@ -17,63 +19,85 @@ export default class ClaimCommand extends SassybotCommand {
       return;
     }
 
-    const character = await this.sb.dbConnection
-      .getRepository(FFXIVChar)
-      .findOne({ where: { user: message.member.id } });
-    let memberByUserId = await this.sb.dbConnection.getRepository(COTMember).findOne({ where: { character } });
-
     const name = params.args.trim().toLowerCase();
-    if (memberByUserId && name === memberByUserId.character.name.trim().toLowerCase()) {
-      await message.channel.send(`You've already claimed the character: ${memberByUserId.character.name}.`);
-      return;
-    }
     if (!name) {
       await message.channel.send(this.getHelpText());
       return;
     }
+
     if (name === 'sasner rensas' || name === 'sasner') {
-      await message.channel.send('"Sasner Rensas" is the example, you need put in YOUR characters name.');
+      await message.channel.send('"Sasner Rensas" is the example, you need put in YOUR character\'s name.');
       return;
     }
 
-    const charByName = await this.sb.dbConnection
-      .getRepository(FFXIVChar)
+    const userRepo = this.sb.dbConnection.getRepository(SbUser);
+    const characterRepo = this.sb.dbConnection.getRepository(FFXIVChar);
+
+    let sbUser = await userRepo.findOne(message.member.id);
+    if (!sbUser) {
+      sbUser = await userRepo.create({ discordUserId: message.member.id });
+    }
+    const previouslyClaimedCharacter = await characterRepo.findOne({ where: { user: message.member.id } });
+    if (previouslyClaimedCharacter && name === previouslyClaimedCharacter.name.trim().toLowerCase()) {
+      await message.channel.send(`You've already claimed the character: ${previouslyClaimedCharacter.name}.`);
+      return;
+    }
+
+    let charByName = await characterRepo.createQueryBuilder().where(`LOWER(name) = LOWER(:name)`, { name }).getOne();
+    if (charByName) {
+      const charDiscordId = charByName.user.discordUserId;
+      if (charDiscordId !== undefined && charDiscordId !== null && charDiscordId !== message.member.id) {
+        const sasner = await this.sb.getSasner();
+        await message.channel.send(
+          `${charByName.name} has already been claimed by another user. Please contact ${sasner.toString()} for help.`,
+        );
+        return;
+      } else if (previouslyClaimedCharacter) {
+        await characterRepo.query(
+          `UPDATE ffxiv_char SET userDiscordUserId = null WHERE id = ${previouslyClaimedCharacter.id}`,
+        );
+      }
+    } else {
+      if (previouslyClaimedCharacter) {
+        await characterRepo.query(
+          `UPDATE ffxiv_char SET userDiscordUserId = null WHERE id = ${previouslyClaimedCharacter.id}`,
+        );
+      }
+      charByName = await characterRepo.create({ name: name.toLowerCase().trim(), user: sbUser });
+      charByName = await characterRepo.save(charByName, { reload: true });
+    }
+
+    await characterRepo.update(charByName.id, { user: sbUser });
+    await message.channel.send(`Thank you, I now have you as: ${charByName.name}`);
+    let cotMember = await this.sb.dbConnection
+      .getRepository(COTMember)
       .createQueryBuilder()
-      .where(`LOWER(name) = LOWER(:name)`, { name })
+      .where('characterId = :id', { id: charByName.id })
       .getOne();
 
-    const charDiscordId = charByName?.user?.discordUserId;
-    if (charByName && charDiscordId && charDiscordId !== message.member.id) {
-      const sasner = await this.sb.getSasner();
-      await message.channel.send(
-        `${charByName.name} has already been claimed by another user. Please contact ${sasner.toString()} for help.`,
-      );
-      return;
+    let rankRole: CotRanks = CotRanks.GUEST;
+    if (cotMember) {
+      rankRole = cotMember.rank === CotRanks.NEW ? CotRanks.RECRUIT : cotMember.rank;
     }
-
-    memberByUserId = await COTMember.getCotMemberByName(name, message.member.id);
-    let rankRole: CotRanks = memberByUserId.rank === CotRanks.NEW ? CotRanks.RECRUIT : memberByUserId.rank;
+    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    if (isMessageFromAdmin(message, officerRole) || rankRole === CotRanks.OFFICER) {
+      rankRole = CotRanks.VETERAN;
+      await message.channel.send(
+        "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
+      );
+    }
     if (!message.member.roles.cache.has(rankRole)) {
-      if (memberByUserId.rank === CotRanks.OFFICER) {
-        rankRole = CotRanks.VETERAN;
-      }
       try {
-        if (message.member.roles.cache.has(CotRanks.GUEST)) {
+        if (cotMember && message.member.roles.cache.has(CotRanks.GUEST)) {
           await message.member.roles.remove(CotRanks.GUEST, 'claimed member');
         }
-        await message.member.roles.add(rankRole, 'user claimed member');
-        await message.channel.send(`Thank you, I now have you as: ${memberByUserId.character.name}`);
-        if (memberByUserId.rank === CotRanks.OFFICER) {
-          await message.channel.send(
-            "I cannot add the Officer Rank, please have an Officer update you. I've temporarily set you to Veteran",
-          );
-        }
+        await message.member.roles.add(rankRole, 'user claimed character');
       } catch (error: unknown) {
         const sasner = await this.sb.getSasner();
         await message.channel.send(
           `I'm a terrible bot, I could not add your rank: ${sasner.toString()} please come help me.`,
         );
-        this.sb.logger.warn('unable to add role (2)', [error, message.member, rankRole]);
+        this.sb.logger.warn('unable to add role', [error, message.member, rankRole]);
       }
     }
   }
