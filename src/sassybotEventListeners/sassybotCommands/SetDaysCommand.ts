@@ -49,7 +49,9 @@ export default class SetDaysCommand extends SassybotCommand {
     const refreshedChar = await charRepo.findOne(character.id);
     if (refreshedChar) {
       await message.channel.send(
-        `${refreshedChar.name} has been in the FC for approximately ${getNumberOFDays(character.firstSeenApi)} days.`,
+        `${refreshedChar.name} has been in the FC for approximately ${getNumberOFDays(
+          refreshedChar.firstSeenApi,
+        )} days.`,
       );
     }
   }
