@@ -45,7 +45,7 @@ export default class ClaimCommand extends SassybotCommand {
 
     let charByName = await characterRepo.createQueryBuilder().where(`LOWER(name) = LOWER(:name)`, { name }).getOne();
     if (charByName) {
-      const charDiscordId = charByName.user.discordUserId;
+      const charDiscordId = charByName?.user?.discordUserId;
       if (charDiscordId !== undefined && charDiscordId !== null && charDiscordId !== message.member.id) {
         const sasner = await this.sb.getSasner();
         await message.channel.send(
