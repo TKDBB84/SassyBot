@@ -63,7 +63,11 @@ export default class ClaimCommand extends SassybotCommand {
           `UPDATE ffxiv_char SET userDiscordUserId = null WHERE id = ${previouslyClaimedCharacter.id}`,
         );
       }
-      charByName = await characterRepo.create({ name: name.toLowerCase().trim(), user: sbUser });
+      charByName = await characterRepo.create({
+        name: name.toLowerCase().trim(),
+        apiId: 0,
+      });
+      charByName.user = sbUser;
       charByName = await characterRepo.save(charByName, { reload: true });
     }
 
