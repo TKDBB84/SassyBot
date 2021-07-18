@@ -61,24 +61,24 @@ export default class DaysCommand extends SassybotCommand {
     }
     daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`;
 
-    const randNum = Math.random();
-    if (randNum <= 0.01 && !isOfficerQuery) {
-      await message.channel.send(
-        `${charName} been in the FC for ${DaysCommand.randomIntFromInterval(1000, 9000)} days`,
-      );
-      await DaysCommand.sleep(10);
-      await message.channel.send('No... Wait, I did the math wrong');
-      await DaysCommand.sleep(15);
-      await message.channel.send(`It's definitely ${DaysCommand.randomIntFromInterval(1, 20)} days`);
-      await DaysCommand.sleep(10);
-      await message.channel.send(
-        "NO NO NO NO NO that can't be right either... I can do this... I am a bot, I can do basic Math...",
-      );
-      await DaysCommand.sleep(5);
-      await message.channel.send('carry the 3... the sum of the negative hypotenuse...');
-      await DaysCommand.sleep(10);
-      daysInFc += '.. final answer!';
-    }
+    // const randNum = Math.random();
+    // if (randNum <= 0.01 && !isOfficerQuery) {
+      // await message.channel.send(
+        // `${charName} been in the FC for ${DaysCommand.randomIntFromInterval(1000, 9000)} days`,
+      // );
+      // await DaysCommand.sleep(10);
+      // await message.channel.send('No... Wait, I did the math wrong');
+      // await DaysCommand.sleep(15);
+      // await message.channel.send(`It's definitely ${DaysCommand.randomIntFromInterval(1, 20)} days`);
+      // await DaysCommand.sleep(10);
+      // await message.channel.send(
+        // "NO NO NO NO NO that can't be right either... I can do this... I am a bot, I can do basic Math...",
+      // );
+      // await DaysCommand.sleep(5);
+      // await message.channel.send('carry the 3... the sum of the negative hypotenuse...');
+      // await DaysCommand.sleep(10);
+      // daysInFc += '.. final answer!';
+    // }
     await message.channel.send(daysInFc);
   }
 
