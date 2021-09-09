@@ -30,7 +30,7 @@
     "typeorm": "^0.2.37",
     "typescript": "^4.4.2",
     "winston": "^3.3.3",
-    "winston-discordjs": "^2.1.1"
+    "winston-discordjs": "^3.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.31.0",
