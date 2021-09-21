@@ -10,6 +10,7 @@ import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
 import PunCommand from './PunCommand';
 import QuoteCommand from './QuoteCommand';
+import RefreshCommand from './RefreshCommand';
 import RestartCommand from './RestartCommand';
 import RollCommand from './RollCommand';
 import SetDaysCommand from './SetDaysCommand';
@@ -32,6 +33,7 @@ export default [
   PromoteCommand,
   PunCommand,
   QuoteCommand,
+  RefreshCommand,
   RestartCommand,
   RollCommand,
   SetDaysCommand,
