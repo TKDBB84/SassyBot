@@ -33,9 +33,9 @@ interface IFreeCompanyMember {
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
   try {
-    const memberList = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
-    if (memberList && memberList.FreeCompanyMembers) {
-      return memberList.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
+    const result = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    if (result && result.FreeCompanyMembers) {
+      return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
         switch (Rank) {
           case 'FOUNDER':
@@ -79,7 +79,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
         }
       }) as IFreeCompanyMember[];
     } else {
-      sb.logger.error('Could not fetch member list');
+      sb.logger.error('result did not include member list', result);
     }
   } catch (err) {
     sb.logger.error('Could not fetch member list', err);
