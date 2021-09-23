@@ -23,7 +23,7 @@
     "moment-timezone": "^0.5.33",
     "mysql": "^2.18.1",
     "node-cron": "^3.0.0",
-    "node-fetch": "^2.6.3",
+    "node-fetch": "^2.6.5",
     "node-gyp": "^8.2.0",
     "reflect-metadata": "^0.1.13",
     "tsd": "^0.17.0",
