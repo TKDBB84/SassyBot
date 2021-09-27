@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@discordjs/opus": "^0.6.0",
-    "@types/node": "^16.9.4",
+    "@types/node": "^16.10.1",
     "@types/node-cron": "^2.0.4",
     "@types/node-fetch": "^2.5.12",
     "@types/shortid": "0.0.29",
