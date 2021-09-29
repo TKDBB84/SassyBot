@@ -79,7 +79,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
         }
       }) as IFreeCompanyMember[];
     } else {
-      sb.logger.error('result did not include member list', result);
+      sb.logger.error('result did not include member list', JSON.stringify(result));
     }
   } catch (err) {
     sb.logger.error('Could not fetch member list', err);

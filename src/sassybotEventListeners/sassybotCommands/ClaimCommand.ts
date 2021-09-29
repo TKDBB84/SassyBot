@@ -35,7 +35,7 @@ export default class ClaimCommand extends SassybotCommand {
 
     let sbUser = await userRepo.findOne(message.member.id);
     if (!sbUser) {
-      sbUser = await userRepo.create({ discordUserId: message.member.id });
+      sbUser = userRepo.create({ discordUserId: message.member.id });
     }
     const previouslyClaimedCharacter = await characterRepo.findOne({ where: { user: message.member.id } });
     if (previouslyClaimedCharacter && name === previouslyClaimedCharacter.name.trim().toLowerCase()) {
@@ -63,7 +63,7 @@ export default class ClaimCommand extends SassybotCommand {
           `UPDATE ffxiv_char SET userDiscordUserId = null WHERE id = ${previouslyClaimedCharacter.id}`,
         );
       }
-      charByName = await characterRepo.create({
+      charByName = characterRepo.create({
         name: name.toLowerCase().trim(),
         apiId: 0,
       });
@@ -73,7 +73,7 @@ export default class ClaimCommand extends SassybotCommand {
 
     await characterRepo.update(charByName.id, { user: sbUser });
     await message.channel.send(`Thank you, I now have you as: ${charByName.name}`);
-    let cotMember = await this.sb.dbConnection
+    const cotMember = await this.sb.dbConnection
       .getRepository(COTMember)
       .createQueryBuilder()
       .where('characterId = :id', { id: charByName.id })
