@@ -3,7 +3,16 @@
 import { CollectorFilter, Message, MessageCollector, MessageReaction, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
-import { CoTAPIId, CoTPromotionChannelId, CotRanks, CoTRankValueToString, GuildIds, ONE_HOUR } from '../../../consts';
+import {
+  CoTAPIId,
+  CoTPromotionChannelId,
+  CotRanks,
+  CoTRankValueToString,
+  GuildIds,
+  ONE_HOUR,
+  DaysForPromotionTo,
+  TWO_MIN,
+} from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 import getNumberOFDays from '../lib/GetNumberOfDays';
@@ -171,7 +180,7 @@ export default class PromoteCommand extends ActivityCommand {
             messageCollector.stop();
           } else {
             messageCollector.stop();
-            await this.awaitEligibilityOverride(collectedMessage, promotion)
+            await this.awaitEligibilityOverride(collectedMessage, promotion);
           }
         };
         void asyncWork();
@@ -195,7 +204,7 @@ export default class PromoteCommand extends ActivityCommand {
       promotion.CotMember = foundMember;
       const isEligible = await this.verifyEligibility(message, promotion);
       if (!isEligible) {
-        await this.awaitEligibilityOverride(message, promotion)
+        await this.awaitEligibilityOverride(message, promotion);
       } else {
         await this.summarizeData(message, promotion);
       }
@@ -210,23 +219,12 @@ export default class PromoteCommand extends ActivityCommand {
       return false;
     }
     const toRank = this.getToRank(promotion);
-
-    let daysForRank;
-    switch (toRank) {
-      case CotRanks.VETERAN:
-        daysForRank = 275;
-        break;
-      default:
-      case CotRanks.MEMBER:
-        daysForRank = 90;
-        break;
-    }
     const numDays = getNumberOFDays(promotion.CotMember.character.firstSeenApi);
-    if (numDays < daysForRank) {
+    if (numDays < DaysForPromotionTo[toRank]) {
       await message.reply(
-        `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${daysForRank} days are required.\n\nIf you feel you have a valid exception, or the information I have is incorrect please type "I am eligible" to submit the request. Otherwise it will be canceled in 2 minutes.`,
+        `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${DaysForPromotionTo[toRank]} days are required.\n\nIf you feel you have a valid exception, or the information I have is incorrect please type "I am eligible" to submit the request. Otherwise it will be canceled in 2 minutes.`,
       );
-      return false
+      return false;
     }
     return true;
   }
@@ -234,21 +232,21 @@ export default class PromoteCommand extends ActivityCommand {
   protected async awaitEligibilityOverride(message: Message, promotion: PromotionRequest): Promise<void> {
     const filter: CollectorFilter = (filterMessage: Message) => {
       if (filterMessage.author.id !== message.author.id) {
-        return false
+        return false;
       }
-      const cleanedContent = filterMessage.cleanContent.replace(/[^a-z-A-Z ]/g, '')
+      const cleanedContent = filterMessage.cleanContent
+        .replace(/[^a-z-A-Z ]/g, '')
         .replace(/ +/, ' ')
         .trim()
-        .toLowerCase()
+        .toLowerCase();
       return cleanedContent === 'i am eligible' || cleanedContent === 'im eligible' || cleanedContent === 'i eligible';
-    }
+    };
 
-    const TWO_MIN = 120000
-    const messages = await message.channel.awaitMessages(filter, {time: TWO_MIN, errors: [], max: 1})
+    const messages = await message.channel.awaitMessages(filter, { time: TWO_MIN, errors: [], max: 1 });
     if (messages.size === 1) {
       await this.summarizeData(message, promotion);
     }
-    return
+    return;
   }
 
   protected async summarizeData(message: Message, promotion: PromotionRequest, nagString = false): Promise<void> {

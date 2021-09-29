@@ -10,6 +10,7 @@ export const NewUserChannels = {
   [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: 'xx',
 };
 export const ONE_HOUR = 3600000;
+export const TWO_MIN = 120000;
 export const CoTOfficerChannelId = '331196148079394836';
 export const CoTButtStuffChannelId = '331786517041119233';
 export const CoTPromotionChannelId = '362037806178238464';
@@ -50,6 +51,13 @@ export enum CotRanks {
   VETERAN = '600338562298413076',
   OTHER = '999999999999999999',
 }
+
+export const DaysForPromotionTo = {
+  VETERAN: 275,
+  MEMBER: 90,
+  '600338562298413076': 275,
+  '600338911755239424': 90,
+};
 
 export enum CoTRankValueToString {
   '331193662748885013' = 'Dignitary',
