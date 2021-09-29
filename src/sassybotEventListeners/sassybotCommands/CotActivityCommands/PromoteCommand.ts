@@ -9,6 +9,7 @@ import ActivityCommand from './ActivityCommand';
 import getNumberOFDays from '../lib/GetNumberOfDays';
 // @ts-ignore
 import XIVApi from '@xivapi/js';
+
 interface IFreeCompanyMember {
   Avatar: string;
   FeastMatches: number;
@@ -164,8 +165,14 @@ export default class PromoteCommand extends ActivityCommand {
       messageCollector.on('collect', (collectedMessage: Message) => {
         const asyncWork = async () => {
           promotion.CotMember = await this.parseCharacterName(collectedMessage);
-          await this.summarizeData(collectedMessage, promotion);
-          messageCollector.stop();
+          const isEligible = await this.verifyEligibility(collectedMessage, promotion);
+          if (isEligible) {
+            await this.summarizeData(collectedMessage, promotion);
+            messageCollector.stop();
+          } else {
+            messageCollector.stop();
+            await this.awaitEligibilityOverride(collectedMessage, promotion)
+          }
         };
         void asyncWork();
       });
@@ -186,36 +193,85 @@ export default class PromoteCommand extends ActivityCommand {
         return;
       }
       promotion.CotMember = foundMember;
-      await this.summarizeData(message, promotion);
+      const isEligible = await this.verifyEligibility(message, promotion);
+      if (!isEligible) {
+        await this.awaitEligibilityOverride(message, promotion)
+      } else {
+        await this.summarizeData(message, promotion);
+      }
     }
   }
 
-  protected async summarizeData(message: Message, promotion: PromotionRequest, nagString = false): Promise<void> {
-    let toRankName;
-    switch (promotion.CotMember.rank) {
+  protected async verifyEligibility(message: Message, promotion: PromotionRequest): Promise<boolean> {
+    if (promotion.CotMember.rank === CotRanks.VETERAN) {
+      await message.reply(
+        "You're currently a Veteran already, there are no remaining promotions. Officer Ranks are handled as one-off special cases by FC leads.",
+      );
+      return false;
+    }
+    const toRank = this.getToRank(promotion);
+
+    let daysForRank;
+    switch (toRank) {
       case CotRanks.VETERAN:
-        await message.reply(
-          "You're currently a Veteran already, there are no remaining promotions. Officer Ranks are handled as one-off special cases by FC leads.",
-        );
-        return;
-      case CotRanks.MEMBER:
-        promotion.toRank = CotRanks.VETERAN;
-        toRankName = CoTRankValueToString[CotRanks.VETERAN];
+        daysForRank = 275;
         break;
       default:
-      case CotRanks.RECRUIT:
-        promotion.toRank = CotRanks.MEMBER;
-        toRankName = CoTRankValueToString[CotRanks.MEMBER];
+      case CotRanks.MEMBER:
+        daysForRank = 90;
         break;
     }
+    const numDays = getNumberOFDays(promotion.CotMember.character.firstSeenApi);
+    if (numDays < daysForRank) {
+      await message.reply(
+        `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${daysForRank} days are required.\n\nIf you feel you have a valid exception, or the information I have is incorrect please type "I am eligible" to submit the request. Otherwise it will be canceled in 2 minutes.`,
+      );
+      return false
+    }
+    return true;
+  }
+
+  protected async awaitEligibilityOverride(message: Message, promotion: PromotionRequest): Promise<void> {
+    const filter: CollectorFilter = (filterMessage: Message) => {
+      if (filterMessage.author.id !== message.author.id) {
+        return false
+      }
+      const cleanedContent = filterMessage.cleanContent.replace(/[^a-z-A-Z ]/g, '')
+        .replace(/ +/, ' ')
+        .trim()
+        .toLowerCase()
+      return cleanedContent === 'i am eligible' || cleanedContent === 'im eligible' || cleanedContent === 'i eligible';
+    }
+
+    const TWO_MIN = 120000
+    const messages = await message.channel.awaitMessages(filter, {time: TWO_MIN, errors: [], max: 1})
+    if (messages.size === 1) {
+      await this.summarizeData(message, promotion);
+    }
+    return
+  }
+
+  protected async summarizeData(message: Message, promotion: PromotionRequest, nagString = false): Promise<void> {
+    promotion.toRank = this.getToRank(promotion);
     const savedPromotion = await this.sb.dbConnection.getRepository(PromotionRequest).save(promotion, { reload: true });
     const summary = `__Here's the data I have Stored:__ \n\n Character: ${
       savedPromotion.CotMember.character.name
-    } \n Requesting Promotion To: ${toRankName} \n\n ${
+    } \n Requesting Promotion To: ${CoTRankValueToString[promotion.toRank]} \n\n ${
       nagString
         ? 'The officers will review it as soon as they have time.'
         : "I'll make sure the officers see this request!"
     }`;
     await message.reply(summary, { reply: message.author, split: true });
+  }
+
+  protected getToRank(promotion: PromotionRequest) {
+    switch (promotion.CotMember.rank) {
+      case CotRanks.VETERAN:
+      case CotRanks.MEMBER:
+        return CotRanks.VETERAN;
+      default:
+      case CotRanks.RECRUIT:
+        return CotRanks.MEMBER;
+    }
   }
 }
