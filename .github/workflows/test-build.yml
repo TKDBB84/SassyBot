@@ -57,7 +57,7 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
-  build:
+  build-ts:
 
     runs-on: ubuntu-latest
 
@@ -81,7 +81,7 @@ jobs:
 
   automerge:
     if: ${{ github.event_name == 'pull_request' }}
-    needs: [ 'build', 'Analyze' ]
+    needs: [ 'build-ts', 'Analyze' ]
     runs-on: ubuntu-latest
     steps:
       - name: automerge
