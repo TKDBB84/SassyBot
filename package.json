@@ -41,7 +41,7 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-react": "^7.26.1",
     "prettier": "^2.4.1",
-    "ts-node": "^10.2.1"
+    "ts-node": "^10.3.0"
   },
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",
