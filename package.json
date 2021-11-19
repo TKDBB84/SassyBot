@@ -27,7 +27,7 @@
     "node-gyp": "^8.4.0",
     "reflect-metadata": "^0.1.13",
     "tsd": "^0.18.0",
-    "typeorm": "^0.2.40",
+    "typeorm": "^0.2.41",
     "typescript": "^4.5.2",
     "winston": "^3.3.3",
     "winston-discordjs": "^2.1.1"
