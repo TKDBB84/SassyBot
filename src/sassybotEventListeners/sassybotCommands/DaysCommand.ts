@@ -68,7 +68,7 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     let daysInFc = `${charName} has been `;
-    if (charName.includes('Minfilia')) {
+    if (charName.toLowerCase().includes('minfilia')) {
       daysInFc += 'locked in the Waking Sands ';
     } else {
       daysInFc += 'in the FC ';
