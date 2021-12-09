@@ -21,14 +21,28 @@ export default class DaysCommand extends SassybotCommand {
 
     const authorId = message.author.id;
     const cotMember = await this.sb.findCoTMemberByDiscordId(authorId);
-    if (!cotMember) {
-      await message.channel.send(
-        `I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: \`!sb claim Sasner Rensas\`) to claim your character`,
-      );
-      return;
+    let firstSeen: moment.Moment | false;
+    let charName: string;
+    if (cotMember) {
+      firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
+      charName = cotMember.character.name;
+    } else {
+      // try finding by discord id
+      const charByName = await this.sb.dbConnection
+        .getRepository(FFXIVChar)
+        .createQueryBuilder()
+        .where(`userDiscordUserId = :userId`, { userId: message.author.id })
+        .getOne();
+
+      if (!charByName) {
+        await message.channel.send(
+          `I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: \`!sb claim Sasner Rensas\`) to claim your character`,
+        );
+        return;
+      }
+      firstSeen = charByName.firstSeenApi ? moment(charByName.firstSeenApi) : false;
+      charName = charByName.name;
     }
-    let firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
-    let charName = cotMember.character.name;
 
     const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     const isOfficerQuery = isMessageFromAdmin(message, officerRole) && !!params.args.trim();
