@@ -28,20 +28,20 @@ export default class DaysCommand extends SassybotCommand {
       charName = cotMember.character.name;
     } else {
       // try finding by discord id
-      const charByName = await this.sb.dbConnection
+      const charByDiscordId = await this.sb.dbConnection
         .getRepository(FFXIVChar)
         .createQueryBuilder()
         .where(`userDiscordUserId = :userId`, { userId: message.author.id })
         .getOne();
 
-      if (!charByName) {
+      if (!charByDiscordId) {
         await message.channel.send(
           `I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: \`!sb claim Sasner Rensas\`) to claim your character`,
         );
         return;
       }
-      firstSeen = charByName.firstSeenApi ? moment(charByName.firstSeenApi) : false;
-      charName = charByName.name;
+      firstSeen = charByDiscordId.firstSeenApi ? moment(charByDiscordId.firstSeenApi) : false;
+      charName = charByDiscordId.name;
     }
 
     const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
