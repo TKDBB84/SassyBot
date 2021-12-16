@@ -16,6 +16,7 @@ import {
   UserResolvable,
   VoiceState,
 } from 'discord.js';
+import Redis from 'ioredis';
 import { EventEmitter } from 'events';
 import cron from 'node-cron';
 import 'reflect-metadata';
@@ -28,6 +29,12 @@ import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
+import IORedis from 'ioredis';
+
+const redisClient = new Redis();
+const redisConnection: Promise<IORedis.Redis> = new Promise((resolve) => {
+  redisClient.on('connect', () => resolve(redisClient));
+});
 
 export interface ISassybotEventListener {
   event: string;
@@ -107,6 +114,10 @@ export class Sassybot extends EventEmitter {
     this.discordClient = new Client({ disableMentions: 'everyone' });
     this.dbConnection = connection;
     this.logger = logger;
+  }
+
+  public async getRedis(): Promise<IORedis.Redis> {
+    return redisConnection;
   }
 
   public async getSasner(): Promise<User> {
