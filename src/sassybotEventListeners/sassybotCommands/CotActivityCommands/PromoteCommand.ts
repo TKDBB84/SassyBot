@@ -262,7 +262,7 @@ export default class PromoteCommand extends ActivityCommand {
     await message.reply(summary, { reply: message.author, split: true });
   }
 
-  protected getToRank(promotion: PromotionRequest) {
+  protected getToRank(promotion: PromotionRequest): CotRanks.VETERAN | CotRanks.MEMBER {
     switch (promotion.CotMember.rank) {
       case CotRanks.VETERAN:
       case CotRanks.MEMBER:
