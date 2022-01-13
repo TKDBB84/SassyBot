@@ -35,7 +35,7 @@ export default class EventCommand extends SassybotCommand {
       }
 
       let nextSunday = moment().startOf('isoWeek').day('sunday').add(15, 'hours');
-      if (now.isAfter(nextSaturday)) {
+      if (now.isAfter(nextSunday)) {
         nextSunday = moment().startOf('isoWeek').add(1, 'week').day('sunday').add(15, 'hours');
       }
       return [
