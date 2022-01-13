@@ -19,16 +19,16 @@ import getNumberOFDays from '../lib/GetNumberOfDays';
 // @ts-ignore
 // import XIVApi from '@xivapi/js';
 
-interface IFreeCompanyMember {
-  Avatar: string;
-  FeastMatches: number;
-  ID: number;
-  Name: string;
-  Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
-  RankIcon: string;
-  Server: string;
-  exactRecruit: boolean;
-}
+// interface IFreeCompanyMember {
+//   Avatar: string;
+//   FeastMatches: number;
+//   ID: number;
+//   Name: string;
+//   Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
+//   RankIcon: string;
+//   Server: string;
+//   exactRecruit: boolean;
+// }
 
 export default class PromoteCommand extends ActivityCommand {
   protected getHelpText(): string {

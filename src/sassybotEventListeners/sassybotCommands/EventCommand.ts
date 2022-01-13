@@ -7,6 +7,13 @@ import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import { GuildIds } from '../../consts';
 
+declare type repeatingEvent = {
+  id: number;
+  eventName: string;
+  user: { discordUserId: '0' };
+  eventTime: Date;
+};
+
 export default class EventCommand extends SassybotCommand {
   public readonly commands = ['event', 'events'];
 
@@ -17,6 +24,40 @@ export default class EventCommand extends SassybotCommand {
       '`!{sassybot|sb} event list` to see all scheduled events\n' +
       '`!{sassybot|sb} event create My New Event Name` to create an event, you will be prompted for a Date & Time'
     );
+  }
+
+  private static getRepeatingEvents(guildId: string): repeatingEvent[] {
+    if (guildId === GuildIds.COT_GUILD_ID) {
+      let nextSaturday = moment().startOf('isoWeek').day('saturday').add(15, 'hours');
+      const now = moment();
+      if (now.isAfter(nextSaturday)) {
+        nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours');
+      }
+
+      let nextSunday = moment().startOf('isoWeek').day('sunday').add(15, 'hours');
+      if (now.isAfter(nextSaturday)) {
+        nextSunday = moment().startOf('isoWeek').add(1, 'week').day('sunday').add(15, 'hours');
+      }
+      return [
+        {
+          id: 123456789,
+          eventName: "averil's mount farming",
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          user: { discordUserId: '0' },
+          eventTime: nextSaturday.toDate(),
+        },
+        {
+          id: 987654321,
+          eventName: "averil's mount farming",
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          user: { discordUserId: '0' },
+          eventTime: nextSunday.toDate(),
+        },
+      ];
+    }
+    return [];
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
@@ -81,36 +122,8 @@ export default class EventCommand extends SassybotCommand {
       return;
     }
     const guildId = message.guild.id;
-    const allEvents = await Event.getAll(guildId);
-    if (guildId === GuildIds.COT_GUILD_ID) {
-      let nextSaturday = moment().startOf('isoWeek').day('saturday').add(15, 'hours');
-      const now = moment();
-      if (now.isAfter(nextSaturday)) {
-        nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours');
-      }
-      allEvents.push({
-        id: 123456789,
-        eventName: "averil's mount farming",
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        user: { discordUserId: '0' },
-        eventTime: nextSaturday.toDate(),
-      });
-    } else if (guildId === GuildIds.GAMEZZZ_GUILD_ID) {
-      let nextSaturday = moment().startOf('isoWeek').day('saturday').add(11, 'hours');
-      const now = moment();
-      if (now.isAfter(nextSaturday)) {
-        nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(11, 'hours');
-      }
-      allEvents.push({
-        id: 123456789,
-        eventName: 'Ashkeeper',
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        user: { discordUserId: '0' },
-        eventTime: nextSaturday.toDate(),
-      });
-    }
+    const allEvents = [...(await Event.getAll(guildId)), ...EventCommand.getRepeatingEvents(guildId)];
+
     if (allEvents && allEvents.length) {
       for (let i = 0, iMax = allEvents.length; i < iMax; i++) {
         const eventMoment = moment.tz(allEvents[i].eventTime, 'UTC');
