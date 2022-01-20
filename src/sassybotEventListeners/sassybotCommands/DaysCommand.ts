@@ -3,7 +3,7 @@ import moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import { CotRanks, GuildIds } from '../../consts';
+import { CotRanks, GuildIds, UserIds } from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { getNumberOFDays, isMessageFromAdmin } from './lib';
 
@@ -68,6 +68,14 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     let daysInFc = `${charName} has been `;
+    if (charName.toLowerCase() === 'illistil calen') {
+      await message.channel.send('Illistil Calen has been in the FC longer than who ever was asking')
+      return
+    } else if (charName.toLowerCase() === 'brigie ishigami') {
+      await message.channel.send('Brigie Ishigami has been in the FC for ..... Fuck man, I don\'t know at least 10,000 chicken nuggets, or something')
+      return
+    }
+
     if (charName.toLowerCase().includes('minfilia')) {
       daysInFc += 'locked in the Waking Sands ';
     } else {
