@@ -34,10 +34,6 @@ export default class EventCommand extends SassybotCommand {
         nextSaturday = moment().startOf('isoWeek').add(1, 'week').day('saturday').add(15, 'hours');
       }
 
-      let nextSunday = moment().startOf('isoWeek').day('sunday').add(15, 'hours');
-      if (now.isAfter(nextSunday)) {
-        nextSunday = moment().startOf('isoWeek').add(1, 'week').day('sunday').add(15, 'hours');
-      }
       return [
         {
           id: 123456789,
@@ -46,14 +42,6 @@ export default class EventCommand extends SassybotCommand {
           // @ts-ignore
           user: { discordUserId: '0' },
           eventTime: nextSaturday.toDate(),
-        },
-        {
-          id: 987654321,
-          eventName: "averil's mount farming",
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          user: { discordUserId: '0' },
-          eventTime: nextSunday.toDate(),
         },
       ];
     }
