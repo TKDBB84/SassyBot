@@ -29,7 +29,7 @@
     "node-gyp": "^8.4.1",
     "reflect-metadata": "^0.1.13",
     "tsd": "^0.19.1",
-    "typeorm": "^0.2.42",
+    "typeorm": "^0.2.43",
     "typescript": "^4.5.5",
     "winston": "^3.6.0",
     "winston-discordjs": "^2.1.1"
