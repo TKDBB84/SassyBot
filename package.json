@@ -17,7 +17,7 @@
     "@types/node-cron": "^3.0.1",
     "@types/node-fetch": "^2.6.1",
     "@types/shortid": "0.0.29",
-    "@types/ws": "^8.2.3",
+    "@types/ws": "^8.5.0",
     "@xivapi/js": "^0.4.0",
     "discord.js": "^12.5.3",
     "ioredis": "4.28.5",
