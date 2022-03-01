@@ -240,9 +240,8 @@ const deletePastAbsences: IJob = async (sb: Sassybot) => {
 const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
   const nowMoment = moment();
   const FIFTEEN_DAYS_AGO = nowMoment.subtract(15, 'days').toDate();
-  const THIRTY_ONE_DAYS_AGO = nowMoment.subtract(31, 'days').toDate();
-  const NINETY_ONE_DAYS_AGO = nowMoment.subtract(91, 'days').toDate();
-  // const ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO = nowMoment.subtract(181, 'days').toDate();
+  const SIXTY_ONE_DAYS_AGO = nowMoment.subtract(61, 'days').toDate();
+  const ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO = nowMoment.subtract(181, 'days').toDate();
 
   const charRepo = sb.dbConnection.getRepository(FFXIVChar);
   const memberRepo = sb.dbConnection.getRepository(COTMember);
@@ -254,9 +253,9 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
   const allLostMembers = relevantMembers.filter((member) => {
     switch (member.rank) {
       case CotRanks.VETERAN:
-        return !!member.character.lastSeenApi && member.character.lastSeenApi < NINETY_ONE_DAYS_AGO;
+        return !!member.character.lastSeenApi && member.character.lastSeenApi < ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO;
       case CotRanks.MEMBER:
-        return !!member.character.lastSeenApi && member.character.lastSeenApi < THIRTY_ONE_DAYS_AGO;
+        return !!member.character.lastSeenApi && member.character.lastSeenApi < SIXTY_ONE_DAYS_AGO;
       case CotRanks.RECRUIT:
       default:
         return !!member.character.lastSeenApi && member.character.lastSeenApi < FIFTEEN_DAYS_AGO;
