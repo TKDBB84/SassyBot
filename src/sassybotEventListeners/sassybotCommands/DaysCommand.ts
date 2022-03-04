@@ -14,6 +14,8 @@ export default class DaysCommand extends SassybotCommand {
     return "usage: `!{sassybot|sb} days` -- I tell you the number of days  you've been in the fc, as best i know";
   }
 
+  private static stupidFakeReset: { [key: string]: Date } = {};
+
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     if (!message.guild || !message.member) {
       return;
@@ -69,7 +71,7 @@ export default class DaysCommand extends SassybotCommand {
 
     let daysInFc = `${charName} has been `;
     if (charName.toLowerCase() === 'illistil calen') {
-      await message.channel.send('Illistil Calen has been in the FC longer than who ever was asking');
+      await message.channel.send('Illistil Calen has been in the FC longer than whoever is asking');
       return;
     } else if (charName.toLowerCase() === 'brigie ishigami') {
       await message.channel.send(
@@ -78,12 +80,27 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
-    if (charName.toLowerCase().includes('minfilia')) {
-      daysInFc += 'locked in the Waking Sands ';
-    } else {
-      daysInFc += 'in the FC ';
+    if (!isOfficerQuery && DaysCommand.stupidFakeReset[charName.toLowerCase()]) {
+      const fakeDays = getNumberOFDays(DaysCommand.stupidFakeReset[charName.toLowerCase()]);
+      await message.channel.send(
+        `You didn't think I was going to do it did you? ${charName} you've been in the FC for ${fakeDays} days, you lose.`,
+      );
+      return;
     }
-    daysInFc += `for approximately ${getNumberOFDays(firstSeen)} days.`;
+
+    let numDays = getNumberOFDays(firstSeen);
+    if (numDays < 1000 || isOfficerQuery) {
+      if (charName.toLowerCase().includes('minfilia')) {
+        daysInFc += 'locked in the Waking Sands ';
+      } else {
+        daysInFc += 'in the FC ';
+      }
+      daysInFc += `for approximately ${numDays} days.`;
+    } else {
+      daysInFc =
+        "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what I'm resetting your days to 0, get wrecked.";
+      DaysCommand.stupidFakeReset[charName.toLowerCase()] = new Date();
+    }
 
     // const randNum = Math.random();
     // if (randNum <= 0.01 && !isOfficerQuery) {
