@@ -3,7 +3,7 @@ import moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import { CotRanks, GuildIds } from '../../consts';
+import {CotRanks, GuildIds, UserIds} from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { getNumberOFDays, isMessageFromAdmin } from './lib';
 
@@ -64,6 +64,10 @@ export default class DaysCommand extends SassybotCommand {
       charName = charByName.name;
     }
 
+    if (message.author.id === UserIds.SASNER && params.args.trim() === '') {
+      await message.reply(`STFU you don't even play this game anymore.`)
+    }
+
     if (!firstSeen) {
       await message.channel.send(`${charName} does not appear to be in the FC.`);
       return;
@@ -88,21 +92,21 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
+    const randNum = Math.random();
     let numDays = getNumberOFDays(firstSeen);
-    if (numDays < 1000 || isOfficerQuery) {
+    if (!isOfficerQuery && numDays > 1000 && randNum <= 0.4) {
+      daysInFc =
+        "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what I'm resetting your days to 0, get wrecked.";
+      DaysCommand.stupidFakeReset[charName.toLowerCase()] = new Date();
+    } else {
       if (charName.toLowerCase().includes('minfilia')) {
         daysInFc += 'locked in the Waking Sands ';
       } else {
         daysInFc += 'in the FC ';
       }
       daysInFc += `for approximately ${numDays} days.`;
-    } else {
-      daysInFc =
-        "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what I'm resetting your days to 0, get wrecked.";
-      DaysCommand.stupidFakeReset[charName.toLowerCase()] = new Date();
     }
 
-    // const randNum = Math.random();
     // if (randNum <= 0.01 && !isOfficerQuery) {
     // await message.channel.send(
     // `${charName} been in the FC for ${DaysCommand.randomIntFromInterval(1000, 9000)} days`,
