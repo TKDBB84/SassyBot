@@ -3,7 +3,7 @@ import moment from 'moment';
 import 'moment-timezone';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-import {CotRanks, GuildIds, UserIds} from '../../consts';
+import { CotRanks, GuildIds, UserIds } from '../../consts';
 import FFXIVChar from '../../entity/FFXIVChar';
 import { getNumberOFDays, isMessageFromAdmin } from './lib';
 
@@ -65,7 +65,8 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     if (message.author.id === UserIds.SASNER && params.args.trim() === '') {
-      await message.reply(`STFU you don't even play this game anymore.`)
+      await message.reply(`STFU you don't even play this game anymore.`);
+      return;
     }
 
     if (!firstSeen) {
@@ -93,7 +94,7 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     const randNum = Math.random();
-    let numDays = getNumberOFDays(firstSeen);
+    const numDays = getNumberOFDays(firstSeen);
     if (!isOfficerQuery && numDays > 1000 && randNum <= 0.4) {
       daysInFc =
         "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what I'm resetting your days to 0, get wrecked.";
