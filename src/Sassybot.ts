@@ -338,6 +338,11 @@ export class Sassybot extends EventEmitter {
       if (params.command === 'help') {
         await this.processHelpCommand(message, params);
       } else {
+        if (message.author.id === UserIds.SASNER && message.cleanContent === '!sb delete his request') {
+          const mcrib = this.getUser('220584063243780096');
+          await message.channel.send({ content: `OK, I've deleted ${mcrib}'s request, not enough bbq sauce on it anyway.` });
+          return;
+        }
         this.emit('sassybotCommand', { message, params });
       }
       this.emit('sassybotCommandPostprocess', { message });
