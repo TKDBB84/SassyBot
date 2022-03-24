@@ -18,6 +18,7 @@ import SpamCommand from './SpamCommand';
 import TzCommand from './TzCommand';
 
 import EmbedCommand from './EmbedCommand';
+import InspireCommand from './InspireCommand';
 
 export default [
   AbsentCommand,
@@ -28,6 +29,7 @@ export default [
   EmbedCommand,
   EvalCommand,
   EventCommand,
+  InspireCommand,
   PingCommand,
   PodcastCommand,
   PromoteCommand,
