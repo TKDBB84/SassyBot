@@ -28,7 +28,7 @@ export default class InspireCommand extends SassybotCommand {
       },
     });
 
-    const imageLink = response.text();
+    const imageLink = await response.text();
 
     await message.channel.send({ content: imageLink });
   }
