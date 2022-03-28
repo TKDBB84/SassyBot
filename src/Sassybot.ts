@@ -29,10 +29,9 @@ import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
-import IORedis from 'ioredis';
 
 const redisClient = new Redis();
-const redisConnection: Promise<IORedis.Redis> = new Promise((resolve) => {
+const redisConnection: Promise<Redis> = new Promise((resolve) => {
   redisClient.on('connect', () => resolve(redisClient));
 });
 
@@ -116,7 +115,7 @@ export class Sassybot extends EventEmitter {
     this.logger = logger;
   }
 
-  public async getRedis(): Promise<IORedis.Redis> {
+  public async getRedis(): Promise<Redis> {
     return redisConnection;
   }
 

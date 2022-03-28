@@ -231,13 +231,6 @@
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.49.tgz#3facb98ebcd4114a4ecef74e0de2175b56fd4464"
   integrity sha512-K1AFuMe8a+pXmfHTtnwBvqoEylNKVeaiKYkjmcEAdytMQVJ/i9Fu7sc13GxgXdO49gkE7Hy8SyJonUZUn+eVaw==
 
-"@types/ioredis@4.28.10":
-  version "4.28.10"
-  resolved "https://registry.yarnpkg.com/@types/ioredis/-/ioredis-4.28.10.tgz#40ceb157a4141088d1394bb87c98ed09a75a06ff"
-  integrity sha512-69LyhUgrXdgcNDv7ogs1qXZomnfOEnSmrmMFqKgt1XMJxmoOSG/u3wYy13yACIfKuMJ8IhKgHafDO3sx19zVQQ==
-  dependencies:
-    "@types/node" "*"
-
 "@types/json-schema@*", "@types/json-schema@^7.0.7":
   version "7.0.7"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.7.tgz#98a993516c859eb0d5c4c8f098317a9ea68db9ad"
