@@ -30,11 +30,14 @@ interface IFreeCompanyMember {
   Server: string;
   exactRecruit: boolean;
 }
+
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
+  const redisCache = await sb.getRedis();
   const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
   try {
     const result = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
     if (result && result.FreeCompanyMembers) {
+      await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
         switch (Rank) {
@@ -87,8 +90,23 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
   return [];
 };
 
+const maybeRetryMemberList: IJob = async (sb: Sassybot) => {
+  const currentTime = moment();
+  const redisCache = await sb.getRedis();
+  const isRunning = await redisCache.get('memberPullRunning');
+  const lastPull = await redisCache.get('lastSuccessfulMemberPull');
+  if (lastPull && !isRunning) {
+    const hourDiff = Math.abs(moment.unix(Number(lastPull)).diff(currentTime, 'h'));
+    if (hourDiff > 2) {
+      return updateCotMembersFromLodeStone(sb);
+    }
+  }
+};
+
 const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
   const pullTime = new Date();
+  const redisCache = await sb.getRedis();
+  await redisCache.set('memberPullRunning', 1);
   const lodestoneMembers = await getLatestMemberList(sb);
   const cotMemberRepo = sb.dbConnection.getRepository(COTMember);
   const characterRepo = sb.dbConnection.getRepository(FFXIVChar);
@@ -198,6 +216,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
       }
     }
   }
+  await redisCache.del('memberPullRunning');
 };
 
 const checkForReminders: IJob = async (sb: Sassybot) => {
@@ -297,7 +316,7 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
 const twiceADay = '0 15 8,20 * * *';
 const daily = '0 0 20 * * *';
 const afterTwiceADay = '0 30 8,20 * * *';
-// const every15Min = '0 0,15,30,45 * * * *';
+const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
   {
@@ -319,6 +338,10 @@ const jobs: IScheduledJob[] = [
   {
     job: deletePastAbsences,
     schedule: twiceADay,
+  },
+  {
+    job: maybeRetryMemberList,
+    schedule: every15Min,
   },
 ];
 
