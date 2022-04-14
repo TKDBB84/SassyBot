@@ -180,6 +180,15 @@ export class Sassybot extends EventEmitter {
     return null;
   }
 
+  public async maybeCreateSBUser(userId: string): Promise<SbUser> {
+    const userRepo = this.dbConnection.getRepository<SbUser>(SbUser);
+    let sbUser = await userRepo.findOne({ discordUserId: userId });
+    if (!sbUser) {
+      sbUser = await userRepo.save(userRepo.create({ discordUserId: userId }));
+    }
+    return sbUser
+  }
+
   public async getUser(userId: string): Promise<User | undefined> {
     try {
       let user = this.discordClient.users.cache.get(userId);
@@ -332,6 +341,11 @@ export class Sassybot extends EventEmitter {
 
     this.emit('messageReceived', { message });
     if (Sassybot.isSassybotCommand(message)) {
+      try {
+        void await this.maybeCreateSBUser(message.author.id)
+      } catch (e) {
+        this.logger.warn('Error Creating SbUser', e);
+      }
       this.emit('sassybotCommandPreprocess', { message });
       const params = Sassybot.getCommandParameters(message);
       if (params.command === 'help') {
