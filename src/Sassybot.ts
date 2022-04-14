@@ -184,7 +184,7 @@ export class Sassybot extends EventEmitter {
     const userRepo = this.dbConnection.getRepository<SbUser>(SbUser);
     let sbUser = await userRepo.findOne({ discordUserId: userId });
     if (!sbUser) {
-      sbUser = await userRepo.save(userRepo.create({ discordUserId: userId }));
+      sbUser = await userRepo.save(userRepo.create({ discordUserId: userId }), { reload: true });
     }
     return sbUser
   }
@@ -202,14 +202,7 @@ export class Sassybot extends EventEmitter {
     }
   }
   public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null> {
-    const sbUserRepo = this.dbConnection.getRepository(SbUser);
-    let sbUser = await sbUserRepo.findOne(discordId);
-    if (!sbUser) {
-      sbUser = new SbUser();
-      sbUser.discordUserId = discordId;
-      await sbUserRepo.save(sbUser);
-      return null;
-    }
+    const sbUser = await this.maybeCreateSBUser(discordId);
     const char = await this.dbConnection
       .getRepository(FFXIVChar)
       .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });

@@ -1,6 +1,5 @@
 import { MessageReaction, ReactionEmoji } from 'discord.js';
 import Quote from '../entity/Quote';
-import SbUser from '../entity/SbUser';
 import SassybotEventListener from './SassybotEventListener';
 
 export default class QuoteListener extends SassybotEventListener {
@@ -14,17 +13,11 @@ export default class QuoteListener extends SassybotEventListener {
     const reaction = messageReaction.emoji as ReactionEmoji;
     if (quoteStrings.includes(reaction.name)) {
       const quoteRepo = this.sb.dbConnection.getRepository(Quote);
-      const sbUserRepo = this.sb.dbConnection.getRepository(SbUser);
       const alreadyQuoted = await quoteRepo.findOne({ messageId: messageReaction.message.id });
       if (alreadyQuoted) {
         return;
       }
-      let sbUser = await sbUserRepo.findOne({ discordUserId: messageReaction.message.author.id });
-      if (!sbUser) {
-        sbUser = new SbUser();
-        sbUser.discordUserId = messageReaction.message.author.id;
-        sbUser = await sbUserRepo.save(sbUser, { reload: true });
-      }
+      const sbUser = await this.sb.maybeCreateSBUser(messageReaction.message.author.id)
       const sbQuote = new Quote();
       sbQuote.user = sbUser;
       sbQuote.quoteText = messageReaction.message.cleanContent;
