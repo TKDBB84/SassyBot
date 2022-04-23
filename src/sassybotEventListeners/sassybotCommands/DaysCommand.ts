@@ -97,7 +97,7 @@ export default class DaysCommand extends SassybotCommand {
     const numDays = getNumberOFDays(firstSeen);
     if (!isOfficerQuery && numDays > 1000 && randNum <= 0.4) {
       daysInFc =
-        "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what I'm resetting your days to 0, get wrecked.";
+        "More than 1,000 days, are you happy? Why are you even still checking?  This isn't some contest. You know what, I'm resetting your days to 0, suck it bitch.";
       DaysCommand.stupidFakeReset[charName.toLowerCase()] = new Date();
     } else {
       if (charName.toLowerCase().includes('minfilia')) {

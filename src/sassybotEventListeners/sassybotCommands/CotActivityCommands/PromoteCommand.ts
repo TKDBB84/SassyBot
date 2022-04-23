@@ -170,7 +170,7 @@ export default class PromoteCommand extends ActivityCommand {
     if (!foundMember) {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-      const messageCollector = new MessageCollector(message.channel, filter);
+      const messageCollector = new MessageCollector(message.channel, filter, { idle: 120000 });
       messageCollector.on('collect', (collectedMessage: Message) => {
         const asyncWork = async () => {
           promotion.CotMember = await this.parseCharacterName(collectedMessage);
