@@ -29,7 +29,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       return;
     }
 
-    const newMemberChannel = await this.sb.getChannel(NewUserChannels[GuildIds.COT_GUILD_ID]);
+    const newMemberChannel = await this.sb.getTextChannel(NewUserChannels[GuildIds.COT_GUILD_ID]);
     if (!newMemberChannel || !this.sb.isTextChannel(newMemberChannel)) {
       this.sb.logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
       return;
@@ -42,11 +42,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   private async getDeclaredName(newMemberChannel: TextChannel, member: GuildMember): Promise<string> {
-    await newMemberChannel.send(
-      'Hey, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?',
-      { reply: member },
-    );
-    const collectedNameMessages = await newMemberChannel.awaitMessages(CoTNewMemberListener.messageFilter(member), {
+    await newMemberChannel.send({
+      content: `Hey ${member.toString()}, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?`,
+    });
+    const collectedNameMessages = await newMemberChannel.awaitMessages({
+      filter: CoTNewMemberListener.messageFilter(member),
       max: 1,
     });
     const declaredName: Message | undefined = collectedNameMessages.first();
@@ -63,10 +63,10 @@ export default class CoTNewMemberListener extends SassybotEventListener {
       try {
         await message.member.setNickname(declaredName, 'Declared Character Name');
       } catch (error) {
-        await message.channel.send(
-          'I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?',
-          { reply: message.author },
-        );
+        await message.channel.send({
+          content: `I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?`,
+          reply: { messageReference: message },
+        });
         this.sb.logger.warn('unable to update nickname', error);
       }
     }
@@ -97,18 +97,18 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     firstRun = true,
   ): Promise<void> {
     if (firstRun) {
-      await newMemberChannel.send(
-        'This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n' +
+      await newMemberChannel.send({
+        content:
+          `${member.toString()}, This is a quick verification process requiring you to read through our rules and become familiar with the rank guidelines for promotions/absences. \n\n` +
           'Once you\'ve done that, please type "I Agree" and you\'ll be granted full access to the server! We hope you enjoy your stay 😃',
-        { reply: member },
-      );
+      });
     } else {
-      await newMemberChannel.send(
-        'Sorry, you must agree to the rules to processed, please type "I Agree" to access the server',
-        { reply: member },
-      );
+      await newMemberChannel.send({
+        content: `${member.toString()},Sorry, you must agree to the rules to processed, please type "I Agree" to access the server`,
+      });
     }
-    const collectedNameMessages = await newMemberChannel.awaitMessages(CoTNewMemberListener.messageFilter(member), {
+    const collectedNameMessages = await newMemberChannel.awaitMessages({
+      filter: CoTNewMemberListener.messageFilter(member),
       max: 1,
     });
 
@@ -150,13 +150,18 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     } catch (error) {
       const sasner = await this.sb.getSasner();
       this.sb.logger.warn('could not remove role', [error, CotRanks.NEW]);
-      await message.channel.send(
-        `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner.toString()} for help.`,
-        { reply: message.author },
-      );
+      await message.channel.send({
+        content: `Sorry I'm a terrible bot, I wasn't able to remove your 'New' status, please contact ${sasner.toString()} for help.`,
+        reply: { messageReference: message },
+      });
       return true;
     }
-    await message.channel.send('Thank You & Welcome to Crowne Of Thorne', { reply: message.author });
+    await message.channel.send({
+      content: 'Thank You & Welcome to Crowne Of Thorne',
+      reply: {
+        messageReference: message,
+      },
+    });
     return true;
   }
 }

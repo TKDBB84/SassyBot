@@ -23,15 +23,13 @@ export default class CockCommand extends SassybotCommand {
       '10/10, you have a perfect & beautiful cock.',
       '6/10, nothing special',
     ];
-    let resp = phrases[Math.floor(Math.random() * phrases.length)];
+    let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
-      resp = '10/10, i want it to rub on my soft furry programming!';
+      content = '10/10, i want it to rub on my soft furry programming!';
     }
     if (message.author.id === '153364394443669507') {
-      resp = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.';
+      content = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.';
     }
-    await message.channel.send(resp, {
-      split: true,
-    });
+    await message.channel.send({ content, reply: { messageReference: message } });
   }
 }

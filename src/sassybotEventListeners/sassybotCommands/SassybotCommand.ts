@@ -35,11 +35,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     const invokedCommand = params.command.toLowerCase();
     const commandsListenedFor = this.commands.map((c) => c.toLowerCase());
     if (invokedCommand === 'help' && commandsListenedFor.includes(params.args.toLowerCase().trim())) {
-      await message.channel.send(helpText, {
-        split: {
-          char: ' ',
-        },
-      });
+      await message.channel.send(helpText);
     }
   }
 
@@ -60,11 +56,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
       }
     }
     if (invoked === 'help' && commands.includes(params.args.toLowerCase())) {
-      await message.channel.send(this.getHelpText(), {
-        split: {
-          char: ' ',
-        },
-      });
+      await message.channel.send(this.getHelpText());
     }
   }
 }

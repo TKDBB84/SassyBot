@@ -10,8 +10,9 @@ export default class EchoCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    await message.channel.send(params.args, {
-      split: true,
+    await message.channel.send({
+      content: params.args,
+      reply: { messageReference: message },
     });
   }
 }

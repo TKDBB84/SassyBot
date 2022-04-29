@@ -26,7 +26,7 @@ export default class PodcastCommand extends SassybotCommand {
     }
     if (member.roles.cache.has(PodcastRoleId)) {
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-      const messageCollector = new MessageCollector(messageChannel, filter, { max: 1, time: 60000 });
+      const messageCollector = new MessageCollector(messageChannel, { filter, max: 1, time: 60000 });
       await message.reply('Are you sure you want to leave?');
       messageCollector.on('collect', (collectedMessage: Message) => {
         const text = collectedMessage.cleanContent.toLowerCase();
