@@ -358,10 +358,10 @@
     "@typescript-eslint/types" "4.33.0"
     eslint-visitor-keys "^2.0.0"
 
-"@xivapi/js@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@xivapi/js/-/js-0.4.0.tgz#c5056092b93743f0a8ef91cf43c14b13ed2e5018"
-  integrity sha512-sClGrHxJcaRNL8O5ZmLkBXNUZsWwII0azvXkgmbTh+sVTTNs40e0mZYOig5qohKFi7ZVV6TQhVQVVwd/F+1LVA==
+"@xivapi/js@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@xivapi/js/-/js-0.4.1.tgz#76062f60904f0dac968a1812b2b3bece855e88bf"
+  integrity sha512-m9VDuytGMMTCN5L+lg+CNRnrqUq9GZky1WjEmAK4LXj5DFWDAt+1vCdNESFWRw5pqPdyMlJPywSvMu8e8n6+Aw==
   dependencies:
     "@root/request" "^1.7.0"
 
