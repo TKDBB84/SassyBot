@@ -54,13 +54,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     });
   }
   public readonly event = 'voiceStateUpdate';
-  public getEventListener(): ({
-    previousMemberState,
-    currentMemberState,
-  }: {
-    previousMemberState: VoiceState;
-    currentMemberState: VoiceState;
-  }) => Promise<void> {
+  public getEventListener(): (previousMemberState: VoiceState, currentMemberState: VoiceState) => Promise<void> {
     return this.listener.bind(this);
   }
 
@@ -87,13 +81,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     return null;
   }
 
-  private async listener({
-    previousMemberState,
-    currentMemberState,
-  }: {
-    previousMemberState: VoiceState;
-    currentMemberState: VoiceState;
-  }) {
+  private async listener(previousMemberState: VoiceState, currentMemberState: VoiceState): Promise<void> {
     const promiseResolution = await Promise.all([
       previousMemberState.channel,
       currentMemberState.channel,
