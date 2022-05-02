@@ -17,7 +17,7 @@
     "@types/node-fetch": "^2.6.1",
     "@types/shortid": "0.0.29",
     "@types/ws": "^8.5.3",
-    "@xivapi/js": "^0.4.0",
+    "@xivapi/js": "^0.4.1",
     "discord.js": "^12.5.3",
     "ioredis": "5.0.4",
     "moment": "^2.29.3",
