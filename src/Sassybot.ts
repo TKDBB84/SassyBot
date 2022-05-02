@@ -284,7 +284,6 @@ export class Sassybot extends EventEmitter {
     });
 
     this.discordClient.on('voiceStateUpdate', (...args) => {
-      this.logger.info('voiceStateUpdate', args);
       void this.onVoiceStateUpdate.bind(this)(...args);
     });
 
