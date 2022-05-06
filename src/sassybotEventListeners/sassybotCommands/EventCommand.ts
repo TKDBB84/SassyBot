@@ -1,4 +1,4 @@
-import { Collection, CollectorFilter, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
+import { Collection, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import Event from '../../entity/Event';
@@ -128,10 +128,10 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private listenForReaction(sentMessage: Message, authorId: string, eventIdToDelete: number) {
-    const reactionCollectorFilter: CollectorFilter = (reaction: MessageReaction, user: User): boolean => {
-      return (reaction.emoji.name === '⛔' || reaction.emoji.name === '🔁') && user.id === authorId;
-    };
     const reactionCollectorOptions = {
+      filter: (reaction: MessageReaction, user: User): boolean => {
+        return (reaction.emoji.name === '⛔' || reaction.emoji.name === '🔁') && user.id === authorId;
+      },
       max: 1,
       maxEmojis: 1,
       maxUsers: 1,
@@ -139,10 +139,7 @@ export default class EventCommand extends SassybotCommand {
     };
     void Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
       ([reactionRepeat, reactionNo]: MessageReaction[]) => {
-        const reactionCollector = sentMessage.createReactionCollector(
-          reactionCollectorFilter,
-          reactionCollectorOptions,
-        );
+        const reactionCollector = sentMessage.createReactionCollector(reactionCollectorOptions);
         reactionCollector.on('end', (collected: Collection<Snowflake, MessageReaction>) => {
           const doAsyncWork = async () => {
             await EventCommand.removeReactions([reactionRepeat, reactionNo]);
@@ -212,7 +209,7 @@ export default class EventCommand extends SassybotCommand {
     };
 
     if (this.sb.isTextChannel(message.channel)) {
-      const messageCollector = new MessageCollector(message.channel, filter, { max: 1 });
+      const messageCollector = new MessageCollector(message.channel, { filter, max: 1 });
       messageCollector.on('end', (collected: Collection<string, Message>) => {
         const doAsyncWork = async () => {
           const collectedMessage = collected.first();

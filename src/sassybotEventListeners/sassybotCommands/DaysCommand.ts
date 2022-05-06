@@ -65,7 +65,7 @@ export default class DaysCommand extends SassybotCommand {
     }
 
     if (message.author.id === UserIds.SASNER && params.args.trim() === '') {
-      await message.reply(`STFU you don't even play this game anymore.`);
+      await message.reply({ content: `STFU you don't even play this game anymore.` });
       return;
     }
 

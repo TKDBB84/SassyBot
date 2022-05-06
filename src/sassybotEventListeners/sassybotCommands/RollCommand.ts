@@ -181,12 +181,7 @@ export default class RollCommand extends SassybotCommand {
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const response = RollCommand.rollFunction(params.args);
-    await message.channel.send(response, {
-      reply: message.author,
-      split: {
-        char: ',',
-      },
-    });
+    await message.channel.send({ content: response, reply: { messageReference: message } });
     return;
   }
 }

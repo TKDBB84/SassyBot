@@ -137,9 +137,6 @@ export default class QuoteCommand extends SassybotCommand {
 
     await message.channel.send(
       `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber}) of ${userQuotes.length}`,
-      {
-        split: true,
-      },
     );
   }
 

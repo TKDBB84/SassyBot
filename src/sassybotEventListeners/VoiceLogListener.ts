@@ -1,4 +1,4 @@
-import { Message, MessageOptions, TextChannel, VoiceState } from 'discord.js';
+import { Message, TextChannel, VoiceState } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import { GuildIds } from '../consts';
@@ -10,9 +10,6 @@ interface IIgnoredVoiceChannelsMap {
 }
 
 export default class VoiceLogListener extends SassybotEventListener {
-  private static messageOptions: MessageOptions = {
-    split: false,
-  };
   private static readonly TIME_FORMAT = 'HH:mm z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
@@ -27,10 +24,9 @@ export default class VoiceLogListener extends SassybotEventListener {
     charName: string,
     timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
-    return await channel.send(
-      `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} left: ${channelName}`,
-      this.messageOptions,
-    );
+    return await channel.send({
+      content: `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} left: ${channelName}`,
+    });
   }
 
   private static async sendJoinedMessage(
@@ -39,10 +35,9 @@ export default class VoiceLogListener extends SassybotEventListener {
     charName: string,
     timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
-    return await channel.send(
-      `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} joined: ${channelName}`,
-      this.messageOptions,
-    );
+    return await channel.send({
+      content: `(${moment().tz(timezone).format(VoiceLogListener.TIME_FORMAT)}) ${charName} joined: ${channelName}`,
+    });
   }
 
   private static async sendMovedMessage(
@@ -52,12 +47,11 @@ export default class VoiceLogListener extends SassybotEventListener {
     charName: string,
     timezone = 'UTC',
   ): Promise<Message | Message[] | void> {
-    return await channel.send(
-      `(${moment()
+    return await channel.send({
+      content: `(${moment()
         .tz(timezone)
         .format(VoiceLogListener.TIME_FORMAT)}) ${charName} has moved from: ${fromChannelName}\tto: ${toChannelName}`,
-      this.messageOptions,
-    );
+    });
   }
   public readonly event = 'voiceStateUpdate';
   public getEventListener(): ({
@@ -115,7 +109,7 @@ export default class VoiceLogListener extends SassybotEventListener {
 
     if (
       VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(
-        previousMemberState.channelID || 'not-in-array',
+        previousMemberState.channelId || 'not-in-array',
       )
     ) {
       userLeftChannel = null;
@@ -123,7 +117,7 @@ export default class VoiceLogListener extends SassybotEventListener {
 
     if (
       VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id].has(
-        currentMemberState.channelID || 'not-in-array',
+        currentMemberState.channelId || 'not-in-array',
       )
     ) {
       userJoinedChannel = null;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // disable because non-ts XIVApi
-import { CollectorFilter, Message, MessageCollector, MessageReaction, User } from 'discord.js';
+import { Message, MessageCollector, MessageReaction, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import {
@@ -46,7 +46,7 @@ export default class PromoteCommand extends ActivityCommand {
       return;
     }
 
-    const reactionFilter: CollectorFilter = (reaction: MessageReaction, user: User): boolean => {
+    const reactionFilter = (reaction: MessageReaction, user: User): boolean => {
       return (reaction.emoji.name === '⛔' || reaction.emoji.name === '✅') && user.id === message.author.id;
     };
 
@@ -82,14 +82,14 @@ export default class PromoteCommand extends ActivityCommand {
         }
 
         const daysAgo = moment().diff(promotion.requested, 'd');
-        const response = `${promotion.CotMember.character.name}\t${
+        const content = `${promotion.CotMember.character.name}\t${
           CoTRankValueToString[promotion.CotMember.rank]
         } ⇒ ${toRankName}\tDays In FC: ${getNumberOFDays(promotion.CotMember.character.firstSeenApi)}\tRequested ${
           daysAgo > 0 ? `${daysAgo} days ago` : 'today'
         }`;
 
         let sentMessageArray: Message[];
-        const sentMessages = await message.channel.send(response, { split: false });
+        const sentMessages = await message.channel.send({ content, reply: { messageReference: message } });
         if (!Array.isArray(sentMessages)) {
           sentMessageArray = [sentMessages];
         } else {
@@ -99,7 +99,8 @@ export default class PromoteCommand extends ActivityCommand {
           sentMessageArray.map(async (sentMessage) => {
             const reactionYes = await sentMessage.react('✅');
             const reactionNo = await sentMessage.react('⛔');
-            const collection = await sentMessage.awaitReactions(reactionFilter, {
+            const collection = await sentMessage.awaitReactions({
+              filter: reactionFilter,
               max: 1,
               maxEmojis: 1,
               maxUsers: 1,
@@ -143,13 +144,13 @@ export default class PromoteCommand extends ActivityCommand {
               if (promotionChannel) {
                 await promotionChannel.send(`${promotion.CotMember.character.name} your promotion has been approved`);
               }
-              await sentMessage.delete({ timeout: 100 });
+              setTimeout(() => void sentMessage.delete(), 100);
             } else {
               await message.channel.send(
                 `Please Remember To Follow Up With ${promotion.CotMember.character.name} On Why They Were Denied`,
               );
               await promotionsRepo.delete(promotion.id);
-              await sentMessage.delete({ timeout: 100 });
+              setTimeout(() => void sentMessage.delete(), 100);
             }
             return Promise.resolve();
           }),
@@ -170,7 +171,7 @@ export default class PromoteCommand extends ActivityCommand {
     if (!foundMember) {
       await this.requestCharacterName(message);
       const filter = (filterMessage: Message) => filterMessage.author.id === message.author.id;
-      const messageCollector = new MessageCollector(message.channel, filter, { idle: 120000 });
+      const messageCollector = new MessageCollector(message.channel, { filter, idle: 120000 });
       messageCollector.on('collect', (collectedMessage: Message) => {
         const asyncWork = async () => {
           promotion.CotMember = await this.parseCharacterName(collectedMessage);
@@ -230,7 +231,7 @@ export default class PromoteCommand extends ActivityCommand {
   }
 
   protected async awaitEligibilityOverride(message: Message, promotion: PromotionRequest): Promise<void> {
-    const filter: CollectorFilter = (filterMessage: Message) => {
+    const filter = (filterMessage: Message) => {
       if (filterMessage.author.id !== message.author.id) {
         return false;
       }
@@ -242,7 +243,7 @@ export default class PromoteCommand extends ActivityCommand {
       return cleanedContent === 'i am eligible' || cleanedContent === 'im eligible' || cleanedContent === 'i eligible';
     };
 
-    const messages = await message.channel.awaitMessages(filter, { time: TWO_MIN, errors: [], max: 1 });
+    const messages = await message.channel.awaitMessages({ filter, time: TWO_MIN, errors: [], max: 1 });
     if (messages.size === 1) {
       await this.summarizeData(message, promotion);
     }
@@ -259,7 +260,7 @@ export default class PromoteCommand extends ActivityCommand {
         ? 'The officers will review it as soon as they have time.'
         : "I'll make sure the officers see this request!"
     }`;
-    await message.reply(summary, { reply: message.author, split: true });
+    await message.reply({ content: summary });
   }
 
   protected getToRank(promotion: PromotionRequest): CotRanks.VETERAN | CotRanks.MEMBER {

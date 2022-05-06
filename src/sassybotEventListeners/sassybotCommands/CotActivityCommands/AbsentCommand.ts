@@ -44,7 +44,7 @@ export default class AbsentCommand extends ActivityCommand {
         year: 'numeric',
       })}\n`;
     });
-    await message.channel.send(reply, { split: true });
+    await message.channel.send(reply);
     return;
   }
 
@@ -82,7 +82,8 @@ export default class AbsentCommand extends ActivityCommand {
       if (!foundMember) {
         await this.requestCharacterName(message);
         try {
-          const collectedMessage = await message.channel.awaitMessages(filter, {
+          const collectedMessage = await message.channel.awaitMessages({
+            filter,
             max: 1,
             time: 30000,
             errors: ['time'],
@@ -119,7 +120,7 @@ export default class AbsentCommand extends ActivityCommand {
       await this.requestStartDate(message, absent);
       messageCount = 1;
     }
-    const messageCollector = new MessageCollector(message.channel, filter, { time: 300000 });
+    const messageCollector = new MessageCollector(message.channel, { filter, time: 300000 });
     messageCollector
       .on('collect', (collectedMessage: Message) => {
         const asyncWork = async () => {
@@ -189,9 +190,7 @@ export default class AbsentCommand extends ActivityCommand {
     if (moment(possibleDate, 'YYYY-MM-DD').isValid()) {
       return moment(possibleDate, 'YYYY-MM-DD').toDate();
     }
-    await message.reply('Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format', {
-      reply: message.author,
-    });
+    await message.reply('Date Does Not Appear to be valid YYYY-MM-DD, please try again with that date format');
     return false;
   }
 
@@ -216,7 +215,7 @@ export default class AbsentCommand extends ActivityCommand {
       timeZone: 'UTC',
       year: 'numeric',
     })}`;
-    await message.reply(summary, { reply: message.author, split: true });
+    await message.reply(summary);
   }
 
   private static async checkDuration(message: Message, absentRequest: AbsentRequest): Promise<boolean> {

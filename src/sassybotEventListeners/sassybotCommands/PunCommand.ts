@@ -24,8 +24,6 @@ export default class PunCommand extends SassybotCommand {
     const jokeRes = await fetch(url);
     const data: { setup: string; delivery: string } = await jokeRes.json();
     const text = `${data.setup}\n\n||${data.delivery}||`;
-    await message.channel.send(text, {
-      split: false,
-    });
+    await message.channel.send(text);
   }
 }

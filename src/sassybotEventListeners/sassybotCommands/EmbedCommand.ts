@@ -37,12 +37,11 @@ export default class EmbedCommand extends SassybotCommand {
           text: apiCharacter.Name,
         },
       });
-      const collector: MessageCollector = new MessageCollector(
-        message.channel,
-        (collectedMessage: Message) => collectedMessage.author.id === message.author.id,
-        { max: 1 },
-      );
-      await message.reply(embed);
+      const collector: MessageCollector = new MessageCollector(message.channel, {
+        filter: (collectedMessage: Message) => collectedMessage.author.id === message.author.id,
+        max: 1,
+      });
+      await message.reply({ embeds: [embed] });
       collector.on('end', (collected) => {
         if (collected) {
           const collectedMessage = collected.first();
@@ -77,9 +76,9 @@ export default class EmbedCommand extends SassybotCommand {
             text: apiCharacter.Rank || '',
           },
         });
-        await message.reply(embed);
+        await message.reply({ embeds: [embed] });
         if (i === 0) {
-          const collector = new MessageCollector(message.channel, filter, { max: 1 });
+          const collector = new MessageCollector(message.channel, { filter, max: 1 });
           collector.on('end', (collected) => {
             if (collected.size > 0) {
               const collectedMessage = collected.first();
@@ -94,7 +93,7 @@ export default class EmbedCommand extends SassybotCommand {
                     text: chosenCharacter.Rank || '',
                   },
                 });
-                void message.reply(embed);
+                void message.reply({ embeds: [embed] });
               }
             }
           });

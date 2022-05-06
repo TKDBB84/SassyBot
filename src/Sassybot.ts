@@ -1,8 +1,10 @@
 import {
-  Channel,
+  AnyChannel,
+  TextChannel,
   Client,
   Guild,
   GuildMember,
+  Intents,
   Message,
   MessageMentions,
   MessageReaction,
@@ -11,10 +13,10 @@ import {
   PermissionResolvable,
   Role,
   Snowflake,
-  TextChannel,
   User,
   UserResolvable,
   VoiceState,
+  PartialMessageReaction,
 } from 'discord.js';
 import Redis from 'ioredis';
 import { EventEmitter } from 'events';
@@ -110,7 +112,26 @@ export class Sassybot extends EventEmitter {
 
   constructor(connection: Connection) {
     super();
-    this.discordClient = new Client({ disableMentions: 'everyone' });
+    const intents = new Intents();
+    intents.add(
+      Intents.FLAGS.GUILDS,
+      Intents.FLAGS.GUILD_MEMBERS,
+      Intents.FLAGS.GUILD_BANS,
+      Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
+      Intents.FLAGS.GUILD_INTEGRATIONS,
+      Intents.FLAGS.GUILD_WEBHOOKS,
+      Intents.FLAGS.GUILD_INVITES,
+      Intents.FLAGS.GUILD_VOICE_STATES,
+      Intents.FLAGS.GUILD_PRESENCES,
+      Intents.FLAGS.GUILD_MESSAGES,
+      Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+      Intents.FLAGS.GUILD_MESSAGE_TYPING,
+      Intents.FLAGS.DIRECT_MESSAGES,
+      Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+      Intents.FLAGS.DIRECT_MESSAGE_TYPING,
+      Intents.FLAGS.GUILD_SCHEDULED_EVENTS
+    );
+    this.discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
     this.dbConnection = connection;
     this.logger = logger;
   }
@@ -141,28 +162,18 @@ export class Sassybot extends EventEmitter {
       if (!guild) {
         return null;
       }
-      return await guild.roles.fetch(roleId, true);
+      return await guild.roles.fetch(roleId);
     } catch (error) {
       this.logger.warn('could not fetch role', [error, guildId, roleId]);
       throw error;
     }
   }
 
-  public async getChannel(channelId: string): Promise<Channel | null> {
-    let channel;
-    try {
-      channel = this.discordClient.channels.cache.get(channelId);
-      if (!channel) {
-        channel = await this.discordClient.channels.fetch(channelId);
-      }
-    } catch (error) {
-      this.logger.error('could not fetch channel', [error, channelId]);
-    }
-    return channel || null;
-  }
-
   public async getTextChannel(channelId: string): Promise<TextChannel | null> {
-    const channel = await this.getChannel(channelId);
+    let channel: AnyChannel | undefined | null = this.discordClient.channels.cache.get(channelId);
+    if (!channel) {
+      channel = await this.discordClient.channels.fetch(channelId);
+    }
     if (this.isTextChannel(channel)) {
       return channel;
     }
@@ -186,7 +197,7 @@ export class Sassybot extends EventEmitter {
     if (!sbUser) {
       sbUser = await userRepo.save(userRepo.create({ discordUserId: userId }), { reload: true });
     }
-    return sbUser
+    return sbUser;
   }
 
   public async getUser(userId: string): Promise<User | undefined> {
@@ -224,10 +235,7 @@ export class Sassybot extends EventEmitter {
       let member;
       const guild = this.discordClient.guilds.cache.get(guildId);
       if (guild) {
-        member = guild.member(userResolvable);
-        if (!member) {
-          member = await guild.members.fetch(userResolvable);
-        }
+        member = await guild.members.fetch(userResolvable);
       }
       return member;
     } catch (error) {
@@ -236,8 +244,8 @@ export class Sassybot extends EventEmitter {
     }
   }
 
-  public isTextChannel(channel: Channel | null | undefined): channel is TextChannel {
-    return !!channel && channel.type === 'text';
+  public isTextChannel(channel: AnyChannel | null | undefined): channel is TextChannel {
+    return channel instanceof TextChannel;
   }
 
   public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
@@ -249,7 +257,7 @@ export class Sassybot extends EventEmitter {
     if (sassybot && guildId) {
       const sbUser = await this.getMember(guildId, sassybot);
       if (sbUser) {
-        return sbUser.hasPermission(permissionString);
+        return sbUser.permissions.has(permissionString);
       }
     }
     return false;
@@ -335,7 +343,7 @@ export class Sassybot extends EventEmitter {
     this.emit('messageReceived', { message });
     if (Sassybot.isSassybotCommand(message)) {
       try {
-        void await this.maybeCreateSBUser(message.author.id)
+        void (await this.maybeCreateSBUser(message.author.id));
       } catch (e) {
         this.logger.warn('Error Creating SbUser', e);
       }
@@ -355,21 +363,16 @@ export class Sassybot extends EventEmitter {
     if (params.args === '') {
       const commands: string[] = [...this.registeredCommands];
       commands.sort();
-      await message.channel.send(
-        `Available commands are:\n${commands.join(
+      await message.channel.send({
+        content: `Available commands are:\n${commands.join(
           ', ',
         )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
-        {
-          split: true,
-        },
-      );
+      });
     } else if (params.args === 'help') {
-      await message.channel.send(
-        'usage: `!{sassybot|sb} help [commands]` -- I displays a list of commands, and can take a 2nd argument for more details of a commands',
-        {
-          split: true,
-        },
-      );
+      await message.channel.send({
+        content:
+          'usage: `!{sassybot|sb} help [commands]` -- I displays a list of commands, and can take a 2nd argument for more details of a commands',
+      });
     } else {
       this.emit('sassybotHelpCommand', { message, params });
     }
@@ -388,11 +391,13 @@ export class Sassybot extends EventEmitter {
     }
     this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
-  private onMessageReactionAdd(messageReaction: MessageReaction, user: User | PartialUser) {
-    if (messageReaction.message.author.bot || user.bot) {
-      return;
+  private onMessageReactionAdd(reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
+    if (reaction instanceof MessageReaction && user instanceof User) {
+      if (reaction.message.author?.bot || user.bot) {
+        return;
+      }
+      this.emit('messageReactionAdd', { messageReaction: reaction, user });
     }
-    this.emit('messageReactionAdd', { messageReaction, user });
   }
 }
 
