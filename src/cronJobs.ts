@@ -96,7 +96,7 @@ const maybeRetryMemberList: IJob = async (sb: Sassybot) => {
   const isRunning = await redisCache.get('memberPullRunning');
   const lastPull = await redisCache.get('lastSuccessfulMemberPull');
   if (lastPull && !isRunning) {
-    const hourDiff = Math.abs(moment.unix(Number(lastPull)).diff(currentTime, 'h'));
+    const hourDiff = Math.abs(moment(lastPull).diff(currentTime, 'h'));
     if (hourDiff > 2) {
       return updateCotMembersFromLodeStone(sb);
     }
