@@ -21,34 +21,36 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
+    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    const isOfficerQuery = isMessageFromAdmin(message, officerRole) && !!params.args.trim();
+
     const authorId = message.author.id;
     const cotMember = await this.sb.findCoTMemberByDiscordId(authorId);
     let firstSeen: moment.Moment | false;
     let charName: string;
-    if (cotMember) {
-      firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
-      charName = cotMember.character.name;
-    } else {
-      // try finding by discord id
-      const charByDiscordId = await this.sb.dbConnection
-        .getRepository(FFXIVChar)
-        .createQueryBuilder()
-        .where(`userDiscordUserId = :userId`, { userId: message.author.id })
-        .getOne();
 
-      if (!charByDiscordId) {
-        await message.channel.send(
-          `I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: \`!sb claim Sasner Rensas\`) to claim your character`,
-        );
-        return;
+    if (!isOfficerQuery) {
+      if (cotMember) {
+        firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
+        charName = cotMember.character.name;
+      } else {
+        // try finding by discord id
+        const charByDiscordId = await this.sb.dbConnection
+          .getRepository(FFXIVChar)
+          .createQueryBuilder()
+          .where(`userDiscordUserId = :userId`, {userId: message.author.id})
+          .getOne();
+
+        if (!charByDiscordId) {
+          await message.channel.send(
+            `I'm  not sure who you are, you can use \`!sb claim Your CharName\` (ex: \`!sb claim Sasner Rensas\`) to claim your character`,
+          );
+          return;
+        }
+        firstSeen = charByDiscordId.firstSeenApi ? moment(charByDiscordId.firstSeenApi) : false;
+        charName = charByDiscordId.name;
       }
-      firstSeen = charByDiscordId.firstSeenApi ? moment(charByDiscordId.firstSeenApi) : false;
-      charName = charByDiscordId.name;
-    }
-
-    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-    const isOfficerQuery = isMessageFromAdmin(message, officerRole) && !!params.args.trim();
-    if (isOfficerQuery) {
+    } else {
       const targetMember = params.args.trim().toLowerCase();
       const charByName = await this.sb.dbConnection
         .getRepository(FFXIVChar)
