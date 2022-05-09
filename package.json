@@ -18,7 +18,7 @@
     "@types/shortid": "0.0.29",
     "@types/ws": "^8.5.3",
     "@xivapi/js": "^0.4.1",
-    "discord-api-types": "^0.26.0",
+    "discord-api-types": "^0.32.1",
     "discord.js": "^13.6.0",
     "ioredis": "5.0.4",
     "moment": "^2.29.3",
