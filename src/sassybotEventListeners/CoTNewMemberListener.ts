@@ -3,6 +3,7 @@ import { CotRanks, CoTRankValueToString, GuildIds, NewUserChannels } from '../co
 import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
 import SassybotEventListener from './SassybotEventListener';
+import moment from 'moment';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
   private static messageFilter = (member: GuildMember) => (message: Message) => {
@@ -20,7 +21,11 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     }
 
     const isCotMember = await this.sb.findCoTMemberByDiscordId(member.id);
-    if (isCotMember && isCotMember.firstSeenDiscord) {
+    if (
+      isCotMember &&
+      isCotMember.firstSeenDiscord &&
+      moment(isCotMember.firstSeenDiscord).isAfter('1900-01-01 00:00:00')
+    ) {
       const role = isCotMember.rank;
       await member.roles.add(role, 'Added Known Rank To User');
       if (isCotMember.character.name && (role === CotRanks.MEMBER || role === CotRanks.RECRUIT)) {

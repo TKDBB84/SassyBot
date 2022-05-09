@@ -270,6 +270,9 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
   });
 
   const allLostMembers = relevantMembers.filter((member) => {
+    if (moment(member.character.lastSeenApi).isBefore('1900-01-01 00:00:00')) {
+      return false;
+    }
     switch (member.rank) {
       case CotRanks.VETERAN:
         return !!member.character.lastSeenApi && member.character.lastSeenApi < ONE_HUNDRED_EIGHTY_ONE_DAYS_AGO;
@@ -307,7 +310,9 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
     }
     promises.push(memberRepo.delete(member));
     promises.push(
-      charRepo.query(`UPDATE ffxiv_char SET firstSeenApi = NULL, lastSeenApi = NULL WHERE id = ${member.character.id}`),
+      charRepo.query(
+        `UPDATE ffxiv_char SET firstSeenApi = '1000-01-01 00:00:00', lastSeenApi = '1000-01-01 00:00:00' WHERE id = ${member.character.id}`,
+      ),
     );
     await Promise.all(promises);
   }

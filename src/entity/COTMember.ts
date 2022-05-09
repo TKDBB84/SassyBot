@@ -5,6 +5,7 @@ import AbsentRequest from './AbsentRequest';
 import FFXIVChar from './FFXIVChar';
 import PromotionRequest from './PromotionRequest';
 import SbUser from './SbUser';
+import moment from 'moment';
 
 @Entity()
 export default class COTMember {
@@ -59,7 +60,10 @@ export default class COTMember {
         }
       }
     } else {
-      const firstSeenDiscord = cotMember.firstSeenDiscord ? cotMember.firstSeenDiscord : new Date();
+      const firstSeenDiscord =
+        cotMember.firstSeenDiscord && moment(cotMember.firstSeenDiscord).isAfter('1900-01-01 00:00:00')
+          ? cotMember.firstSeenDiscord
+          : new Date();
       await cotMemberRepo.update(cotMember.id, { firstSeenDiscord, character: cotPlayer });
     }
     cotPlayer.user = sbUser;
