@@ -38,7 +38,7 @@ export default class SetDaysCommand extends SassybotCommand {
       .where(`LOWER(name) = LOWER(:name)`, { name: memberName.toLowerCase() })
       .getOne();
 
-    if (!character || !character.firstSeenApi) {
+    if (!character || !character.firstSeenApi || moment(character.firstSeenApi).isBefore('1900-01-01 00:00:00')) {
       await message.channel.send('This Character Does Not Seem To Be A CoT Member.');
       return;
     }

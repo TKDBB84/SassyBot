@@ -32,13 +32,16 @@ export default class DaysCommand extends SassybotCommand {
     if (!isOfficerQuery) {
       if (cotMember) {
         firstSeen = cotMember.character.firstSeenApi ? moment(cotMember.character.firstSeenApi) : false;
+        if (firstSeen && firstSeen.isBefore('1900-01-01 00:00:00')) {
+          firstSeen = false;
+        }
         charName = cotMember.character.name;
       } else {
         // try finding by discord id
         const charByDiscordId = await this.sb.dbConnection
           .getRepository(FFXIVChar)
           .createQueryBuilder()
-          .where(`userDiscordUserId = :userId`, {userId: message.author.id})
+          .where(`userDiscordUserId = :userId`, { userId: message.author.id })
           .getOne();
 
         if (!charByDiscordId) {
@@ -48,6 +51,9 @@ export default class DaysCommand extends SassybotCommand {
           return;
         }
         firstSeen = charByDiscordId.firstSeenApi ? moment(charByDiscordId.firstSeenApi) : false;
+        if (firstSeen && firstSeen.isBefore('1900-01-01 00:00:00')) {
+          firstSeen = false;
+        }
         charName = charByDiscordId.name;
       }
     } else {
@@ -63,6 +69,9 @@ export default class DaysCommand extends SassybotCommand {
         return;
       }
       firstSeen = charByName.firstSeenApi ? moment(charByName.firstSeenApi) : false;
+      if (firstSeen && firstSeen.isBefore('1900-01-01 00:00:00')) {
+        firstSeen = false;
+      }
       charName = charByName.name;
     }
 

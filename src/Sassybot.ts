@@ -129,7 +129,7 @@ export class Sassybot extends EventEmitter {
       Intents.FLAGS.DIRECT_MESSAGES,
       Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
       Intents.FLAGS.DIRECT_MESSAGE_TYPING,
-      Intents.FLAGS.GUILD_SCHEDULED_EVENTS
+      Intents.FLAGS.GUILD_SCHEDULED_EVENTS,
     );
     this.discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
     this.dbConnection = connection;

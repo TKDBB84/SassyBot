@@ -1,6 +1,10 @@
 import moment from 'moment';
 
 const getNumberOFDays = (firstSeenApi: string | Date | moment.Moment): number => {
-  return moment().diff(moment(firstSeenApi), 'd');
+  const firstSeen = moment(firstSeenApi);
+  if (firstSeen.isBefore('1900-01-01 00:00:00')) {
+    return 0;
+  }
+  return moment().diff(firstSeen, 'd');
 };
 export default getNumberOFDays;
