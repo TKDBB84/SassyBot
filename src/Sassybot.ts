@@ -17,6 +17,7 @@ import {
   UserResolvable,
   VoiceState,
   PartialMessageReaction,
+  PartialMessage,
 } from 'discord.js';
 import Redis from 'ioredis';
 import { EventEmitter } from 'events';
@@ -279,8 +280,11 @@ export class Sassybot extends EventEmitter {
   }
 
   public async run(): Promise<void> {
-    this.discordClient.on('message', (...args) => {
+    this.discordClient.on('messageCreate', (...args) => {
       void this.onMessageHandler.bind(this)(...args);
+    });
+    this.discordClient.on('messageUpdate', (oldMessage, newMessage) => {
+      void this.onMessageHandler.bind(this)(newMessage);
     });
 
     this.discordClient.on('voiceStateUpdate', (...args) => {
@@ -335,8 +339,8 @@ export class Sassybot extends EventEmitter {
     this.emit('postLogin');
   }
 
-  private async onMessageHandler(message: Message): Promise<void> {
-    if (message.author.bot) {
+  private async onMessageHandler(message: Message | PartialMessage): Promise<void> {
+    if (!message || message.partial || message?.author?.bot) {
       return;
     }
 
