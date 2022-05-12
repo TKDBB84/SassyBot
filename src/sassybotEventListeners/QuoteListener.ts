@@ -13,7 +13,7 @@ export default class QuoteListener extends SassybotEventListener {
     const reaction = messageReaction.emoji as ReactionEmoji;
     if (quoteStrings.includes(reaction.name || '')) {
       const quoteRepo = this.sb.dbConnection.getRepository(Quote);
-      const alreadyQuoted = await quoteRepo.findOne({ messageId: messageReaction.message.id });
+      const alreadyQuoted = await quoteRepo.findOne({ where: { messageId: messageReaction.message.id } });
       if (alreadyQuoted) {
         return;
       }

@@ -189,7 +189,7 @@ export default class PromoteCommand extends ActivityCommand {
     } else {
       const existingPromotion = await this.sb.dbConnection
         .getRepository(PromotionRequest)
-        .findOne({ CotMember: foundMember });
+        .findOne({ where: { CotMember: { id: foundMember.id } } });
       if (existingPromotion) {
         await message.channel.send(
           `You already requested a promotion on ${existingPromotion.requested.toLocaleDateString('en-US', {

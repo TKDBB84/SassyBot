@@ -66,7 +66,7 @@ export default class VoiceLogListener extends SassybotEventListener {
 
   private async getSpamChannelTimezone(guildId: string): Promise<string> {
     const spamChannelEntity = await this.sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
-      guildId,
+      where: { guildId },
     });
     if (spamChannelEntity && spamChannelEntity.timezone) {
       return spamChannelEntity.timezone;
@@ -76,7 +76,7 @@ export default class VoiceLogListener extends SassybotEventListener {
 
   private async getSpamTextChannel(guildId: string): Promise<TextChannel | null> {
     const spamChannelEntity = await this.sb.dbConnection.manager.findOne<SpamChannel>(SpamChannel, {
-      guildId,
+      where: { guildId },
     });
     if (spamChannelEntity && spamChannelEntity.channelId) {
       const spamTextChannel = await this.sb.getTextChannel(spamChannelEntity.channelId);
