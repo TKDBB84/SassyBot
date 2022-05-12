@@ -37,7 +37,12 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
       `https://xivapi.com/freecompany/${CoTAPIId}?data=FCM${
         process.env.XIV_API_TOKEN ? `&private_key=${process.env.XIV_API_TOKEN}` : ''
       }`,
-    ).then((res) => res.json());
+    ).then((res) => {
+      if (res.ok) {
+        return res.json()
+      }
+      throw new Error(`${res.status} ${res.statusText}`);
+    });
     if (result && result.FreeCompanyMembers) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       sb.logger.info('Member List Updated');
