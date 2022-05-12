@@ -9,9 +9,8 @@ import FFXIVChar from './entity/FFXIVChar';
 import PromotionRequest from './entity/PromotionRequest';
 import { Sassybot } from './Sassybot';
 import { DiscordAPIError, GuildMember } from 'discord.js';
-// @ts-ignore
-import XIVApi from '@xivapi/js';
 import AbsentRequest from './entity/AbsentRequest';
+import fetch from 'node-fetch';
 
 export type IJob = (sb: Sassybot) => Promise<void>;
 
@@ -33,11 +32,15 @@ interface IFreeCompanyMember {
 
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const redisCache = await sb.getRedis();
-  const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
   try {
-    const result = await xiv.freecompany.get(CoTAPIId, { data: 'FCM' });
+    const result = await fetch(
+      `https://xivapi.com/freecompany/${CoTAPIId}?data=FCM${
+        process.env.XIV_API_TOKEN ? `&private_key=${process.env.XIV_API_TOKEN}` : ''
+      }`,
+    ).then((res) => res.json());
     if (result && result.FreeCompanyMembers) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
+      sb.logger.info('Member List Updated');
       return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
         switch (Rank) {
@@ -81,8 +84,6 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             };
         }
       }) as IFreeCompanyMember[];
-    } else {
-      sb.logger.error('result did not include member list');
     }
   } catch (err) {
     sb.logger.error('Could not fetch member list', err);
