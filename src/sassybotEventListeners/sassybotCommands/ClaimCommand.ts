@@ -33,11 +33,13 @@ export default class ClaimCommand extends SassybotCommand {
     const userRepo = this.sb.dbConnection.getRepository(SbUser);
     const characterRepo = this.sb.dbConnection.getRepository(FFXIVChar);
 
-    let sbUser = await userRepo.findOne(message.member.id);
+    let sbUser = await userRepo.findOne({ where: { discordUserId: message.member.id } });
     if (!sbUser) {
       sbUser = userRepo.create({ discordUserId: message.member.id });
     }
-    const previouslyClaimedCharacter = await characterRepo.findOne({ where: { user: message.member.id } });
+    const previouslyClaimedCharacter = await characterRepo.findOne({
+      where: { user: { discordUserId: message.member.id } },
+    });
     if (previouslyClaimedCharacter && name === previouslyClaimedCharacter.name.trim().toLowerCase()) {
       await message.channel.send(`You've already claimed the character: ${previouslyClaimedCharacter.name}.`);
       return;

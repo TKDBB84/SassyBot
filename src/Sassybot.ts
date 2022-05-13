@@ -23,7 +23,8 @@ import Redis from 'ioredis';
 import { EventEmitter } from 'events';
 import cron from 'node-cron';
 import 'reflect-metadata';
-import { Connection, createConnection } from 'typeorm';
+import type { DataSource } from 'typeorm';
+import getDataSource from './dataSource';
 import jobs from './cronJobs';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
@@ -105,13 +106,13 @@ export class Sassybot extends EventEmitter {
     }
     return result;
   }
-  public dbConnection: Connection;
+  public dbConnection: DataSource;
   public logger: typeof logger;
   protected discordClient: Client;
   private registeredCommands = new Set<string>();
   private sasner: User | undefined;
 
-  constructor(connection: Connection) {
+  constructor(connection: DataSource) {
     super();
     const intents = new Intents();
     intents.add(
@@ -194,7 +195,7 @@ export class Sassybot extends EventEmitter {
 
   public async maybeCreateSBUser(userId: string): Promise<SbUser> {
     const userRepo = this.dbConnection.getRepository<SbUser>(SbUser);
-    let sbUser = await userRepo.findOne({ discordUserId: userId });
+    let sbUser = await userRepo.findOneBy({ discordUserId: userId });
     if (!sbUser) {
       sbUser = await userRepo.save(userRepo.create({ discordUserId: userId }), { reload: true });
     }
@@ -405,25 +406,8 @@ export class Sassybot extends EventEmitter {
   }
 }
 
-let dbConnection;
-if (process.env.NODE_ENV !== 'production') {
-  dbConnection = createConnection({
-    database: 'sassybot',
-    entities: ['dist/entity/**/*.js', 'src/entity/**/*.ts'],
-    host: 'localhost',
-    logging: true,
-    password: 'sassy123',
-    port: 3306,
-    synchronize: false,
-    type: 'mariadb',
-    username: 'sassybot',
-  });
-} else {
-  dbConnection = createConnection();
-}
-
-dbConnection
-  .then(async (connection: Connection) => {
+getDataSource()
+  .then(async (connection: DataSource) => {
     const sb = new Sassybot(connection);
     sb.setMaxListeners(30);
     SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));

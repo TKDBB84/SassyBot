@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // disabled for XIVApi
 import moment from 'moment';
-import { DeleteResult, In, LessThan } from 'typeorm';
+import { DeleteResult, Equal, In, LessThan } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
@@ -151,7 +151,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
       .orWhere(`LOWER(TRIM(name)) = LOWER(:name)`, { name: lodestoneMember.Name.trim().toLowerCase() })
       .getOne();
     if (characterData && characterData.id) {
-      character = await characterRepo.findOneOrFail(characterData.id);
+      character = await characterRepo.findOneOrFail({ where: { id: characterData.id }, relations: [] });
       await characterRepo.update(characterData.id, {
         ...charUpdates,
         firstSeenApi: characterData.firstSeenApi || pullTime,
@@ -300,10 +300,10 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
         .catch(() => false);
 
       const promotionsRepo = sb.dbConnection.getRepository<PromotionRequest>(PromotionRequest);
-      const promotions = await promotionsRepo.find({ where: { CotMember: member.id } });
+      const promotions = await promotionsRepo.find({ where: { CotMember: Equal(member.id) } });
       if (promotions) {
         promotions.forEach((promotion) => {
-          promises.push(promotionsRepo.delete(promotion));
+          promises.push(promotionsRepo.delete(promotion.id));
         });
       }
 
@@ -314,7 +314,7 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
         promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
       }
     }
-    promises.push(memberRepo.delete(member));
+    promises.push(memberRepo.delete(member.id));
     promises.push(
       charRepo.query(
         `UPDATE ffxiv_char SET firstSeenApi = '1000-01-01 00:00:00', lastSeenApi = '1000-01-01 00:00:00' WHERE id = ${member.character.id}`,
