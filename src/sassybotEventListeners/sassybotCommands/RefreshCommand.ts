@@ -33,7 +33,7 @@ export default class RefreshCommand extends SassybotCommand {
       const lastRefresh = moment(lastRefreshedCharacter.lastSeenApi);
       const lastRefreshString = lastRefresh
         .tz(thisUser && thisUser.timezone && moment.tz.zone(thisUser.timezone) ? thisUser.timezone : 'UTC')
-        .format('LT');
+        .format('LT z');
       void message.reply({ content: `Fresh FC Member Data Was Pulled At: ${lastRefreshString}` });
     }
   }
