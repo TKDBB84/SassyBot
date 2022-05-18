@@ -20,7 +20,7 @@
     "@xivapi/js": "^0.4.1",
     "discord-api-types": "^0.33.0",
     "discord.js": "^13.6.0",
-    "ioredis": "5.0.4",
+    "ioredis": "5.0.5",
     "moment": "^2.29.3",
     "moment-timezone": "^0.5.34",
     "mysql": "^2.18.1",
