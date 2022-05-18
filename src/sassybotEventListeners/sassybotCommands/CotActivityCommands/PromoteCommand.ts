@@ -53,7 +53,7 @@ export default class PromoteCommand extends ActivityCommand {
     const promotingMemberId = message.author.id;
     const promotingMember = await this.sb.getMember(GuildIds.COT_GUILD_ID, promotingMemberId);
     const promotionChannel = await this.sb.getTextChannel(CoTPromotionChannelId);
-    await message.channel.send('__Current Promotion Requests:__\n');
+    await message.channel.send({ content: '__Current Promotion Requests:__', reply: { messageReference: message } });
     // const memberList = (await xiv.freecompany.get(CoTAPIId, { data: 'FCM' })) as {
     //   FreeCompanyMembers: IFreeCompanyMember[];
     // };
@@ -89,7 +89,7 @@ export default class PromoteCommand extends ActivityCommand {
         }`;
 
         let sentMessageArray: Message[];
-        const sentMessages = await message.channel.send({ content, reply: { messageReference: message } });
+        const sentMessages = await message.channel.send({ content });
         if (!Array.isArray(sentMessages)) {
           sentMessageArray = [sentMessages];
         } else {

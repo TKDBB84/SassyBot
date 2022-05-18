@@ -24,5 +24,5 @@ export default async function getDataSource(): Promise<DataSource> {
   if (!dataSource.isInitialized) {
     await dataSource.initialize();
   }
-  return dataSource
+  return dataSource;
 }

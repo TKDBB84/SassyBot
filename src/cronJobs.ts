@@ -39,7 +39,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
       }`,
     ).then((res) => {
       if (res.ok) {
-        return res.json()
+        return res.json();
       }
       throw new Error(`${res.status} ${res.statusText}`);
     });
