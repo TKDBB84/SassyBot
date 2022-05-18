@@ -21,5 +21,8 @@ const dataSource = new DataSource({
 });
 
 export default async function getDataSource(): Promise<DataSource> {
-  return await dataSource.initialize();
+  if (!dataSource.isInitialized) {
+    await dataSource.initialize();
+  }
+  return dataSource
 }
