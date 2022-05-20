@@ -45,6 +45,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
     });
     if (result && result.FreeCompanyMembers) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
+      await redisCache.set('memberPullFailCount', '0');
       return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
         const Rank = member.Rank.toUpperCase().trim();
         switch (Rank) {
@@ -89,7 +90,16 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
         }
       }) as IFreeCompanyMember[];
     } else {
-      sb.logger.error(`Error getting latest member list`, result);
+      const redisCache = await sb.getRedis();
+      let failCount = await redisCache.get('memberPullFailCount');
+      if (!failCount) {
+        failCount = '0';
+      }
+      const failCountInt = parseInt(failCount, 10) + 1;
+      await redisCache.set('memberPullFailCount', failCountInt.toString());
+      if (failCountInt >= 5) {
+        sb.logger.error(`Error getting latest member list ${failCountInt} times in a row`, JSON.stringify(result));
+      }
     }
   } catch (err) {
     sb.logger.error('Could not fetch member list', err);
