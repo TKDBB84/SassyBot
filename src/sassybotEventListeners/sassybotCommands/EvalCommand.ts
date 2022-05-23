@@ -25,9 +25,12 @@ export default class EvalCommand extends SassybotCommand {
       }
       // tslint:disable-next-line:no-eval
       // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
-      let result = eval(params.args);
-      if (typeof result !== 'string') {
-        result = inspect(result);
+      const evalResult = eval(params.args);
+      let result: string
+      if (typeof evalResult !== 'string') {
+        result = inspect(evalResult);
+      } else {
+        result = evalResult
       }
       await message.channel.send(result);
     }

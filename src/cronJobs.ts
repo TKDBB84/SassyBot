@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // disabled for XIVApi
 import moment from 'moment';
-import { DeleteResult, Equal, In, LessThan } from 'typeorm';
+import { DeleteResult, Equal, In, LessThan, UpdateResult } from 'typeorm';
 import { CoTAPIId, CoTOfficerChannelId, CotRanks, GuildIds } from './consts';
 import COTMember from './entity/COTMember';
 import Event from './entity/Event';
@@ -223,9 +223,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
         // user no longer in discord
         if (e instanceof DiscordAPIError) {
           if (e.message === 'Unknown Member' && e.httpStatus === 404 && character.id) {
-            await characterRepo.query(`UPDATE ffxiv_char
-                                       SET userDiscordUserId = NULL
-                                       WHERE id = ${character.id}`);
+            void (await characterRepo.update({ id: character.id }, { user: null }));
           } else {
             sb.logger.error('message', e);
           }
@@ -304,7 +302,7 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
   for (let i = 0, iMax = allLostMembers.length; i < iMax; i++) {
     const member = allLostMembers[i];
     const discordId = member.character.user?.discordUserId;
-    const promises: Promise<DeleteResult | GuildMember>[] = [];
+    const promises: Promise<DeleteResult | UpdateResult | GuildMember>[] = [];
     if (discordId) {
       const discordMember: GuildMember | undefined | false = await sb
         .getMember(GuildIds.COT_GUILD_ID, discordId)
@@ -326,12 +324,14 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
       }
     }
     promises.push(memberRepo.delete(member.id));
+
     promises.push(
-      charRepo.query(
-        `UPDATE ffxiv_char SET firstSeenApi = '1000-01-01 00:00:00', lastSeenApi = '1000-01-01 00:00:00' WHERE id = ${member.character.id}`,
+      charRepo.update(
+        { id: member.character.id },
+        { firstSeenApi: '1000-01-01 00:00:00', lastSeenApi: '1000-01-01 00:00:00' },
       ),
     );
-    await Promise.all(promises);
+    void (await Promise.all(promises));
   }
 };
 

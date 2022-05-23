@@ -33,14 +33,30 @@ import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
+import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
 const redisClient = new Redis();
 const redisConnection: Promise<Redis> = new Promise((resolve) => {
   redisClient.on('connect', () => resolve(redisClient));
 });
 
+export type SassybotEvent =
+  | 'preLogin'
+  | 'postLogin'
+  | 'messageReceived'
+  | 'sassybotCommandPreprocess'
+  | 'sassybotCommand'
+  | 'sassybotHelpCommand'
+  | 'sassybotCommandPostprocess'
+  | 'messageEnd'
+  | 'messageReactionAdd'
+  | 'voiceStateUpdate'
+  | 'messageCreate'
+  | 'messageUpdate'
+  | 'guildMemberAdd'
+
 export interface ISassybotEventListener {
-  event: string;
+  event: SassybotEvent;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEventListener: () => (...args: any[]) => Promise<void>;
 }
@@ -306,7 +322,7 @@ export class Sassybot extends EventEmitter {
     await this.login();
   }
 
-  public registerSassybotEventListener(sbEvent: ISassybotEventListener): void {
+  public registerSassybotEventListener(sbEvent: SassybotEventListener): void {
     const uniqueCommands = new Set();
     if (this.isSassyBotCommand(sbEvent)) {
       sbEvent.commands.forEach((eachCommand) => {
@@ -318,13 +334,7 @@ export class Sassybot extends EventEmitter {
       });
       const command = sbEvent.commands[0].toLowerCase();
       this.registeredCommands.add(command);
-      this.on('sassybotHelpCommand', ({ message, params }: { message: Message; params: ISassybotCommandParams }) => {
-        void sbEvent.displayHelpText.bind(sbEvent)({ message, params });
-      });
     }
-    this.on(sbEvent.event, (...args) => {
-      void sbEvent.getEventListener().bind(sbEvent)(...args);
-    });
   }
 
   private async login() {

@@ -20,5 +20,5 @@ export default class FFXIVChar {
 
   @OneToOne(() => SbUser, { eager: true, nullable: true })
   @JoinColumn()
-  public user!: SbUser;
+  public user!: SbUser | null;
 }

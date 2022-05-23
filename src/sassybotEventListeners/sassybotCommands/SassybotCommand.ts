@@ -1,10 +1,17 @@
-import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
+import type { Message } from 'discord.js';
+import type { ISassybotCommandParams, Sassybot } from '../../Sassybot';
 import SassybotEventListener from '../SassybotEventListener';
 
 export default abstract class SassybotCommand extends SassybotEventListener {
   public abstract readonly commands: string[];
   public readonly event = 'sassybotCommand';
+
+  constructor(sb: Sassybot) {
+    super(sb);
+    this.sb.on('sassybotHelpCommand', ({ message, params }: { message: Message; params: ISassybotCommandParams }) => {
+      void this.displayHelpText.bind(this)({ message, params });
+    });
+  }
 
   public getEventListener(): ({
     message,
