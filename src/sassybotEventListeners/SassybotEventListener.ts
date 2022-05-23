@@ -1,4 +1,4 @@
-import type { ISassybotEventListener, Sassybot, SassybotEvent} from '../Sassybot';
+import type { ISassybotEventListener, Sassybot, SassybotEvent } from '../Sassybot';
 
 export default abstract class SassybotEventListener implements ISassybotEventListener {
   public abstract event: SassybotEvent;

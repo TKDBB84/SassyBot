@@ -116,28 +116,30 @@ export default class PromoteCommand extends ActivityCommand {
               const updatedMember = await promotion.CotMember.promote();
               await promotionsRepo.delete(promotion.id);
               const newRole = updatedMember.rank;
-
-              const member = await this.sb.getMember(GuildIds.COT_GUILD_ID, updatedMember.character.user.discordUserId);
-              if (member && newRole) {
-                let reason = `promoted`;
-                if (promotingMember) {
-                  reason += ` by ${promotingMember.displayName}`;
-                }
-                try {
-                  await member.roles.add(newRole, reason);
-                  if (previousRole) {
-                    await member.roles.remove(previousRole, reason);
+              const userDiscordId = updatedMember.character.user?.discordUserId || false;
+              if (userDiscordId) {
+                const member = await this.sb.getMember(GuildIds.COT_GUILD_ID, userDiscordId);
+                if (member && newRole) {
+                  let reason = `promoted`;
+                  if (promotingMember) {
+                    reason += ` by ${promotingMember.displayName}`;
                   }
-                } catch (error) {
-                  this.sb.logger.warn('error promoting member, adding/removing rank:', {
-                    error,
-                    member,
-                    newRole,
-                    previousRole,
-                  });
-                  await message.reply(
-                    `I was unable to change ${promotion.CotMember.character.name}'s rank, please update it when you have a moment.`,
-                  );
+                  try {
+                    await member.roles.add(newRole, reason);
+                    if (previousRole) {
+                      await member.roles.remove(previousRole, reason);
+                    }
+                  } catch (error) {
+                    this.sb.logger.warn('error promoting member, adding/removing rank:', {
+                      error,
+                      member,
+                      newRole,
+                      previousRole,
+                    });
+                    await message.reply(
+                      `I was unable to change ${promotion.CotMember.character.name}'s rank, please update it when you have a moment.`,
+                    );
+                  }
                 }
               }
 

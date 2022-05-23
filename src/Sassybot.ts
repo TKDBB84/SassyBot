@@ -53,7 +53,7 @@ export type SassybotEvent =
   | 'voiceStateUpdate'
   | 'messageCreate'
   | 'messageUpdate'
-  | 'guildMemberAdd'
+  | 'guildMemberAdd';
 
 export interface ISassybotEventListener {
   event: SassybotEvent;
