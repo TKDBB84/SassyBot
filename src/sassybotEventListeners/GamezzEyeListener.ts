@@ -1,9 +1,13 @@
 import { Message } from 'discord.js';
 import SassybotEventListener from './SassybotEventListener';
 import { GuildIds, UserIds } from '../consts';
+import { Sassybot } from '../Sassybot';
 
 export default class GamezzEyeListenerListener extends SassybotEventListener {
-  public readonly event = 'messageReceived';
+  constructor(sb: Sassybot) {
+    super(sb, 'messageReceived');
+  }
+
   public getEventListener(): ({ message }: { message: Message }) => Promise<void> {
     return this.listener.bind(this);
   }

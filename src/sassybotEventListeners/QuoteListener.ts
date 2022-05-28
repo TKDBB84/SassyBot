@@ -1,9 +1,13 @@
 import { MessageReaction, ReactionEmoji } from 'discord.js';
 import Quote from '../entity/Quote';
 import SassybotEventListener from './SassybotEventListener';
+import type { Sassybot } from '../Sassybot';
 
 export default class QuoteListener extends SassybotEventListener {
-  public readonly event = 'messageReactionAdd';
+  constructor(sb: Sassybot) {
+    super(sb, 'messageReactionAdd');
+  }
+
   public getEventListener(): ({ messageReaction }: { messageReaction: MessageReaction }) => Promise<void> {
     return this.listener.bind(this);
   }

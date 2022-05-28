@@ -56,7 +56,6 @@ export type SassybotEvent =
   | 'guildMemberAdd';
 
 export interface ISassybotEventListener {
-  event: SassybotEvent;
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEventListener: () => (...args: any[]) => Promise<void>;
 }

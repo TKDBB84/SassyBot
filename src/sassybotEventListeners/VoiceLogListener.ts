@@ -4,6 +4,7 @@ import 'moment-timezone';
 import { GuildIds } from '../consts';
 import SpamChannel from '../entity/SpamChannel';
 import SassybotEventListener from './SassybotEventListener';
+import { Sassybot } from '../Sassybot';
 
 interface IIgnoredVoiceChannelsMap {
   [key: string]: Set<string>;
@@ -53,7 +54,11 @@ export default class VoiceLogListener extends SassybotEventListener {
         .format(VoiceLogListener.TIME_FORMAT)}) ${charName} has moved from: ${fromChannelName}\tto: ${toChannelName}`,
     });
   }
-  public readonly event = 'voiceStateUpdate';
+
+  constructor(sb: Sassybot) {
+    super(sb, 'voiceStateUpdate');
+  }
+
   public getEventListener(): ({
     previousMemberState,
     currentMemberState,

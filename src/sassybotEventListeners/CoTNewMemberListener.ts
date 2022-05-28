@@ -4,13 +4,17 @@ import COTMember from '../entity/COTMember';
 import FFXIVChar from '../entity/FFXIVChar';
 import SassybotEventListener from './SassybotEventListener';
 import moment from 'moment';
+import type { Sassybot } from '../Sassybot';
 
 export default class CoTNewMemberListener extends SassybotEventListener {
+  constructor(sb: Sassybot) {
+    super(sb, 'guildMemberAdd');
+  }
+
   private static messageFilter = (member: GuildMember) => (message: Message) => {
     return message.author.id === member.user.id && message.cleanContent.trim().length > 0;
   };
 
-  public readonly event = 'guildMemberAdd';
   public getEventListener(): ({ member }: { member: GuildMember }) => Promise<void> {
     return this.listener.bind(this);
   }
