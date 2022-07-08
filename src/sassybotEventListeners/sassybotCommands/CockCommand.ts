@@ -22,10 +22,18 @@ export default class CockCommand extends SassybotCommand {
       '4/10, all wrinkly & moist',
       '10/10, you have a perfect & beautiful cock.',
       '6/10, nothing special',
+      'fuck man, what is that thing, I don\'t think I can even rate that: -1 out of 10',
+      '7/10, I\'d let that thing my code',
+      '6/10, just fine, i suppose',
+      '3/10, just barely passable',
+      'I plead the 5th',
+      '1/10, no... just no',
+      '1/10, have you ever seen a cock before? Because that\'s a not a cock',
+      '4/10, not even big enough to be a pain in the ass',
     ];
     let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
-      content = '10/10, i want it to rub on my soft furry programming!';
+      content = 'shit i forgot my costume... i can make it up in other ways i swear!';
     }
     if (message.author.id === '153364394443669507') {
       content = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.';
