@@ -27,7 +27,7 @@
     "mysql": "^2.18.1",
     "node-cron": "^3.0.1",
     "node-fetch": "^2.6.7",
-    "node-gyp": "^9.0.0",
+    "node-gyp": "^9.1.0",
     "reflect-metadata": "^0.1.13",
     "tsd": "^0.22.0",
     "typeorm": "^0.3.7",
