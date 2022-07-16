@@ -38,9 +38,6 @@
     "zlib-sync": "^0.1.7"
   },
   "overrides": {
-    "winston-discordjs": {
-      "discord.js": "$discord.js"
-    },
     "typeorm": {
       "ioredis": "$ioredis"
     }
