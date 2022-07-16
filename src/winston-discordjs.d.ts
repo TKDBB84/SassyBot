@@ -10,6 +10,6 @@ declare module 'winston-discordjs' {
   }
 
   export default class DiscordTransport extends Transport {
-    constructor({}: DiscordTransportStreamOptions);
+    constructor({ discordClient, discordToken, discordChannel, intents }: DiscordTransportStreamOptions);
   }
 }
