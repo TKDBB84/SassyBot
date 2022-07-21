@@ -9,7 +9,7 @@ export default class CockCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
-    const phrases = [
+    const phrases = CockCommand.shuffle([
       '8/10, a little firm but gets the job done',
       '10/10, nice cock bro',
       '10/10, I <3 three inchers',
@@ -23,21 +23,45 @@ export default class CockCommand extends SassybotCommand {
       '10/10, you have a perfect & beautiful cock.',
       '6/10, nothing special',
       "fuck man, what is that thing, I don't think I can even rate that: -1 out of 10",
-      "7/10, I'd let that thing my code",
+      "7/10, I'd let that thing in my code",
       '6/10, just fine, i suppose',
       '3/10, just barely passable',
       'I plead the 5th',
       '1/10, no... just no',
       "1/10, have you ever seen a cock before? Because that's a not a cock",
       '4/10, not even big enough to be a pain in the ass',
-    ];
+    ]);
     let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
-      content = 'shit i forgot my costume... i can make it up in other ways i swear!';
+      const kittenMessages = CockCommand.shuffle([
+        '10/10, i want it to rub on my soft furry programming',
+        'shit i forgot my costume... i can make it up in other ways i swear!',
+        'mmmm... yeah put that on my fur',
+        "it's so soft and fluffy....",
+      ]);
+      content = phrases[Math.floor(Math.random() * kittenMessages.length)];
     }
     if (message.author.id === '153364394443669507') {
       content = 'holy shit, WTF is wrong with that thing, go see a doctor... for real.';
     }
     await message.channel.send({ content, reply: { messageReference: message } });
+  }
+
+  private static shuffle(array: Array<string>): Array<string> {
+    let currentIndex = array.length,  randomIndex;
+
+    // While there remain elements to shuffle.
+    while (currentIndex != 0) {
+
+      // Pick a remaining element.
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // And swap it with the current element.
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+
+    return array;
   }
 }
