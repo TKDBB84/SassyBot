@@ -413,6 +413,17 @@ export class Sassybot extends EventEmitter {
       this.emit('messageReactionAdd', { messageReaction: reaction, user });
     }
   }
+
+  public async sendEventMessage(eventName: string, data: Object): Promise<void> {
+    const redis = await this.getRedis();
+    await redis.publish(
+      'sassybot-events',
+      JSON.stringify({
+        ...data,
+        eventName,
+      }),
+    );
+  }
 }
 
 getDataSource()
