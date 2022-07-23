@@ -129,14 +129,4 @@ export default class DaysCommand extends SassybotCommand {
     });
     await message.channel.send(daysInFc);
   }
-
-  private static randomIntFromInterval(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-  }
-
-  private static sleep(seconds: number): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(resolve, seconds * 1000);
-    });
-  }
 }
