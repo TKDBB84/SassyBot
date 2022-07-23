@@ -1,87 +1,55 @@
-import winston from 'winston';
 import DiscordTransport from 'winston-discordjs';
 import { Client, TextChannel } from 'discord.js';
+import { format, transports, createLogger as createWinstonLogger } from 'winston';
+import type { Logger } from 'winston';
+import { consoleFormat } from 'winston-console-format';
 
-let winLogger;
-const config: winston.LoggerOptions = {
-  exceptionHandlers: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.colorize(),
-        winston.format.splat(),
-        winston.format.simple(),
-      ),
-      level: 'error',
-      stderrLevels: ['error'],
-    }),
-  ],
-  format: winston.format.combine(winston.format.timestamp(), winston.format.simple()),
+const winLogger = createWinstonLogger({
+  defaultMeta: { service: 'sassybot' },
+  level: 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.ms(),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json(),
+  ),
   transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.colorize(),
-        winston.format.splat(),
-        winston.format.simple(),
+    new transports.Console({
+      consoleWarnLevels: ['warning', 'notice'],
+      stderrLevels: ['error', 'emerg', 'alert', 'crit'],
+      level: 'info',
+      handleExceptions: true,
+      handleRejections: true,
+      format: format.combine(
+        format.colorize({ all: true }),
+        format.padLevels(),
+        consoleFormat({
+          showMeta: true,
+          metaStrip: ['service'],
+          inspectOptions: {
+            depth: Infinity,
+            colors: true,
+            maxArrayLength: Infinity,
+            breakLength: 120,
+            compact: Infinity,
+          },
+        }),
       ),
-      stderrLevels: ['error'],
     }),
   ],
-};
-if (process.env.NODE_ENV === 'production') {
-  winLogger = winston.createLogger({
-    level: 'info',
-    ...config,
-  });
-} else {
-  winLogger = winston.createLogger({
-    level: 'silly',
-    ...config,
-  });
-}
+});
 
-const createLogger = (discordClient: Client, discordChannel: TextChannel): winston.Logger => {
-  const withDiscord: winston.LoggerOptions = {
-    exceptionHandlers: [
-      new winston.transports.Console({
-        format: winston.format.combine(
-          winston.format.timestamp(),
-          winston.format.colorize(),
-          winston.format.splat(),
-          winston.format.simple(),
-        ),
-        level: 'error',
-        stderrLevels: ['error'],
-      }),
-    ],
-    format: winston.format.combine(winston.format.timestamp(), winston.format.simple()),
-    transports: [
+const createLogger = (discordClient: Client, discordChannel: TextChannel): Logger => {
+  if (process.env.NODE_ENV === 'production') {
+    return winLogger.add(
       new DiscordTransport({
         discordClient,
         discordChannel,
       }),
-      new winston.transports.Console({
-        format: winston.format.combine(
-          winston.format.timestamp(),
-          winston.format.colorize(),
-          winston.format.splat(),
-          winston.format.simple(),
-        ),
-        stderrLevels: ['error'],
-      }),
-    ],
-  };
-  if (process.env.NODE_ENV === 'production') {
-    return winston.createLogger({
-      level: 'info',
-      ...withDiscord,
-    });
+    );
   }
-  return winston.createLogger({
-    level: 'silly',
-    ...config,
-  });
+  return winLogger;
 };
 
 const logger = winLogger;
