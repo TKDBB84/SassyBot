@@ -28,7 +28,7 @@ export default class CockCommand extends SassybotCommand {
       '3/10, just barely passable',
       'I plead the 5th',
       '1/10, no... just no',
-      "1/10, have you ever seen a cock before? Because that's a not a cock",
+      "1/10, have you ever seen a cock before? Because that's not a cock",
       '2/10, not even big enough to be a pain in the ass',
       '...is it an innie?'
     ];
