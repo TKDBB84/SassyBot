@@ -32,7 +32,6 @@ export default class CockCommand extends SassybotCommand {
       '2/10, not even big enough to be a pain in the ass',
       '...is it an innie?'
     ];
-    CockCommand.shuffle(phrases);
     let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
       const kittenMessages = [
@@ -41,16 +40,8 @@ export default class CockCommand extends SassybotCommand {
         'mmmm... yeah put that on my fur',
         "it's so soft and fluffy....",
       ];
-      CockCommand.shuffle(kittenMessages);
       content = phrases[Math.floor(Math.random() * kittenMessages.length)];
     }
     await message.channel.send({ content, reply: { messageReference: message } });
-  }
-
-  private static shuffle<T>(array: Array<T>) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
   }
 }
