@@ -30,7 +30,7 @@ export default class CockCommand extends SassybotCommand {
       '1/10, no... just no',
       "1/10, have you ever seen a cock before? Because that's not a cock",
       '2/10, not even big enough to be a pain in the ass',
-      '...is it an innie?'
+      '...is it an innie?',
     ];
     let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
@@ -40,7 +40,7 @@ export default class CockCommand extends SassybotCommand {
         'mmmm... yeah put that on my fur',
         "it's so soft and fluffy....",
       ];
-      content = phrases[Math.floor(Math.random() * kittenMessages.length)];
+      content = kittenMessages[Math.floor(Math.random() * kittenMessages.length)];
     }
     await message.channel.send({ content, reply: { messageReference: message } });
   }
