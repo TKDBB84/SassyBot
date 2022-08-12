@@ -149,7 +149,7 @@ export default class FactorioCommand extends SassybotCommand {
       const memoryUsage = stats.recent.memory.resource.usage;
       const memoryMax = stats.recent.memory.resource.limit;
       const memoryPercent = `${((memoryUsage / memoryMax) * 100).toFixed(1)}%`;
-      replyStats = `CPU: ${cpuUsage} ¯\\_(ツ)_/¯\nMemory: ${memoryUsage}/${memoryMax}MB (${memoryPercent})`;
+      replyStats = `CPU: \`${cpuUsage}\` ¯\\_(ツ)_/¯\nMemory: \`${memoryUsage}/${memoryMax}\`MB (\`${memoryPercent}\`)`;
     }
 
     await message.reply(
