@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import { ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
+import { UserIds } from '../../consts';
 
 const defaultHeaders = {
   Accept: 'application/json, text/plain, */*',
@@ -153,9 +154,13 @@ export default class FactorioCommand extends SassybotCommand {
       replyStats = `CPU: \`${cpuUsage}\` ¯\\_(ツ)_/¯\nMemory: \`${memoryUsage}/${memoryMax}\`MB (\`${memoryPercent}\`)`;
     }
 
-    await message.reply(
-      `Server Status: \`${currentStatus}\`\n` + `Connection String: \`${connectionString}\`\n${replyStats}`.trim(),
-    );
+    const allowedIds = [UserIds.YOAKE, UserIds.JIGGLYPENGUIN, UserIds.SASTRA, UserIds.SASNER].map((i) => i.toString());
+    let replyMessage = `Server Status: \`${currentStatus}\`\n`;
+    if (allowedIds.includes(message.author.id)) {
+      replyMessage += `Connection String: \`${connectionString}\`\n`;
+    }
+    replyMessage += replyStats;
+    await message.reply(replyMessage);
   }
 
   private async getAuthToken(): Promise<string> {
