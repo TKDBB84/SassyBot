@@ -6,6 +6,7 @@ import DaysCommand from './DaysCommand';
 import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
+import FactorioCommand from './FactorioCommand';
 import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
 import PunCommand from './PunCommand';
@@ -29,6 +30,7 @@ export default [
   EmbedCommand,
   EvalCommand,
   EventCommand,
+  FactorioCommand,
   InspireCommand,
   PingCommand,
   PodcastCommand,
