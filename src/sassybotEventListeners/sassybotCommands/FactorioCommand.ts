@@ -117,7 +117,7 @@ export default class FactorioCommand extends SassybotCommand {
   public readonly commands = ['factorio'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} factorio [status|start]` -- I reply with the status of the server, or start it for you';
+    return 'usage: `!{sassybot|sb} factorio [start]` -- I reply with the status of the server, or start it for you';
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
