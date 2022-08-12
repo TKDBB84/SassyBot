@@ -124,14 +124,22 @@ export default class FactorioCommand extends SassybotCommand {
     const hostFactorJWT = await this.getAuthToken();
     const instance = await this.getInstance(hostFactorJWT);
     const instanceName = instance.name;
-    const currentStatus = instance.status.message;
+    let currentStatus = instance.status.message;
     const connectionString = `${instance.inter.host}:${instance.inter.port}`;
     const instanceId = instance.meta.id;
     const isReady = instance.status.message === 'Ready';
     const isStarting = instance.status.message === 'Starting';
 
     if (!isReady && !isStarting && params.args.toLowerCase().includes('start')) {
-      await this.startServer(hostFactorJWT, instanceName, instanceId);
+      const isStarting = await this.startServer(hostFactorJWT, instanceName, instanceId);
+      if (isStarting) {
+        await message.reply('Server Is Starting... This may take sometime.');
+        currentStatus = 'Starting';
+      }
+    }
+
+    if (isStarting && params.args.toLowerCase().includes('start')) {
+      await message.reply('The Server is already starting, it may take some time.');
     }
 
     let replyStats = '';
@@ -145,7 +153,9 @@ export default class FactorioCommand extends SassybotCommand {
     }
 
     await message.reply(
-      `Server Status: \n${currentStatus}\nConnection String: ${connectionString}${replyStats ? `\n${replyStats}` : ''}`,
+      `Server Status: \`${currentStatus}\`\nConnection String: \`${connectionString}${
+        replyStats ? `\n${replyStats}` : ''
+      }\``,
     );
   }
 
