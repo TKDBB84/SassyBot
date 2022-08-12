@@ -98,7 +98,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
       const failCountInt = parseInt(failCount, 10) + 1;
       await redisCache.set('memberPullFailCount', failCountInt.toString());
       if (failCountInt >= 5) {
-        sb.logger.error(`Error getting latest member list ${failCountInt} times in a row`, JSON.stringify(result));
+        sb.logger.error(`Error getting latest member list ${failCountInt} times in a row`, { result });
       }
     }
   } catch (err) {
