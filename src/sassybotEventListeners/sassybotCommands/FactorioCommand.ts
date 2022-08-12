@@ -180,7 +180,7 @@ export default class FactorioCommand extends SassybotCommand {
       if (responseBody && responseBody.auth_packet) {
         try {
           const { token: jwtString } = responseBody.auth_packet;
-          const jwt = JSON.parse(new Buffer(jwtString).toString('base64')) as jwtType;
+          const jwt = JSON.parse(Buffer.from(jwtString, 'base64').toString('utf-8')) as jwtType;
           const expTimestamp = jwt.exp;
           const currentTimestamp = Math.floor(Date.now() / 1000);
           const ttlForJWT = expTimestamp - currentTimestamp - 1000; // pull an extra 1000s off because why not
