@@ -129,8 +129,9 @@ export default class FactorioCommand extends SassybotCommand {
     const instanceId = instance.meta.id;
     const isReady = instance.status.message === 'Ready';
     const isStarting = instance.status.message === 'Starting';
+    const isIdle = instance.status.message === 'Idle';
 
-    if (!isReady && !isStarting && params.args.toLowerCase().includes('start')) {
+    if (isIdle && !isReady && !isStarting && params.args.toLowerCase().includes('start')) {
       const isStarting = await this.startServer(hostFactorJWT, instanceName, instanceId);
       if (isStarting) {
         await message.reply('Server Is Starting... This may take sometime.');
