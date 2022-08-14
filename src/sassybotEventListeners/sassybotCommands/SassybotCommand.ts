@@ -34,7 +34,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   }): Promise<void> {
     const helpText = this.getHelpText().trim();
     if (helpText === '') {
-      // dont bother
+      // don't bother
       return;
     }
 

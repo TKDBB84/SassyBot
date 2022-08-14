@@ -15,7 +15,7 @@ export default class SpamCommand extends SassybotCommand {
       return;
     }
     const authorId = message.author.id;
-    if (message.member?.permissions.has('ADMINISTRATOR') || authorId === UserIds.SASNER) {
+    if (message.member?.permissions.has('Administrator') || authorId === UserIds.SASNER) {
       const spamChannelRepo = this.sb.dbConnection.getRepository(SpamChannel);
       let spamChannel = await spamChannelRepo.findOne({ where: { guildId: message.guild.id } });
       if (!spamChannel) {
