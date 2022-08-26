@@ -23,7 +23,7 @@
     "erlpack": "github:discord/erlpack",
     "ioredis": "^5.2.3",
     "moment": "^2.29.4",
-    "moment-timezone": "^0.5.35",
+    "moment-timezone": "^0.5.37",
     "mysql": "^2.18.1",
     "node-cron": "^3.0.2",
     "node-fetch": "^2.6.7",
