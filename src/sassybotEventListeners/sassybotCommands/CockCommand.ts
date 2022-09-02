@@ -33,7 +33,9 @@ export default class CockCommand extends SassybotCommand {
       '...is it an innie?',
     ];
     let content = phrases[Math.floor(Math.random() * phrases.length)];
-    if (message.author.id === '125025069402554368') {
+    if (message.author.id === '100713419027537920') {
+      content = 'Happy Fucking Birthday, remember to wipe the shit off your cock';
+    } else if (message.author.id === '125025069402554368') {
       const kittenMessages = [
         '10/10, i want it to rub on my soft furry programming',
         'shit i forgot my costume... i can make it up in other ways i swear!',
