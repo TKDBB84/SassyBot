@@ -96,4 +96,4 @@ jobs:
             npm ci
             npm run build
             npm prune --omit=dev
-            pm2 restart ./ecosystem.config.cjs --env production --update-env
+            pm2 restart ${{ secrets.PATH }}/ecosystem.config.js --env production --update-env
