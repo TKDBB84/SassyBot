@@ -92,8 +92,7 @@ jobs:
             cd ${{ secrets.PATH }}
             git reset --hard HEAD
             git pull origin master
-            nvm use 16
-            npm ci
-            npm run build
-            npm prune --omit=dev
+            ${{ secrets.NPM_PATH }} ci
+            ${{ secrets.NPM_PATH }} run build
+            ${{ secrets.NPM_PATH }} prune --omit=dev
             pm2 restart ${{ secrets.PATH }}/ecosystem.config.js --env production --update-env
