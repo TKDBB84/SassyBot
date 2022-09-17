@@ -72,13 +72,7 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'push' }}
     needs: [ 'build-ts', 'Analyze' ]
-
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [ 16.x ]
-
     steps:
       - name: Pulling and building on server
         uses: appleboy/ssh-action@master
@@ -88,11 +82,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.PORT }}
           script: |
-            source ~/.bashrc
             cd ${{ secrets.PATH }}
             git reset --hard HEAD
             git pull origin master
             ${{ secrets.NPM_PATH }} ci
             ${{ secrets.NPM_PATH }} run build
             ${{ secrets.NPM_PATH }} prune --omit=dev
-            pm2 restart ${{ secrets.PATH }}/ecosystem.config.js --env production --update-env
+            pm2 restart ${{ secrets.PATH }}/ecosystem.config.js --update-env
