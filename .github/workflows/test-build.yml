@@ -68,3 +68,31 @@ jobs:
         uses: fastify/github-action-merge-dependabot@v3.0.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+  deploy:
+    if: ${{ github.event_name == 'push' }}
+    needs: [ 'build-ts', 'Analyze' ]
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 18.x ]
+
+    steps:
+      - name: Pulling and building on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ${{ secrets.PATH }}
+            git reset --hard HEAD
+            git pull origin main
+            nvm use 18
+            npm ci
+            npm run build
+            npm prune --omit=dev
+            pm2 restart ./ecosystem.config.cjs --env production --update-env
