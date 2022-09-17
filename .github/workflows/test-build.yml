@@ -90,7 +90,7 @@ jobs:
           script: |
             cd ${{ secrets.PATH }}
             git reset --hard HEAD
-            git pull origin main
+            git pull origin master
             nvm use 18
             npm ci
             npm run build
