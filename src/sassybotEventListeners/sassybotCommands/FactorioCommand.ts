@@ -299,7 +299,6 @@ export default class FactorioCommand extends SassybotCommand {
 
   private async startServer(hostFactorJWT: string, instanceName: string, instanceId: string): Promise<true> {
     const location = this.getMostRecentSaveLocation(hostFactorJWT, instanceName);
-
     const result = await fetch(`https://hostfactor.io/v1/instance/${instanceId}/start`, {
       method: 'PUT',
       body: JSON.stringify({

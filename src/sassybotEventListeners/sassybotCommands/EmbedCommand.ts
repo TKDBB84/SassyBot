@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Message, MessageCollector, MessageEmbed } from 'discord.js';
+import { Message, MessageCollector, EmbedBuilder } from 'discord.js';
 import { affirmativeResponses, UserIds } from '../../consts';
 import { ISassybotCommandParams, XIVAPISearchResponse } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
@@ -29,7 +29,7 @@ export default class EmbedCommand extends SassybotCommand {
       // couldn't find the character, just giong to accept the name and move on
     } else if (apiChars.length === 1) {
       const apiCharacter = apiChars[0];
-      const embed = new MessageEmbed({
+      const embed = new EmbedBuilder({
         title: 'Is this your character?',
         description: 'You can type "Yes" or "No"',
         image: { url: apiCharacter.Avatar },
@@ -68,7 +68,7 @@ export default class EmbedCommand extends SassybotCommand {
       };
       for (let i = 0; i < apiChars.length; i++) {
         const apiCharacter = apiChars[i];
-        const embed = new MessageEmbed({
+        const embed = new EmbedBuilder({
           title: apiCharacter.Name,
           description: `You can type "${i + 1}" to select this character`,
           image: { url: apiCharacter.Avatar },
@@ -85,7 +85,7 @@ export default class EmbedCommand extends SassybotCommand {
               if (collectedMessage) {
                 const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
                 const chosenCharacter = apiChars[chosenInt];
-                const embed = new MessageEmbed({
+                const embed = new EmbedBuilder({
                   title: 'You picked',
                   description: `this one`,
                   image: { url: chosenCharacter.Avatar },

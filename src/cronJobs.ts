@@ -222,7 +222,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
       } catch (e: unknown) {
         // user no longer in discord
         if (e instanceof DiscordAPIError) {
-          if (e.message === 'Unknown Member' && e.httpStatus === 404 && character.id) {
+          if (e.message === 'Unknown Member' && e.code === 404 && character.id) {
             void (await characterRepo.update({ id: character.id }, { user: null }));
           } else {
             sb.logger.error('message', e);

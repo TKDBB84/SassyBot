@@ -169,7 +169,7 @@ export default class EventCommand extends SassybotCommand {
     const toResolve: Promise<Message | true>[] = [];
     const guildId = sentMessage.guild?.id;
     if (guildId) {
-      const canDelete = await this.sb.botHasPermission('MANAGE_MESSAGES', guildId);
+      const canDelete = await this.sb.botHasPermission('ManageMessages', guildId);
       if (canDelete) {
         toResolve.push(sentMessage.delete());
       }
