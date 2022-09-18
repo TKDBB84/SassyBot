@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [ master ]
   pull_request_target:
-    branches: [master]
+    branches: [ master ]
     types:
       - closed
 
@@ -44,7 +44,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
