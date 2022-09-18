@@ -146,6 +146,7 @@ export class Sassybot extends EventEmitter {
       GatewayIntentBits.DirectMessageReactions,
       GatewayIntentBits.DirectMessageTyping,
       GatewayIntentBits.GuildScheduledEvents,
+      GatewayIntentBits.MessageContent,
     ];
     this.discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
     this.dbConnection = connection;
