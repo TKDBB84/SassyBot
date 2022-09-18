@@ -125,7 +125,7 @@ export default class DaysCommand extends SassybotCommand {
       charName,
       authorId,
       channelId: message.channelId,
-      messageId: message.id
+      messageId: message.id,
     });
     await message.channel.send(daysInFc);
   }

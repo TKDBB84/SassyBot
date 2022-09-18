@@ -8,6 +8,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  pull_request_target:
+    branches: [master]
+    types:
+      - closed
 
 jobs:
   analyze:
@@ -65,6 +69,28 @@ jobs:
       contents: write
     steps:
       - name: automerge
-        uses: fastify/github-action-merge-dependabot@v3.0.0
+        uses: fastify/github-action-merge-dependabot@v3.x
         with:
+          merge-method: 'rebase'
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+  deploy:
+    if: ${{ github.event_name == 'push' || github.event.pull_request.merged == true }}
+    needs: [ 'build-ts', 'Analyze' ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pulling and building on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd ${{ secrets.PATH }}
+            git reset --hard HEAD
+            git pull origin master
+            ${{ secrets.NPM_PATH }} ci
+            ${{ secrets.NPM_PATH }} run build
+            ${{ secrets.NPM_PATH }} prune --omit=dev
+            pm2 restart ${{ secrets.PATH }}/ecosystem.config.js --update-env

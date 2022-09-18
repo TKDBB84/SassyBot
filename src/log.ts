@@ -46,7 +46,7 @@ const createLogger = (discordClient: Client, discordChannel: TextChannel): Logge
       new DiscordTransport({
         discordClient,
         discordChannel,
-        level: 'warning'
+        level: 'warning',
       }),
     );
   }
