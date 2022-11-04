@@ -31,6 +31,7 @@ export default class CockCommand extends SassybotCommand {
       "1/10, have you ever seen a cock before? Because that's not a cock",
       '2/10, not even big enough to be a pain in the ass',
       '...is it an innie?',
+      "**DAMN GIRL**, That's a huge cock you have! I give it a confused 9/10",
     ];
     let content = phrases[Math.floor(Math.random() * phrases.length)];
     if (message.author.id === '125025069402554368') {
