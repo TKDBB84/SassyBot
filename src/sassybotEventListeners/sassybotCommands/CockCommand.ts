@@ -33,17 +33,20 @@ export default class CockCommand extends SassybotCommand {
       '...is it an innie?',
       "**DAMN GIRL**, That's a huge cock you have! I give it a confused 9/10",
       '10/10, Zachary Scuderi would be proud',
+      "6/10, pretty much the same as every other one i've seen",
+      '10/10, Meaty AF',
+      "8/10, sure it's big, but points off for that weird shape",
+      'well... hopefully you have a long tongue.  2/10',
     ];
-    let content = phrases[Math.floor(Math.random() * phrases.length)];
+
     if (message.author.id === '125025069402554368') {
-      const kittenMessages = [
+      phrases.push(
         '10/10, i want it to rub on my soft furry programming',
-        'shit i forgot my costume... i can make it up in other ways i swear!',
         'mmmm... yeah put that on my fur',
         "it's so soft and fluffy....",
-      ];
-      content = kittenMessages[Math.floor(Math.random() * kittenMessages.length)];
+      );
     }
+    const content = phrases[Math.floor(Math.random() * phrases.length)];
     await message.channel.send({ content, reply: { messageReference: message } });
   }
 }
