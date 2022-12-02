@@ -19,7 +19,7 @@
     "@types/ws": "^8.5.3",
     "@xivapi/js": "^0.4.1",
     "bufferutil": "^4.0.7",
-    "discord.js": "^14.7.0",
+    "discord.js": "^14.7.1",
     "erlpack": "github:discord/erlpack",
     "ioredis": "^5.2.4",
     "moment": "^2.29.4",
