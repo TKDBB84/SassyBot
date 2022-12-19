@@ -32,7 +32,7 @@ export default class CockCommand extends SassybotCommand {
       '2/10, not even big enough to be a pain in the ass',
       '...is it an innie?',
       "**DAMN GIRL**, That's a huge cock you have! I give it a confused 9/10",
-      '10/10, Zachary Scuderi would be proud',
+      '10/10, Zachary Scuderi would be proud of that tuck',
       "6/10, pretty much the same as every other one i've seen",
       '10/10, Meaty AF',
       "8/10, sure it's big, but points off for that weird shape",
