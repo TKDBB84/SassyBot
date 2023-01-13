@@ -94,6 +94,11 @@ export default class DaysCommand extends SassybotCommand {
         "Brigie Ishigami has been in the FC for ..... Fuck man, I don't know at least 10,000 chicken nuggets, or something",
       );
       return;
+    } else if (charName.toLowerCase() === 'belladas lionheart') {
+      await message.channel.send(
+        "Bella, probably should have more days, or maybe less.  It's all very confusing.",
+      );
+      return;
     }
 
     if (!isOfficerQuery && DaysCommand.stupidFakeReset[charName.toLowerCase()]) {
