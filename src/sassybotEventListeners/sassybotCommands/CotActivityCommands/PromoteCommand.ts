@@ -223,7 +223,8 @@ export default class PromoteCommand extends ActivityCommand {
     }
     const toRank = this.getToRank(promotion);
     const numDays = getNumberOFDays(promotion.CotMember.character.firstSeenApi);
-    if (numDays < DaysForPromotionTo[toRank]) {
+    const numDaysTolerance = 5;
+    if (numDays + numDaysTolerance < DaysForPromotionTo[toRank]) {
       await message.reply(
         `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${DaysForPromotionTo[toRank]} days are required.\n\nIf you feel you have a valid exception, or the information I have is incorrect please type "I am eligible" to submit the request. Otherwise it will be canceled in 2 minutes.`,
       );
