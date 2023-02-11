@@ -10,7 +10,8 @@ export default class EchoCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    await message.channel.send({
+    const channel = await this.sb.getTextChannel('331196148079394836')
+    await channel?.send({
       content: 'No, you shut the fuck up and deal with the promotions..... fucking whiner.',
       reply: { messageReference: '1074058437144612914' },
     });
