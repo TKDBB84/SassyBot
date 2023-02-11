@@ -21,6 +21,8 @@ import TzCommand from './TzCommand';
 import EmbedCommand from './EmbedCommand';
 import InspireCommand from './InspireCommand';
 
+import PasCommand from './PasCommand'
+
 export default [
   AbsentCommand,
   ClaimCommand,
@@ -32,6 +34,7 @@ export default [
   EventCommand,
   FactorioCommand,
   InspireCommand,
+  PasCommand,
   PingCommand,
   PodcastCommand,
   PromoteCommand,
