@@ -163,7 +163,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
       .getOne();
     if (characterData && characterData.id) {
       character = await characterRepo.findOneOrFail({ where: { id: characterData.id }, relations: [] });
-      if (characterData.firstSeenApi < new Date('1900-01-01')) {
+      if (characterData.firstSeenApi && characterData.firstSeenApi < new Date('1900-01-01')) {
         characterData.firstSeenApi = pullTime;
       }
       await characterRepo.update(characterData.id, {
