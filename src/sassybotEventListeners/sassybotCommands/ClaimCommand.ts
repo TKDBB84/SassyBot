@@ -103,7 +103,7 @@ export default class ClaimCommand extends SassybotCommand {
         await message.channel.send(
           `I'm a terrible bot, I could not add your rank: ${sasner.toString()} please come help me.`,
         );
-        this.sb.logger.warn('unable to add role', [error, message.member, rankRole]);
+        this.sb.logger.warn('unable to add role', { error, member: message.member, rankRole });
       }
     }
   }

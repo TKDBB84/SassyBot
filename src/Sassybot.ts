@@ -181,7 +181,7 @@ export class Sassybot extends EventEmitter {
       }
       return await guild.roles.fetch(roleId);
     } catch (error) {
-      this.logger.warn('could not fetch role', [error, guildId, roleId]);
+      this.logger.warn('could not fetch role', { guildId, roleId });
       throw error;
     }
   }
@@ -225,7 +225,7 @@ export class Sassybot extends EventEmitter {
       }
       return user;
     } catch (error) {
-      this.logger.error('could not fetch user', [error, userId]);
+      this.logger.error('could not fetch user', { userId });
       throw error;
     }
   }
@@ -256,7 +256,7 @@ export class Sassybot extends EventEmitter {
       }
       return member;
     } catch (error) {
-      this.logger.error('could not fetch member', [error, guildId, userResolvable]);
+      this.logger.error(`could not fetch member - discordId: ${userResolvable.toString()}`);
       throw error;
     }
   }

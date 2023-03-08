@@ -98,7 +98,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
       const failCountInt = parseInt(failCount, 10) + 1;
       await redisCache.set('memberPullFailCount', failCountInt.toString());
       if (failCountInt >= 5) {
-        sb.logger.error(`Error getting latest member list ${failCountInt} times in a row`, { result });
+        sb.logger.error(`Error getting latest member list ${failCountInt} times in a row`);
       }
     }
   } catch (err) {
@@ -225,7 +225,7 @@ const updateCotMembersFromLodeStone: IJob = async (sb: Sassybot) => {
       } catch (e: unknown) {
         // user no longer in discord
         if (e instanceof DiscordAPIError) {
-          if (e.message === 'Unknown Member' && e.code === 404 && character.id) {
+          if (e.message === 'Unknown Member' && e.code === 10007 && e.status === 404 && character.id) {
             void (await characterRepo.update({ id: character.id }, { user: null }));
           } else {
             sb.logger.error('message', e);
@@ -326,7 +326,10 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
         promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
       }
     }
-    sb.logger.info(`Removing Member: ${member.character.name} - Last Seen ${member.character.lastSeenApi.toISOString()}`, { member });
+    sb.logger.info(
+      `Removing Member: ${member.character.name} - Last Seen ${member.character.lastSeenApi.toISOString()}`,
+      { member },
+    );
     promises.push(memberRepo.delete(member.id));
 
     promises.push(
