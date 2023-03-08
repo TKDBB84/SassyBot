@@ -326,6 +326,7 @@ const cleanUpOldMembers: IJob = async (sb: Sassybot) => {
         promises.push(discordMember.roles.add(CotRanks.GUEST, 'No longer seen in FC'));
       }
     }
+    sb.logger.info(`Removing Member: ${member.character.name} - Last Seen ${member.character.lastSeenApi}`, { member });
     promises.push(memberRepo.delete(member.id));
 
     promises.push(
