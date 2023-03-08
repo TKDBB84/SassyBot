@@ -95,9 +95,7 @@ export default class DaysCommand extends SassybotCommand {
       );
       return;
     } else if (charName.toLowerCase() === 'belladas lionheart') {
-      await message.channel.send(
-        "Bella's days are numbered.... we just have no idea what that number is.",
-      );
+      await message.channel.send("Bella's days are numbered.... we just have no idea what that number is.");
       return;
     }
 
