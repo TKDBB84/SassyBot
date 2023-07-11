@@ -21,8 +21,6 @@ import TzCommand from './TzCommand';
 import EmbedCommand from './EmbedCommand';
 import InspireCommand from './InspireCommand';
 
-// import PasCommand from './PasCommand';
-
 export default [
   AbsentCommand,
   ClaimCommand,
