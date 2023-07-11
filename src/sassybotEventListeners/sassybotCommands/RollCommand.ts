@@ -173,7 +173,7 @@ export default class RollCommand extends SassybotCommand {
     total += additions.constant;
     return replyMessage + ' => ' + total.toString();
   }
-  public readonly commands = ['roll', 'rolls'];
+  public readonly commands = ['roll', 'rolls', 'r'];
 
   protected getHelpText(): string {
     return 'usage: `!{sassybot|sb} roll {int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
@@ -182,6 +182,5 @@ export default class RollCommand extends SassybotCommand {
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
     const response = RollCommand.rollFunction(params.args);
     await message.channel.send({ content: response, reply: { messageReference: message } });
-    return;
   }
 }
