@@ -17,7 +17,7 @@
     "@types/node-fetch": "^2.6.4",
     "@types/shortid": "^0.0.29",
     "@types/ws": "^8.5.5",
-    "@xivapi/js": "^0.4.2",
+    "@xivapi/js": "^0.4.3",
     "bufferutil": "^4.0.7",
     "discord.js": "^14.11.0",
     "erlpack": "github:discord/erlpack",
