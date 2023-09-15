@@ -11,7 +11,7 @@
     "url": "git+https://github.com/TKDBB84/SassyBot.git"
   },
   "dependencies": {
-    "@discordjs/rest": "^1.7.1",
+    "@discordjs/rest": "^2.0.1",
     "@types/node": "^20.6.0",
     "@types/node-cron": "^3.0.8",
     "@types/node-fetch": "^2.6.4",
