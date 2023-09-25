@@ -13,7 +13,7 @@
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
     "@types/node": "^20.6.3",
-    "@types/node-cron": "^3.0.8",
+    "@types/node-cron": "^3.0.9",
     "@types/node-fetch": "^2.6.4",
     "@types/shortid": "^0.0.29",
     "@types/ws": "^8.5.5",
