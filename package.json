@@ -18,7 +18,7 @@
     "@types/shortid": "^0.0.30",
     "@types/ws": "^8.5.7",
     "@xivapi/js": "^0.4.2",
-    "bufferutil": "^4.0.7",
+    "bufferutil": "^4.0.8",
     "discord.js": "^14.11.0",
     "erlpack": "github:discord/erlpack",
     "ioredis": "^5.3.2",
