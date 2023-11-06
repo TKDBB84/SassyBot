@@ -9,6 +9,7 @@ export const NewUserChannels = {
   [GuildIds.GAMEZZZ_GUILD_ID]: 'xx',
   [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: 'xx',
 };
+
 export const ONE_HOUR = 3600000;
 export const TWO_MIN = 120000;
 export const CoTOfficerChannelId = '331196148079394836';
