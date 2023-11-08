@@ -15,7 +15,7 @@
     "@types/node": "^20.8.10",
     "@types/node-cron": "^3.0.11",
     "@types/node-fetch": "^2.6.4",
-    "@types/shortid": "^0.0.31",
+    "@types/shortid": "^0.0.32",
     "@types/ws": "^8.5.9",
     "@xivapi/js": "^0.4.2",
     "bufferutil": "^4.0.8",
