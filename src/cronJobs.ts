@@ -33,11 +33,7 @@ interface IFreeCompanyMember {
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const redisCache = await sb.getRedis();
   try {
-    const result = await fetch(
-      `https://xivapi.com/freecompany/${CoTAPIId}?data=FCM${
-        process.env.XIV_API_TOKEN ? `&private_key=${process.env.XIV_API_TOKEN}` : ''
-      }`,
-    ).then((res) => {
+    const result = await fetch(`http://nodestone/freecompany/${CoTAPIId}?data=FCM`).then((res) => {
       if (res.ok) {
         return res.json();
       }
