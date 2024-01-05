@@ -1,0 +1,57 @@
+
+services:
+  redis:
+    image: redis:latest
+    restart: always
+    networks:
+      - backend-network
+    expose:
+      - 6379
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', '--raw', 'incr', 'ping' ]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 6s
+
+  database:
+    image: mariadb:10.6
+    restart: always
+    expose:
+      - 3306
+    networks:
+      - backend-network
+    environment:
+      - MARIADB_USER=${SASSYBOT_DB_USER:-sassybot}
+      - MARIADB_PASSWORD=${SASSYBOT_DB_PASSWORD:-password}
+      - MARIADB_DATABASE=${SASSYBOT_DB_NAME:-sassybot}
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-root}
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      start_period: 6s
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  sassybot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+      - backend-network
+    depends_on:
+        database:
+          condition: service_healthy
+        redis:
+          condition: service_healthy
+    environment:
+      - ENV TYPEORM_USERNAME=${SASSYBOT_DB_USER:-sassybot}
+      - ENV TYPEORM_PASSWORD=${SASSYBOT_DB_PASSWORD:-password}
+      - ENV TYPEORM_DATABASE=${SASSYBOT_DB_NAME:-sassybot}
+      - ENV DISCORD_TOKEN=$DISCORD_TOKEN
+      - ENV XIV_API_TOKEN=$XIV_API_TOKEN
+
+networks:
+  backend-network:
+    driver: bridge

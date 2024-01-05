@@ -1,15 +1,5 @@
 {
-  "name": "sassybot",
-  "version": "1.0.0",
-  "description": "Sassybot, mostly useless",
-  "main": "dist/sassybot.js",
-  "keywords": [],
   "author": "TKDBB84 (Sasner)",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/TKDBB84/SassyBot.git"
-  },
   "dependencies": {
     "@discordjs/rest": "^1.7.1",
     "@types/node": "^20.10.6",
@@ -18,31 +8,22 @@
     "@types/shortid": "^0.0.32",
     "@types/ws": "^8.5.10",
     "@xivapi/js": "^0.4.2",
-    "bufferutil": "^4.0.8",
     "discord.js": "^14.11.0",
-    "erlpack": "github:discord/erlpack",
     "ioredis": "^5.3.2",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.44",
     "mysql": "^2.18.1",
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
-    "node-gyp": "^10.0.1",
     "reflect-metadata": "^0.2.1",
     "tsd": "^0.30.3",
     "typeorm": "^0.3.19",
     "typescript": "^5.3.3",
-    "utf-8-validate": "^6.0.3",
     "winston": "^3.11.0",
     "winston-console-format": "^1.0.8",
-    "winston-discordjs": "https://github.com/TKDBB84/winston-discordjs/releases/download/v5.0.0/winston-discordjs-5.0.0.tgz",
-    "zlib-sync": "^0.1.9"
+    "winston-discordjs": "https://github.com/TKDBB84/winston-discordjs/releases/download/v5.0.0/winston-discordjs-5.0.0.tgz"
   },
-  "overrides": {
-    "typeorm": {
-      "ioredis": "$ioredis"
-    }
-  },
+  "description": "Sassybot, mostly useless",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.61.0",
     "@typescript-eslint/parser": "^5.62.0",
@@ -54,20 +35,35 @@
     "prettier": "^3.1.1",
     "ts-node": "^10.9.2"
   },
-  "scripts": {
-    "format": "prettier --write \"src/**/*.ts\"",
-    "lint": "eslint --fix -c .eslintrc.js --ext .ts src",
-    "build": "tsc"
+  "keywords": [],
+  "license": "ISC",
+  "main": "dist/sassybot.js",
+  "name": "sassybot",
+  "overrides": {
+    "typeorm": {
+      "ioredis": "$ioredis"
+    }
   },
   "prettier": {
-    "singleQuote": true,
-    "useTabs": false,
-    "printWidth": 120,
-    "tabWidth": 2,
-    "quoteProps": "as-needed",
-    "trailingComma": "all",
     "arrowParens": "always",
+    "endOfLine": "lf",
     "parser": "typescript",
-    "endOfLine": "lf"
-  }
+    "printWidth": 120,
+    "quoteProps": "as-needed",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "all",
+    "useTabs": false
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TKDBB84/SassyBot.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint --fix -c .eslintrc.js --ext .ts src",
+    "start": "node dist/sassybot.js"
+  },
+  "version": "1.0.0"
 }

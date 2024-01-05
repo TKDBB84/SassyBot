@@ -1,10 +1,10 @@
 /* eslint-disable */
-import { Message, MessageCollector, EmbedBuilder } from 'discord.js';
-import { affirmativeResponses, UserIds } from '../../consts';
-import { ISassybotCommandParams, XIVAPISearchResponse } from '../../Sassybot';
+import { type Message } from 'discord.js';
+// import { affirmativeResponses, UserIds } from '../../consts';
+import { type ISassybotCommandParams } from '../../Sassybot';
 import SassybotCommand from './SassybotCommand';
-// @ts-ignore
-import XIVApi from '@xivapi/js';
+// // @ts-ignore
+// import XIVApi from '@xivapi/js';
 
 export default class EmbedCommand extends SassybotCommand {
   public readonly commands = ['embed'];
@@ -14,91 +14,91 @@ export default class EmbedCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (message.author.id !== UserIds.SASNER) {
-      return;
-    }
-    if (!this.sb.isTextChannel(message.channel)) {
-      return;
-    }
-
-    const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
-    const declaredName = 'sasner rensas';
-    const { Results }: XIVAPISearchResponse = await xiv.character.search(declaredName, { server: 'Jenova' });
-    const apiChars = Results; // .filter((result) => result.Name.trim().toLowerCase() === declaredName.toLowerCase());
-    if (apiChars.length === 0) {
-      // couldn't find the character, just giong to accept the name and move on
-    } else if (apiChars.length === 1) {
-      const apiCharacter = apiChars[0];
-      const embed = new EmbedBuilder({
-        title: 'Is this your character?',
-        description: 'You can type "Yes" or "No"',
-        image: { url: apiCharacter.Avatar },
-        footer: {
-          text: apiCharacter.Name,
-        },
-      });
-      const collector: MessageCollector = new MessageCollector(message.channel, {
-        filter: (collectedMessage: Message) => collectedMessage.author.id === message.author.id,
-        max: 1,
-      });
-      await message.reply({ embeds: [embed] });
-      collector.on('end', (collected) => {
-        if (collected) {
-          const collectedMessage = collected.first();
-          if (collectedMessage) {
-            if (affirmativeResponses.includes(collectedMessage.cleanContent.trim().toLowerCase())) {
-              const chosenCharacter = apiCharacter;
-            }
-          }
-        }
-      });
-    } else {
-      // many characters match, going to have to get them to tell me which one:
-      await message.reply('Multiple Characters match your name, please choose which character is yours');
-      const filter = (collectedMessage: Message) => {
-        if (collectedMessage.author.id !== message.author.id) {
-          return false;
-        }
-        const collectedValue = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10);
-        if (isNaN(collectedValue)) {
-          return false;
-        }
-
-        return !(collectedValue <= 0 || collectedValue > apiChars.length);
-      };
-      for (let i = 0; i < apiChars.length; i++) {
-        const apiCharacter = apiChars[i];
-        const embed = new EmbedBuilder({
-          title: apiCharacter.Name,
-          description: `You can type "${i + 1}" to select this character`,
-          image: { url: apiCharacter.Avatar },
-          footer: {
-            text: apiCharacter.Rank || '',
-          },
-        });
-        await message.reply({ embeds: [embed] });
-        if (i === 0) {
-          const collector = new MessageCollector(message.channel, { filter, max: 1 });
-          collector.on('end', (collected) => {
-            if (collected.size > 0) {
-              const collectedMessage = collected.first();
-              if (collectedMessage) {
-                const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
-                const chosenCharacter = apiChars[chosenInt];
-                const embed = new EmbedBuilder({
-                  title: 'You picked',
-                  description: `this one`,
-                  image: { url: chosenCharacter.Avatar },
-                  footer: {
-                    text: chosenCharacter.Rank || '',
-                  },
-                });
-                void message.reply({ embeds: [embed] });
-              }
-            }
-          });
-        }
-      }
-    }
+    //   if (message.author.id !== UserIds.SASNER) {
+    //     return;
+    //   }
+    //   if (!this.sb.isTextChannel(message.channel)) {
+    //     return;
+    //   }
+    //
+    //   const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
+    //   const declaredName = 'sasner rensas';
+    //   const { Results }: XIVAPISearchResponse = await xiv.character.search(declaredName, { server: 'Jenova' });
+    //   const apiChars = Results; // .filter((result) => result.Name.trim().toLowerCase() === declaredName.toLowerCase());
+    //   if (apiChars.length === 0) {
+    //     // couldn't find the character, just giong to accept the name and move on
+    //   } else if (apiChars.length === 1) {
+    //     const apiCharacter = apiChars[0];
+    //     const embed = new EmbedBuilder({
+    //       title: 'Is this your character?',
+    //       description: 'You can type "Yes" or "No"',
+    //       image: { url: apiCharacter.Avatar },
+    //       footer: {
+    //         text: apiCharacter.Name,
+    //       },
+    //     });
+    //     const collector: MessageCollector = new MessageCollector(message.channel, {
+    //       filter: (collectedMessage: Message) => collectedMessage.author.id === message.author.id,
+    //       max: 1,
+    //     });
+    //     await message.reply({ embeds: [embed] });
+    //     collector.on('end', (collected) => {
+    //       if (collected) {
+    //         const collectedMessage = collected.first();
+    //         if (collectedMessage) {
+    //           if (affirmativeResponses.includes(collectedMessage.cleanContent.trim().toLowerCase())) {
+    //             const chosenCharacter = apiCharacter;
+    //           }
+    //         }
+    //       }
+    //     });
+    //   } else {
+    //     // many characters match, going to have to get them to tell me which one:
+    //     await message.reply('Multiple Characters match your name, please choose which character is yours');
+    //     const filter = (collectedMessage: Message) => {
+    //       if (collectedMessage.author.id !== message.author.id) {
+    //         return false;
+    //       }
+    //       const collectedValue = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10);
+    //       if (isNaN(collectedValue)) {
+    //         return false;
+    //       }
+    //
+    //       return !(collectedValue <= 0 || collectedValue > apiChars.length);
+    //     };
+    //     for (let i = 0; i < apiChars.length; i++) {
+    //       const apiCharacter = apiChars[i];
+    //       const embed = new EmbedBuilder({
+    //         title: apiCharacter.Name,
+    //         description: `You can type "${i + 1}" to select this character`,
+    //         image: { url: apiCharacter.Avatar },
+    //         footer: {
+    //           text: apiCharacter.Rank || '',
+    //         },
+    //       });
+    //       await message.reply({ embeds: [embed] });
+    //       if (i === 0) {
+    //         const collector = new MessageCollector(message.channel, { filter, max: 1 });
+    //         collector.on('end', (collected) => {
+    //           if (collected.size > 0) {
+    //             const collectedMessage = collected.first();
+    //             if (collectedMessage) {
+    //               const chosenInt = parseInt(collectedMessage.cleanContent.replace(/\D/g, ''), 10) - 1;
+    //               const chosenCharacter = apiChars[chosenInt];
+    //               const embed = new EmbedBuilder({
+    //                 title: 'You picked',
+    //                 description: `this one`,
+    //                 image: { url: chosenCharacter.Avatar },
+    //                 footer: {
+    //                   text: chosenCharacter.Rank || '',
+    //                 },
+    //               });
+    //               void message.reply({ embeds: [embed] });
+    //             }
+    //           }
+    //         });
+    //       }
+    //     }
+    //   }
   }
 }
