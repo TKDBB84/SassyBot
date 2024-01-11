@@ -21,12 +21,11 @@ export interface IScheduledJob {
 
 interface IFreeCompanyMember {
   Avatar: string;
-  FeastMatches: number;
   ID: number;
   Name: string;
+  FcRank: string;
   Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
   RankIcon: string;
-  Server: string;
   exactRecruit: boolean;
 }
 
@@ -39,13 +38,14 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
       }
       throw new Error(`${res.status} ${res.statusText}`);
     });
-    if (result && result.FreeCompanyMembers) {
+    if (result && result.FreeCompanyMembers && result.FreeCompanyMembers.List) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
       return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
-        const Rank = member.Rank.toUpperCase().trim();
+        const Rank = member.FcRank.toUpperCase().trim();
         switch (Rank) {
           case 'FOUNDER':
+          case 'PUPPET':
           case 'FCM':
           case 'NOTMIA':
           case 'OFFICER':
