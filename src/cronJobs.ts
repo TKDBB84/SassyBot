@@ -41,7 +41,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
     if (result && result.FreeCompanyMembers && result.FreeCompanyMembers.List) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
-      return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
+      return result.FreeCompanyMembers.List.map((member: IFreeCompanyMember) => {
         const Rank = member.FcRank.toUpperCase().trim();
         switch (Rank) {
           case 'FOUNDER':
