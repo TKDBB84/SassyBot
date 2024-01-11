@@ -33,4 +33,5 @@ ENV TYPEORM_ENTITIES="entity/*.js,modules/**/entity/*.js"
 
 
 
-ENTRYPOINT ["node", "dist/Sassybot.js"]
+ENTRYPOINT "node"
+CMD "dist/Sassybot.js"
