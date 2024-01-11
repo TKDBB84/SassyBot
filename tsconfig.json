@@ -6,6 +6,7 @@
     ],
     "module": "commonjs",
     "target": "es2020",
+    "types": ["node"],
     "strictNullChecks": true,
     "moduleResolution": "node",
     "declaration": false,

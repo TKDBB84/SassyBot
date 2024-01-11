@@ -35,7 +35,7 @@ import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotC
 import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
-const redisClient = new Redis(6379, 'host.docker.internal');
+const redisClient = new Redis(6379, process.env.REDIS_HOST || 'localhost');
 const redisConnection: Promise<Redis> = new Promise((resolve) => {
   redisClient.on('connect', () => resolve(redisClient));
 });
