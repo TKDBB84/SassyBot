@@ -31,17 +31,31 @@ interface IFreeCompanyMember {
 
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const redisCache = await sb.getRedis();
+  const allMemberData: IFreeCompanyMember[] = [];
+  let Page = 1;
+  let PageTotal = 1;
   try {
-    const result = await fetch(`http://nodestone:8080/freecompany/${CoTAPIId}?data=FCM`).then((res) => {
-      if (res.ok) {
-        return res.json();
-      }
-      throw new Error(`${res.status} ${res.statusText}`);
-    });
-    if (result && result.FreeCompanyMembers && result.FreeCompanyMembers.List) {
+    do {
+      let url = `http://nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
+      await fetch(url)
+        .then((res) => {
+          if (res.ok) {
+            return res.json();
+          }
+          throw new Error(`${res.status} ${res.statusText}`);
+        })
+        .then((json) => {
+          if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
+            allMemberData.push(...json.FreeCompanyMembers.List);
+            Page = json.FreeCompanyMembers.Pagination.PageNext;
+            PageTotal = json.FreeCompanyMembers.Pagination.PageTotal;
+          }
+        });
+    } while (Page < PageTotal);
+    if (allMemberData.length) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
-      return result.FreeCompanyMembers.List.map((member: IFreeCompanyMember) => {
+      return allMemberData.map((member: IFreeCompanyMember) => {
         const Rank = member.FcRank.toUpperCase().trim();
         switch (Rank) {
           case 'FOUNDER':
