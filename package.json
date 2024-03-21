@@ -18,7 +18,7 @@
     "reflect-metadata": "^0.2.1",
     "tsd": "^0.30.7",
     "typeorm": "^0.3.20",
-    "typescript": "^5.4.2",
+    "typescript": "^5.4.3",
     "winston": "^3.12.0",
     "winston-console-format": "^1.0.8",
     "winston-discordjs": "https://github.com/TKDBB84/winston-discordjs/releases/download/v5.0.0/winston-discordjs-5.0.0.tgz"
