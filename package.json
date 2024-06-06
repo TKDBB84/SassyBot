@@ -1,7 +1,7 @@
 {
   "author": "TKDBB84 (Sasner)",
   "dependencies": {
-    "@discordjs/rest": "^1.7.1",
+    "@discordjs/rest": "^2.3.0",
     "@types/node": "^20.14.1",
     "@types/node-cron": "^3.0.11",
     "@types/node-fetch": "^2.6.4",
