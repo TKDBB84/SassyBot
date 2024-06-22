@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:22-alpine as builder
 LABEL authors="tkdbb84"
 
 WORKDIR /home/node/
@@ -12,7 +12,7 @@ COPY . ./
 
 RUN npm run build
 
-FROM node:18-alpine as sassybot
+FROM node:22-alpine as sassybot
 LABEL authors="tkdbb84"
 
 WORKDIR /home/node/

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // disabled for XIVApi
 import moment from 'moment';
 import { DeleteResult, Equal, In, LessThan, UpdateResult } from 'typeorm';
@@ -29,6 +28,16 @@ interface IFreeCompanyMember {
   exactRecruit: boolean;
 }
 
+interface NodeStoneResponse {
+  FreeCompanyMembers: {
+    List: IFreeCompanyMember[];
+    Pagination: {
+      PageNext: number;
+      PageTotal: number;
+    };
+  };
+}
+
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const redisCache = await sb.getRedis();
   const allMemberData: IFreeCompanyMember[] = [];
@@ -36,7 +45,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
   let PageTotal = 1;
   try {
     do {
-      let url = `http://nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
+      const url = `http://nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
       await fetch(url)
         .then((res) => {
           if (res.ok) {
@@ -44,7 +53,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
           }
           throw new Error(`${res.status} ${res.statusText}`);
         })
-        .then((json) => {
+        .then((json: NodeStoneResponse) => {
           if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
             allMemberData.push(...json.FreeCompanyMembers.List);
             Page = json.FreeCompanyMembers.Pagination.PageNext;

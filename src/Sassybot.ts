@@ -20,7 +20,8 @@ import {
   PartialMessage,
 } from 'discord.js';
 import Redis from 'ioredis';
-import { EventEmitter } from 'events';
+import EventEmitter from 'events';
+import type TypedEmitter from 'typed-emitter';
 import cron from 'node-cron';
 import 'reflect-metadata';
 import type { DataSource } from 'typeorm';
@@ -89,8 +90,56 @@ export type XIVAPISearchResponse = {
   Pagination: XIVAPIPagination;
   Results: XIVAPICharacterSearchResult[];
 };
+type SassybotEmitter = {
+  preLogin: () => void;
+  postLogin: () => void;
+  messageReceived: ({ message }: { message: Message | PartialMessage }) => void;
+  sassybotCommandPreprocess: ({ message }: { message: Message | PartialMessage }) => void;
+  sassybotCommand: ({ message, params }: { message: Message | PartialMessage; params: ISassybotCommandParams }) => void;
+  sassybotHelpCommand: ({ message, params }: { message: Message; params: ISassybotCommandParams }) => void;
+  sassybotCommandPostprocess: ({ message }: { message: Message | PartialMessage }) => void;
+  messageEnd: ({ message }: { message: Message | PartialMessage }) => void;
+  messageReactionAdd: ({messageReaction,
+    user,
+  }: {
+    messageReaction: MessageReaction | PartialMessageReaction;
+    user: User | PartialUser;
+  }) => void;
+  voiceStateUpdate: ({
+    previousMemberState,
+    currentMemberState,
+  }: {
+    previousMemberState: VoiceState;
+    currentMemberState: VoiceState;
+  }) => void;
+  messageCreate: () => void;
+  messageUpdate: () => void;
+  guildMemberAdd: ({ member }: { member: GuildMember | PartialGuildMember }) => void;
+};
 
-export class Sassybot extends EventEmitter {
+declare interface SassybotType {
+  dbConnection: DataSource;
+  logger: typeof logger;
+  getRedis(): Promise<Redis>;
+  getSasner(): Promise<User>;
+  getGuild(guildId: string): Guild | null;
+  getRole(guildId: string, roleId: string): Promise<Role | null>;
+  getTextChannel(channelId: string): Promise<TextChannel | null>;
+  getMessage(channelId: string, messageId: string): Promise<Message | null>;
+  maybeCreateSBUser(userId: string): Promise<SbUser>;
+  getUser(userId: string): Promise<User | undefined>;
+  findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null>;
+  getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined>;
+  isTextChannel(channel: Channel | null | undefined): channel is TextChannel;
+  isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand;
+  botHasPermission(permissionString: PermissionResolvable, guildId: Snowflake): Promise<boolean>;
+  eventNames(): (string | symbol)[];
+  run(): Promise<void>;
+  registerSassybotEventListener(sbEvent: SassybotEventListener): void;
+  sendEventMessage(eventName: string, data: Record<string, unknown>): Promise<void>;
+}
+
+export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEmitter>) implements SassybotType {
   private static isSassybotCommand(message: Message): boolean {
     const hasCommandPrefix =
       message.cleanContent.toLowerCase().startsWith('!sb ') ||
@@ -123,32 +172,13 @@ export class Sassybot extends EventEmitter {
   }
   public dbConnection: DataSource;
   public logger: typeof logger;
-  protected discordClient: Client;
-  private registeredCommands = new Set<string>();
+  private discordClient: Client<true>;
+  private registeredCommands: Set<string> = new Set<string>();
   private sasner: User | undefined;
 
-  constructor(connection: DataSource) {
+  constructor(connection: DataSource, discordClient: Client<true>) {
     super();
-    const intents = [
-      GatewayIntentBits.Guilds,
-      GatewayIntentBits.GuildMembers,
-      GatewayIntentBits.GuildBans,
-      GatewayIntentBits.GuildEmojisAndStickers,
-      GatewayIntentBits.GuildIntegrations,
-      GatewayIntentBits.GuildWebhooks,
-      GatewayIntentBits.GuildInvites,
-      GatewayIntentBits.GuildVoiceStates,
-      GatewayIntentBits.GuildPresences,
-      GatewayIntentBits.GuildMessages,
-      GatewayIntentBits.GuildMessageReactions,
-      GatewayIntentBits.GuildMessageTyping,
-      GatewayIntentBits.DirectMessages,
-      GatewayIntentBits.DirectMessageReactions,
-      GatewayIntentBits.DirectMessageTyping,
-      GatewayIntentBits.GuildScheduledEvents,
-      GatewayIntentBits.MessageContent,
-    ];
-    this.discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
+    this.discordClient = discordClient;
     this.dbConnection = connection;
     this.logger = logger;
   }
@@ -426,18 +456,51 @@ export class Sassybot extends EventEmitter {
   }
 }
 
-getDataSource()
-  .then(async (connection: DataSource) => {
-    const sb = new Sassybot(connection);
-    sb.setMaxListeners(30);
-    SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
-    jobs.forEach(({ job, schedule }) => {
-      const jobFunction = job.bind(null, sb);
-      cron.schedule(schedule, () => {
-        void jobFunction();
+const intents = [
+  GatewayIntentBits.Guilds,
+  GatewayIntentBits.GuildMembers,
+  GatewayIntentBits.GuildEmojisAndStickers,
+  GatewayIntentBits.GuildIntegrations,
+  GatewayIntentBits.GuildWebhooks,
+  GatewayIntentBits.GuildInvites,
+  GatewayIntentBits.GuildVoiceStates,
+  GatewayIntentBits.GuildPresences,
+  GatewayIntentBits.GuildMessages,
+  GatewayIntentBits.GuildMessageReactions,
+  GatewayIntentBits.GuildMessageTyping,
+  GatewayIntentBits.DirectMessages,
+  GatewayIntentBits.DirectMessageReactions,
+  GatewayIntentBits.DirectMessageTyping,
+  GatewayIntentBits.GuildScheduledEvents,
+  GatewayIntentBits.MessageContent,
+];
+const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
+const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
+  discordClient.once('ready', () => {
+    resolve(discordClient as Client<true>);
+  });
+  discordClient.once('error', (error) => {
+    reject(error);
+  });
+});
+discordClient.login(process.env.DISCORD_TOKEN);
+
+Promise.all([getDataSource(), waitForReady])
+  .then(async ([connection, discordClient]: [DataSource, Client<true>]) => {
+    if (discordClient.isReady()) {
+      const sb = new Sassybot(connection, discordClient);
+      sb.setMaxListeners(30);
+      SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
+      jobs.forEach(({ job, schedule }) => {
+        const jobFunction = job.bind(null, sb);
+        cron.schedule(schedule, () => {
+          void jobFunction();
+        });
       });
-    });
-    await sb.run();
+      await sb.run();
+    } else {
+      throw new Error('client did not connect');
+    }
   })
   .catch((e) => {
     logger.error('error connecting to database', e);
