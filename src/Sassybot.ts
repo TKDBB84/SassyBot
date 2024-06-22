@@ -99,7 +99,8 @@ type SassybotEmitter = {
   sassybotHelpCommand: ({ message, params }: { message: Message; params: ISassybotCommandParams }) => void;
   sassybotCommandPostprocess: ({ message }: { message: Message | PartialMessage }) => void;
   messageEnd: ({ message }: { message: Message | PartialMessage }) => void;
-  messageReactionAdd: ({messageReaction,
+  messageReactionAdd: ({
+    messageReaction,
     user,
   }: {
     messageReaction: MessageReaction | PartialMessageReaction;
