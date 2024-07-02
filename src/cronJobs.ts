@@ -45,7 +45,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
   let PageTotal = 1;
   try {
     do {
-      const url = `http://nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
+      const url = `http://Nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
       await fetch(url)
         .then((res) => {
           if (res.ok) {
@@ -56,6 +56,13 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
         .then((json: NodeStoneResponse) => {
           if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
             allMemberData.push(...json.FreeCompanyMembers.List);
+            sb.logger.info({
+              pageData: {
+                currentPage: Page,
+                PageNext: json.FreeCompanyMembers.Pagination.PageNext,
+                PageTotal: json.FreeCompanyMembers.Pagination.PageTotal,
+              }
+            })
             Page = json.FreeCompanyMembers.Pagination.PageNext;
             PageTotal = json.FreeCompanyMembers.Pagination.PageTotal;
           }
