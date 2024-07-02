@@ -60,7 +60,7 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
             PageTotal = json.FreeCompanyMembers.Pagination.PageTotal;
           }
         });
-    } while (Page < PageTotal);
+    } while (Page <= PageTotal);
     if (allMemberData.length) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
