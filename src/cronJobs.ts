@@ -56,18 +56,11 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
         .then((json: NodeStoneResponse) => {
           if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
             allMemberData.push(...json.FreeCompanyMembers.List);
-            sb.logger.info({
-              pageData: {
-                currentPage: Page,
-                PageNext: json.FreeCompanyMembers.Pagination.PageNext,
-                PageTotal: json.FreeCompanyMembers.Pagination.PageTotal,
-              }
-            })
             Page = json.FreeCompanyMembers.Pagination.PageNext;
             PageTotal = json.FreeCompanyMembers.Pagination.PageTotal;
           }
         });
-    } while (Page <= PageTotal);
+    } while (Page !== null);
     if (allMemberData.length) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
