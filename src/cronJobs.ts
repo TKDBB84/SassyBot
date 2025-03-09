@@ -42,7 +42,6 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
   const redisCache = await sb.getRedis();
   const allMemberData: IFreeCompanyMember[] = [];
   let Page = 1;
-  let PageTotal = 1;
   try {
     do {
       const url = `http://Nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
@@ -57,7 +56,6 @@ const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> 
           if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
             allMemberData.push(...json.FreeCompanyMembers.List);
             Page = json.FreeCompanyMembers.Pagination.PageNext;
-            PageTotal = json.FreeCompanyMembers.Pagination.PageTotal;
           }
         });
     } while (Page !== null);
