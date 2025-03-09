@@ -1,4 +1,4 @@
-import { Collection, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
+import { ReadonlyCollection, Message, MessageCollector, MessageReaction, Snowflake, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import Event from '../../entity/Event';
@@ -140,7 +140,7 @@ export default class EventCommand extends SassybotCommand {
     void Promise.all([sentMessage.react('🔁'), sentMessage.react('⛔')]).then(
       ([reactionRepeat, reactionNo]: MessageReaction[]) => {
         const reactionCollector = sentMessage.createReactionCollector(reactionCollectorOptions);
-        reactionCollector.on('end', (collected: Collection<Snowflake, MessageReaction>) => {
+        reactionCollector.on('end', (collected: ReadonlyCollection<Snowflake, MessageReaction>) => {
           const doAsyncWork = async () => {
             await EventCommand.removeReactions([reactionRepeat, reactionNo]);
             if (collected && collected.size > 0) {
@@ -179,7 +179,7 @@ export default class EventCommand extends SassybotCommand {
   }
 
   private async createEvent(message: Message, eventName: string, userTz: string) {
-    if (!message.guild || !message.guild.id) {
+    if (!message.inGuild()) {
       await message.reply('cannot create events in private messages!');
       return;
     }
@@ -210,7 +210,7 @@ export default class EventCommand extends SassybotCommand {
 
     if (this.sb.isTextChannel(message.channel)) {
       const messageCollector = new MessageCollector(message.channel, { filter, max: 1 });
-      messageCollector.on('end', (collected: Collection<string, Message>) => {
+      messageCollector.on('end', (collected: ReadonlyCollection<string, Message>) => {
         const doAsyncWork = async () => {
           const collectedMessage = collected.first();
           if (collectedMessage) {

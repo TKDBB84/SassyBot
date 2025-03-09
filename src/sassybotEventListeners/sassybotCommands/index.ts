@@ -6,6 +6,7 @@ import DaysCommand from './DaysCommand';
 import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
+import NodestoneCommand from './NodestoneCommand';
 import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
 import PunCommand from './PunCommand';
@@ -31,6 +32,7 @@ export default [
   EventCommand,
   InspireCommand,
   // PasCommand,
+  NodestoneCommand,
   PingCommand,
   PodcastCommand,
   PromoteCommand,

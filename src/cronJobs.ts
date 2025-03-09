@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
 // disabled for XIVApi
 import moment from 'moment';
 import { DeleteResult, Equal, In, LessThan, UpdateResult } from 'typeorm';
@@ -21,35 +20,53 @@ export interface IScheduledJob {
 
 interface IFreeCompanyMember {
   Avatar: string;
-  FeastMatches: number;
   ID: number;
   Name: string;
+  FcRank: string;
   Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
   RankIcon: string;
-  Server: string;
   exactRecruit: boolean;
+}
+
+interface NodeStoneResponse {
+  FreeCompanyMembers: {
+    List: IFreeCompanyMember[];
+    Pagination: {
+      PageNext: number;
+      PageTotal: number;
+    };
+  };
 }
 
 const getLatestMemberList = async (sb: Sassybot): Promise<IFreeCompanyMember[]> => {
   const redisCache = await sb.getRedis();
+  const allMemberData: IFreeCompanyMember[] = [];
+  let Page = 1;
   try {
-    const result = await fetch(
-      `https://xivapi.com/freecompany/${CoTAPIId}?data=FCM${
-        process.env.XIV_API_TOKEN ? `&private_key=${process.env.XIV_API_TOKEN}` : ''
-      }`,
-    ).then((res) => {
-      if (res.ok) {
-        return res.json();
-      }
-      throw new Error(`${res.status} ${res.statusText}`);
-    });
-    if (result && result.FreeCompanyMembers) {
+    do {
+      const url = `http://Nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=${Page}`;
+      await fetch(url)
+        .then((res) => {
+          if (res.ok) {
+            return res.json();
+          }
+          throw new Error(`${res.status} ${res.statusText}`);
+        })
+        .then((json: NodeStoneResponse) => {
+          if (json && json.FreeCompanyMembers && json.FreeCompanyMembers.List) {
+            allMemberData.push(...json.FreeCompanyMembers.List);
+            Page = json.FreeCompanyMembers.Pagination.PageNext;
+          }
+        });
+    } while (Page !== null);
+    if (allMemberData.length) {
       await redisCache.set('lastSuccessfulMemberPull', new Date().toUTCString());
       await redisCache.set('memberPullFailCount', '0');
-      return result.FreeCompanyMembers.map((member: IFreeCompanyMember) => {
-        const Rank = member.Rank.toUpperCase().trim();
+      return allMemberData.map((member: IFreeCompanyMember) => {
+        const Rank = member.FcRank.toUpperCase().trim();
         switch (Rank) {
           case 'FOUNDER':
+          case 'PUPPET':
           case 'FCM':
           case 'NOTMIA':
           case 'OFFICER':
