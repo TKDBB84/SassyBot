@@ -33,7 +33,7 @@ import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
+import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
 const redisClient = new Redis(6379, process.env.REDIS_HOST || 'localhost');
@@ -373,7 +373,7 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
     this.logger = createLogger(this.discordClient, logChannel);
     if (logChannel && this.isTextChannel(logChannel)) {
-      await logChannel.send('Bot Restarted');
+      await logChannel.send('Bot Restarted - with nodestone');
     }
     this.emit('postLogin');
   }
