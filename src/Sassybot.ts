@@ -372,10 +372,8 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     await this.discordClient.login(process.env.DISCORD_TOKEN);
     const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
     this.logger = createLogger(this.discordClient, logChannel);
-    this.logger.info('Bot Restarted');
-    const restartMessageChannel = await this.discordClient.channels.fetch(CoTButtStuffChannelId);
-    if (restartMessageChannel && this.isTextChannel(restartMessageChannel)) {
-      await restartMessageChannel.send('Bot Restarted');
+    if (logChannel && this.isTextChannel(logChannel)) {
+      await logChannel.send('Bot Restarted');
     }
     this.emit('postLogin');
   }
