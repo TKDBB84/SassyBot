@@ -2,7 +2,6 @@ import { format, transports, createLogger as createWinstonLogger } from 'winston
 import type { Logger } from 'winston';
 
 const winLogger = createWinstonLogger({
-  defaultMeta: { service: 'sassybot' },
   level: 'debug',
   format: format.combine(format.timestamp(), format.errors({ stack: true }), format.json(), format.splat()),
   transports: [
