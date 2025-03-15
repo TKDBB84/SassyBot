@@ -30,7 +30,7 @@ import jobs from './cronJobs';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
-import { createLogger, logger } from './log';
+import { logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
