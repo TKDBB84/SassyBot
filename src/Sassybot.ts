@@ -477,6 +477,7 @@ const intents = [
   GatewayIntentBits.GuildScheduledEvents,
   GatewayIntentBits.MessageContent,
 ];
+logger.info('Creating Discord Client...')
 const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
 const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
@@ -492,6 +493,7 @@ const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   });
 });
 
+logger.info('Attempting To Connect...')
 discordClient.login(process.env.DISCORD_TOKEN).catch((e) => {
   logger.error('Error Logging In', e);
 });
