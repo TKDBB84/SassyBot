@@ -32,7 +32,7 @@ import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import { CoTButtStuffChannelId, NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
+import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
 const redisClient = new Redis(6379, 'redis');
@@ -340,7 +340,7 @@ export class Sassybot extends EventEmitter {
     this.emit('preLogin');
     await this.discordClient.login(process.env.DISCORD_TOKEN);
     const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
-    this.logger = createLogger(this.discordClient, logChannel);
+    this.logger = createLogger();
     if (logChannel && this.isTextChannel(logChannel)) {
       await logChannel.send('Bot Restarted');
     }
