@@ -7,6 +7,7 @@ import PromotionRequest from './entity/PromotionRequest';
 import Quote from './entity/Quote';
 import SbUser from './entity/SbUser';
 import SpamChannel from './entity/SpamChannel';
+import { logger } from './log';
 
 const dataSource = new DataSource({
   type: 'mariadb',
@@ -22,7 +23,9 @@ const dataSource = new DataSource({
 
 export default async function getDataSource(): Promise<DataSource> {
   if (!dataSource.isInitialized) {
+    logger.info('Initializing DataSource...');
     await dataSource.initialize();
+    logger.info('DataSource Ready...');
   }
   return dataSource;
 }

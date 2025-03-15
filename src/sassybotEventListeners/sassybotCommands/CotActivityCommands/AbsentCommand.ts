@@ -94,7 +94,7 @@ export default class AbsentCommand extends ActivityCommand {
           } else {
             return;
           }
-        } catch (e) {
+        } catch {
           // do nothing
           return;
         }

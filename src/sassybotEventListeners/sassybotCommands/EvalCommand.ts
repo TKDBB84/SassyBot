@@ -24,7 +24,7 @@ export default class EvalCommand extends SassybotCommand {
         this.sb.logger.warn(log, { message, params, forUser });
       }
       // tslint:disable-next-line:no-eval
-      // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-assignment
+
       const evalResult = eval(params.args);
       let result: string;
       if (typeof evalResult !== 'string') {
