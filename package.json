@@ -67,7 +67,7 @@
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint --fix src",
-    "start": "node dist/sassybot.js"
+    "start": "node dist/Sassybot.js"
   },
   "version": "1.0.0"
 }
