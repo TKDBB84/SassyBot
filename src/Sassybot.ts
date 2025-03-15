@@ -369,13 +369,17 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
 
   private async login() {
     this.emit('preLogin');
-    await this.discordClient.login(process.env.DISCORD_TOKEN);
-    const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
-    this.logger = createLogger(this.discordClient, logChannel);
-    if (logChannel && this.isTextChannel(logChannel)) {
-      await logChannel.send('Bot Restarted - with nodestone');
+    try {
+      await this.discordClient.login(process.env.DISCORD_TOKEN);
+      const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
+      if (logChannel && this.isTextChannel(logChannel)) {
+        this.logger.info('Bot Restarted');
+        await logChannel.send('Bot Restarted');
+      }
+      this.emit('postLogin');
+    } catch (error) {
+      this.logger.error('Could not login to discord', error);
     }
-    this.emit('postLogin');
   }
 
   private async onMessageHandler(message: Message | PartialMessage): Promise<void> {

@@ -30,8 +30,7 @@ ENV TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'
 ENV TYPEORM_SYNCHRONIZE=0
 ENV TYPEORM_LOGGING=0
 ENV TYPEORM_ENTITIES="entity/*.js,modules/**/entity/*.js"
-
-
+ENV LOG_LEVEL=debug
 
 ENTRYPOINT "node"
 CMD "dist/Sassybot.js"
