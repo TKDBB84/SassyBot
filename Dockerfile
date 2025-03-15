@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:22-alpine as builder
 LABEL authors="tkdbb84"
 
 WORKDIR /home/node/
@@ -12,7 +12,7 @@ COPY . ./
 
 RUN npm run build
 
-FROM node:18-alpine as sassybot
+FROM node:22-alpine as sassybot
 LABEL authors="tkdbb84"
 
 WORKDIR /home/node/
@@ -27,9 +27,9 @@ ENV NODE_ENV=production
 ENV TYPEORM_CONNECTION=mysql
 ENV TYPEORM_HOST=database
 ENV TYPEORM_DRIVER_EXTRA='{"charset": "utf8mb4"}'
-ENV TYPEORM_SYNCHRONIZE=false
-ENV TYPEORM_LOGGING=false
+ENV TYPEORM_SYNCHRONIZE=0
+ENV TYPEORM_LOGGING=0
 ENV TYPEORM_ENTITIES="entity/*.js,modules/**/entity/*.js"
 ENV LOG_LEVEL=debug
 
-ENTRYPOINT ["node", "dist/Sassybot.js"]
+CMD ["npm", "start"]

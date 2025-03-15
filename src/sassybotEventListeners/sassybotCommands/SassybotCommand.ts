@@ -56,6 +56,7 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     const commands = this.commands.map((c) => c.toLowerCase());
     if (commands.includes(invoked)) {
       try {
+        this.sb.logger.info(`Command Invoked: ${invoked}`, { message, params });
         await this.listener({ message, params });
       } catch (e: unknown) {
         this.sb.logger.error(`Error Processing ${invoked}`, { e, message, params });

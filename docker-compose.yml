@@ -50,7 +50,6 @@ services:
       - ENV TYPEORM_PASSWORD=${SASSYBOT_DB_PASSWORD:-password}
       - ENV TYPEORM_DATABASE=${SASSYBOT_DB_NAME:-sassybot}
       - ENV DISCORD_TOKEN=$DISCORD_TOKEN
-      - ENV XIV_API_TOKEN=$XIV_API_TOKEN
 
 networks:
   backend-network:
