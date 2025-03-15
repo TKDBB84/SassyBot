@@ -20,7 +20,7 @@ import {
   PartialMessage,
 } from 'discord.js';
 import Redis from 'ioredis';
-import EventEmitter from 'events';
+import EventEmitter from 'node:events';
 import type TypedEmitter from 'typed-emitter';
 import cron from 'node-cron';
 import 'reflect-metadata';
@@ -479,14 +479,22 @@ const intents = [
 ];
 const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
 const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
+  const timer = setTimeout(() => {
+    reject(new Error('connection timed out'));
+  }, 30_000);
   discordClient.once('ready', () => {
+    clearTimeout(timer);
     resolve(discordClient as Client<true>);
   });
   discordClient.once('error', (error) => {
+    clearTimeout(timer);
     reject(error);
   });
 });
-discordClient.login(process.env.DISCORD_TOKEN);
+
+discordClient.login(process.env.DISCORD_TOKEN).catch((e) => {
+  logger.error('Error Logging In', e);
+});
 
 Promise.all([getDataSource(), waitForReady])
   .then(async ([connection, discordClient]: [DataSource, Client<true>]) => {
