@@ -32,5 +32,4 @@ ENV TYPEORM_LOGGING=0
 ENV TYPEORM_ENTITIES="entity/*.js,modules/**/entity/*.js"
 ENV LOG_LEVEL=debug
 
-ENTRYPOINT "node"
-CMD "dist/Sassybot.js"
+CMD ["npm", "start"]
