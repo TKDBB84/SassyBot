@@ -11,6 +11,9 @@ export default class RestartCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     const officer = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
 
     if (isMessageFromAdmin(message, officer)) {

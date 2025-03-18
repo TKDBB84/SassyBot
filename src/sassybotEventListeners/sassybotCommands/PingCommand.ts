@@ -9,6 +9,10 @@ export default class PingCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     await message.channel.send({ content: 'pong', reply: { messageReference: message } });
   }
 }

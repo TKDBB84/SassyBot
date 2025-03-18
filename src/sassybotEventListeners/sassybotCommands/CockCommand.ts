@@ -9,6 +9,10 @@ export default class CockCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     const phrases = [
       '8/10, a little firm but gets the job done',
       '10/10, nice cock bro',

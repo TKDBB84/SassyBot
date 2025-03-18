@@ -53,6 +53,9 @@ export default class EventCommand extends SassybotCommand {
       await message.reply('cannot create events in private messages!');
       return;
     }
+    if (!this.sb.isTextChannel(message.channel)) {
+      return;
+    }
     const guildId = message.guild.id;
     const userRepository = this.sb.dbConnection.getRepository(SbUser);
     let currentUser = await userRepository.findOne({ where: { discordUserId: message.author.id } });
@@ -65,6 +68,7 @@ export default class EventCommand extends SassybotCommand {
       await message.channel.send(
         'Sorry, you dont have a timezone registered for yourself, use `!sb tz` to set a timezone',
       );
+
       return;
     }
 
@@ -109,6 +113,9 @@ export default class EventCommand extends SassybotCommand {
       await message.reply('cannot create events in private messages!');
       return;
     }
+    if (!this.sb.isTextChannel(message.channel)) {
+      return;
+    }
     const guildId = message.guild.id;
     const allEvents = [...(await Event.getAll(guildId)), ...EventCommand.getRepeatingEvents(guildId)];
 
@@ -149,9 +156,7 @@ export default class EventCommand extends SassybotCommand {
                 await this.deleteEvent(sentMessage, eventIdToDelete);
               } else if (reaction?.emoji.name === '🔁') {
                 // do repeating things
-                await sentMessage.channel.send(
-                  "Sorry, Sasner hasn't finished the repeating functionality, because he sucks",
-                );
+                await sentMessage.reply("Sorry, Sasner hasn't finished the repeating functionality, because he sucks");
               }
             }
           };
@@ -183,6 +188,9 @@ export default class EventCommand extends SassybotCommand {
       await message.reply('cannot create events in private messages!');
       return;
     }
+    if (!this.sb.isTextChannel(message.channel)) {
+      return;
+    }
     const userRepo = this.sb.dbConnection.getRepository<SbUser>(SbUser);
     const guildId = message.guild.id;
     await message.channel.send(
@@ -203,7 +211,9 @@ export default class EventCommand extends SassybotCommand {
       const possibleTime = filterMessage.cleanContent.toLowerCase();
       const matches = validDateFormats.some((format) => moment.tz(possibleTime, format, userTz).isValid());
       if (!matches) {
-        void filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
+        if (filterMessage.channel.isSendable()) {
+          void filterMessage.channel.send('Date & Time Does Not Appear to be valid, please try again');
+        }
       }
       return matches;
     };

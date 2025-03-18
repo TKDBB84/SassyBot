@@ -31,6 +31,10 @@ export default class NodestoneCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     const url = `http://Nodestone:8080/freecompany/${CoTAPIId}?data=FCM&page=1`;
     await fetch(url)
       .then((res) => {
@@ -40,6 +44,9 @@ export default class NodestoneCommand extends SassybotCommand {
         throw new Error(`${res.status} ${res.statusText}`);
       })
       .then(async (json: NodeStoneResponse) => {
+        if (!message.channel.isSendable()) {
+          return;
+        }
         await message.channel.send({
           content: JSON.stringify(json),
           reply: { messageReference: message },

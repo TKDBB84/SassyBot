@@ -14,6 +14,9 @@ export default class SetDaysCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     const officer = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     if (!isMessageFromAdmin(message, officer)) {
       await message.channel.send('This Command Is Only Available to Admins');

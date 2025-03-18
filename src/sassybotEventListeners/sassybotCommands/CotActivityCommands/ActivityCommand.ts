@@ -21,6 +21,9 @@ export default abstract class ActivityCommand extends SassybotCommand {
   }
 
   protected async requestCharacterName(message: Message): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     await message.channel.send('First, Tell Me Your Full Character Name');
   }
 

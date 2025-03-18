@@ -17,6 +17,9 @@ export default class TzCommand extends SassybotCommand {
     );
   }
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     const userRepository = this.sb.dbConnection.getRepository(SbUser);
     let currentUser = await userRepository.findOne({ where: { discordUserId: message.author.id } });
     if (!currentUser) {

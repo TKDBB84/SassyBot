@@ -37,6 +37,9 @@ export default abstract class SassybotCommand extends SassybotEventListener {
       // don't bother
       return;
     }
+    if (!message.channel.isSendable()) {
+      return;
+    }
 
     const invokedCommand = params.command.toLowerCase();
     const commandsListenedFor = this.commands.map((c) => c.toLowerCase());
@@ -52,6 +55,9 @@ export default abstract class SassybotCommand extends SassybotEventListener {
     message: Message;
     params: ISassybotCommandParams;
   }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     const invoked = params.command.toLowerCase();
     const commands = this.commands.map((c) => c.toLowerCase());
     if (commands.includes(invoked)) {

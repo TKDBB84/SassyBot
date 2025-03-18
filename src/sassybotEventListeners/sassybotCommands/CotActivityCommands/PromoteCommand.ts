@@ -1,34 +1,17 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// disable because non-ts XIVApi
 import { Message, MessageCollector, MessageReaction, User } from 'discord.js';
 import moment from 'moment';
 import 'moment-timezone';
 import {
-  // CoTAPIId,
   CoTPromotionChannelId,
   CotRanks,
   CoTRankValueToString,
   GuildIds,
   ONE_HOUR,
   DaysForPromotionTo,
-  TWO_MIN,
 } from '../../../consts';
 import PromotionRequest from '../../../entity/PromotionRequest';
 import ActivityCommand from './ActivityCommand';
 import getNumberOFDays from '../lib/GetNumberOfDays';
-// @ts-ignore
-// import XIVApi from '@xivapi/js';
-
-// interface IFreeCompanyMember {
-//   Avatar: string;
-//   FeastMatches: number;
-//   ID: number;
-//   Name: string;
-//   Rank: 'MEMBER' | 'RECRUIT' | 'VETERAN' | 'OFFICER';
-//   RankIcon: string;
-//   Server: string;
-//   exactRecruit: boolean;
-// }
 
 export default class PromoteCommand extends ActivityCommand {
   protected getHelpText(): string {
@@ -38,6 +21,10 @@ export default class PromoteCommand extends ActivityCommand {
   public readonly commands = ['promote', 'promotion'];
 
   protected async listAll(message: Message): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     // const xiv = new XIVApi({ private_key: process.env.XIV_API_TOKEN, language: 'en' });
     const promotionsRepo = this.sb.dbConnection.getRepository(PromotionRequest);
     const allPromotions = await promotionsRepo.find({ order: { requested: 'ASC' } });
@@ -89,6 +76,9 @@ export default class PromoteCommand extends ActivityCommand {
         }`;
 
         let sentMessageArray: Message[];
+        if (!message.channel.isSendable()) {
+          return;
+        }
         const sentMessages = await message.channel.send({ content });
         if (!Array.isArray(sentMessages)) {
           sentMessageArray = [sentMessages];
@@ -148,6 +138,9 @@ export default class PromoteCommand extends ActivityCommand {
               }
               setTimeout(() => void sentMessage.delete(), 100);
             } else {
+              if (!message.channel.isSendable()) {
+                return;
+              }
               await message.channel.send(
                 `Please Remember To Follow Up With ${promotion.CotMember.character.name} On Why They Were Denied`,
               );
@@ -181,9 +174,6 @@ export default class PromoteCommand extends ActivityCommand {
           if (isEligible) {
             await this.summarizeData(collectedMessage, promotion);
             messageCollector.stop();
-          } else {
-            messageCollector.stop();
-            await this.awaitEligibilityOverride(collectedMessage, promotion);
           }
         };
         void asyncWork();
@@ -206,9 +196,7 @@ export default class PromoteCommand extends ActivityCommand {
       }
       promotion.CotMember = foundMember;
       const isEligible = await this.verifyEligibility(message, promotion);
-      if (!isEligible) {
-        await this.awaitEligibilityOverride(message, promotion);
-      } else {
+      if (isEligible) {
         await this.summarizeData(message, promotion);
       }
     }
@@ -226,31 +214,11 @@ export default class PromoteCommand extends ActivityCommand {
     const numDaysTolerance = 5;
     if (numDays + numDaysTolerance < DaysForPromotionTo[toRank]) {
       await message.reply(
-        `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${DaysForPromotionTo[toRank]} days are required.\n\nIf you feel you have a valid exception, or the information I have is incorrect please type "I am eligible" to submit the request. Otherwise it will be canceled in 2 minutes.`,
+        `You appear to be ineligible for a promotion to ${CoTRankValueToString[toRank]}. You seem to have only been a member for ${numDays} days, when ${DaysForPromotionTo[toRank]} days are required.`,
       );
       return false;
     }
     return true;
-  }
-
-  protected async awaitEligibilityOverride(message: Message, promotion: PromotionRequest): Promise<void> {
-    const filter = (filterMessage: Message) => {
-      if (filterMessage.author.id !== message.author.id) {
-        return false;
-      }
-      const cleanedContent = filterMessage.cleanContent
-        .replace(/[^a-z-A-Z ]/g, '')
-        .replace(/ +/, ' ')
-        .trim()
-        .toLowerCase();
-      return cleanedContent === 'i am eligible' || cleanedContent === 'im eligible' || cleanedContent === 'i eligible';
-    };
-
-    const messages = await message.channel.awaitMessages({ filter, time: TWO_MIN, errors: [], max: 1 });
-    if (messages.size === 1) {
-      await this.summarizeData(message, promotion);
-    }
-    return;
   }
 
   protected async summarizeData(message: Message, promotion: PromotionRequest, nagString = false): Promise<void> {

@@ -14,6 +14,9 @@ export default class QuoteCommand extends SassybotCommand {
     if (!message.guild || !message.member) {
       return;
     }
+    if (!message.channel.isSendable()) {
+      return;
+    }
 
     if (params.args.includes('list all') && !params.mentions) {
       await this.listAllCounts(message);
@@ -120,6 +123,9 @@ export default class QuoteCommand extends SassybotCommand {
     });
 
     if (!userQuotes.length) {
+      if (!message.channel.isSendable()) {
+        return;
+      }
       await message.channel.send(`${member.displayName} has no saved quotes`);
       return;
     }
@@ -129,12 +135,17 @@ export default class QuoteCommand extends SassybotCommand {
     }
 
     if (quoteNumber > userQuotes.length) {
+      if (!message.channel.isSendable()) {
+        return;
+      }
       await message.channel.send(`${member.displayName} only has ${userQuotes.length} saved quotes`);
       return;
     }
 
     const quote = userQuotes[quoteNumber - 1];
-
+    if (!message.channel.isSendable()) {
+      return;
+    }
     await message.channel.send(
       `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber}) of ${userQuotes.length}`,
     );

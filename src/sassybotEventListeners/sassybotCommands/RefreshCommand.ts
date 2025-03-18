@@ -17,6 +17,9 @@ export default class RefreshCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     if (message.author.id === UserIds.SASNER && params.args.trim().toLowerCase() === 'now') {
       await message.channel.send({ content: `Starting Admin Initiated Data Sync` });
       const start = performance.now();

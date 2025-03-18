@@ -21,6 +21,10 @@ export default class DaysCommand extends SassybotCommand {
       return;
     }
 
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
     const isOfficerQuery = isMessageFromAdmin(message, officerRole) && !!params.args.trim();
 

@@ -16,6 +16,10 @@ export default class AbsentCommand extends ActivityCommand {
   private static runningUsers = new Set();
 
   protected async listAll(message: Message): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     const yesterday = new Date();
     yesterday.setTime(new Date().getTime() - 36 * (60 * 60 * 1000));
     const allAbsences = await this.sb.dbConnection.getRepository(AbsentRequest).find({

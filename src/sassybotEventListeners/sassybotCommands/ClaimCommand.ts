@@ -18,6 +18,9 @@ export default class ClaimCommand extends SassybotCommand {
     if (!message.guild || !message.member) {
       return;
     }
+    if (!message.channel.isSendable()) {
+      return;
+    }
 
     const name = params.args.trim().toLowerCase();
     if (!name) {

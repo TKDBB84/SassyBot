@@ -10,6 +10,10 @@ export default class InspireCommand extends SassybotCommand {
   }
 
   protected async listener({ message }: { message: Message }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
+
     const response = await fetch('https://inspirobot.me/api?generate=true', {
       method: 'GET',
       headers: {

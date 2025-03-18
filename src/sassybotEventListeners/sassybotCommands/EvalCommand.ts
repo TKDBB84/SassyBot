@@ -12,6 +12,9 @@ export default class EvalCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     if (
       message.author.id === UserIds.SASNER ||
       message.author.id === UserIds.RYK ||
