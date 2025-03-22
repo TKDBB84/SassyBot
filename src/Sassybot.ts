@@ -18,6 +18,7 @@ import {
   VoiceState,
   PartialMessageReaction,
   PartialMessage,
+  MessageReactionEventDetails,
 } from 'discord.js';
 import Redis from 'ioredis';
 import EventEmitter from 'node:events';
@@ -102,9 +103,11 @@ type SassybotEmitter = {
   messageReactionAdd: ({
     messageReaction,
     user,
+    details,
   }: {
     messageReaction: MessageReaction | PartialMessageReaction;
     user: User | PartialUser;
+    details: MessageReactionEventDetails;
   }) => void;
   voiceStateUpdate: ({
     previousMemberState,
@@ -407,6 +410,9 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
+    if (!message.channel.isSendable()) {
+      return;
+    }
     if (params.args === '') {
       const commands: string[] = [...this.registeredCommands];
       commands.sort();
@@ -438,12 +444,16 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     }
     this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
-  private onMessageReactionAdd(reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) {
+  private onMessageReactionAdd(
+    reaction: MessageReaction | PartialMessageReaction,
+    user: User | PartialUser,
+    details: MessageReactionEventDetails,
+  ) {
     if (reaction instanceof MessageReaction && user instanceof User) {
       if (reaction.message.author?.bot || user.bot) {
         return;
       }
-      this.emit('messageReactionAdd', { messageReaction: reaction, user });
+      this.emit('messageReactionAdd', { messageReaction: reaction, user, details });
     }
   }
 
@@ -477,7 +487,7 @@ const intents = [
   GatewayIntentBits.GuildScheduledEvents,
   GatewayIntentBits.MessageContent,
 ];
-logger.info('Creating Discord Client...')
+logger.info('Creating Discord Client...');
 const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
 const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
@@ -493,7 +503,7 @@ const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   });
 });
 
-logger.info('Attempting To Connect...')
+logger.info('Attempting To Connect...');
 discordClient.login(process.env.DISCORD_TOKEN).catch((e) => {
   logger.error('Error Logging In', e);
 });

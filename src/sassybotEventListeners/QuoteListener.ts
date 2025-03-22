@@ -34,9 +34,11 @@ export default class QuoteListener extends SassybotEventListener {
         const savedQuote = await quoteRepo.save(sbQuote, { reload: true });
         const quotedMember = await this.sb.getMember(savedQuote.guildId, savedQuote.user.discordUserId);
         if (quotedMember) {
-          await messageReaction.message.channel.send({
-            content: `I've noted that ${quotedMember.displayName} said: "${savedQuote.quoteText}"`,
-          });
+          if (messageReaction.message.channel.isSendable()) {
+            await messageReaction.message.channel.send({
+              content: `I've noted that ${quotedMember.displayName} said: "${savedQuote.quoteText}"`,
+            });
+          }
         }
       }
     }

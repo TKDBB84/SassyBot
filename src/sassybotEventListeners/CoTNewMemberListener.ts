@@ -62,7 +62,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     return this.declaringCharacterName(declaredName);
   }
   private async declaringCharacterName(message: Message | undefined): Promise<string> {
-    if (!message || !message.guild || !message.member) {
+    if (!message || !message.guild || !message.member || !message.channel.isSendable()) {
       return '';
     }
     const declaredName = message.cleanContent.trim();
@@ -128,7 +128,7 @@ export default class CoTNewMemberListener extends SassybotEventListener {
     return await this.getAgreement(newMemberChannel, member, declaredName, false);
   }
   private async acceptingTerms(declaredName: string, message: Message | undefined): Promise<boolean> {
-    if (!message || !message.guild || !message.member) {
+    if (!message || !message.guild || !message.member || !message.channel.isSendable()) {
       return false;
     }
 

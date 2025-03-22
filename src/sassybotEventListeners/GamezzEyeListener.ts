@@ -18,7 +18,8 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
       message.cleanContent.toLowerCase().startsWith('!sassybot ') ||
       !message.member ||
       !message.guild ||
-      message.guild.id !== GuildIds.GAMEZZZ_GUILD_ID
+      message.guild.id !== GuildIds.GAMEZZZ_GUILD_ID ||
+      !message.channel.isSendable()
     ) {
       return;
     }
