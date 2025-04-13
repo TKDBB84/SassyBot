@@ -6,7 +6,6 @@ import DaysCommand from './DaysCommand';
 import EchoCommand from './EchoCommand';
 import EvalCommand from './EvalCommand';
 import EventCommand from './EventCommand';
-import NodestoneCommand from './NodestoneCommand';
 import PingCommand from './PingCommand';
 import PodcastCommand from './PodcastCommand';
 import PunCommand from './PunCommand';
@@ -18,7 +17,6 @@ import SetDaysCommand from './SetDaysCommand';
 import SpamCommand from './SpamCommand';
 import TzCommand from './TzCommand';
 
-import EmbedCommand from './EmbedCommand';
 import InspireCommand from './InspireCommand';
 
 export default [
@@ -27,12 +25,9 @@ export default [
   CockCommand,
   DaysCommand,
   EchoCommand,
-  EmbedCommand,
   EvalCommand,
   EventCommand,
   InspireCommand,
-  // PasCommand,
-  NodestoneCommand,
   PingCommand,
   PodcastCommand,
   PromoteCommand,
