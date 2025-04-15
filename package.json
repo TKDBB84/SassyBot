@@ -16,7 +16,7 @@
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
     "reflect-metadata": "^0.2.2",
-    "tsd": "^0.31.1",
+    "tsd": "^0.32.0",
     "typed-emitter": "^2.1.0",
     "typeorm": "^0.3.22",
     "typescript": "^5.8.3",
