@@ -2,7 +2,7 @@
   "author": "TKDBB84 (Sasner)",
   "dependencies": {
     "@discordjs/rest": "^2.4.3",
-    "@types/node": "^22.14.1",
+    "@types/node": "^22.15.18",
     "@types/node-cron": "^3.0.11",
     "@types/node-fetch": "^2.6.4",
     "@types/shortid": "^2.2.0",
