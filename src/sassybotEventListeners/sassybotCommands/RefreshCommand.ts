@@ -17,27 +17,28 @@ export default class RefreshCommand extends SassybotCommand {
   }
 
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (!message.channel.isSendable()) {
-      return;
-    }
-    if (message.author.id === UserIds.SASNER && params.args.trim().toLowerCase() === 'now') {
-      await message.channel.send({ content: `Starting Admin Initiated Data Sync` });
-      const start = performance.now();
-      await jobs[0].job(this.sb);
-      await message.channel.send(`Refresh Completed In ${(performance.now() - start).toFixed(3)}ms`);
-    }
-    const thisUser = await this.sb.dbConnection
-      .getRepository<SbUser>(SbUser)
-      .findOne({ where: { discordUserId: message.author.id } });
-    const lastRefreshedCharacter = await this.sb.dbConnection
-      .getRepository<FFXIVChar>(FFXIVChar)
-      .findOne({ where: { lastSeenApi: Not(IsNull()) }, order: { lastSeenApi: 'DESC' } });
-    if (lastRefreshedCharacter) {
-      const lastRefresh = moment(lastRefreshedCharacter.lastSeenApi);
-      const lastRefreshString = lastRefresh
-        .tz(thisUser && thisUser.timezone && moment.tz.zone(thisUser.timezone) ? thisUser.timezone : 'UTC')
-        .format('LT z');
-      void message.reply({ content: `Fresh FC Member Data Was Pulled At: ${lastRefreshString}` });
-    }
+    return;
+    // if (!message.channel.isSendable()) {
+    //   return;
+    // }
+    // if (message.author.id === UserIds.SASNER && params.args.trim().toLowerCase() === 'now') {
+    //   await message.channel.send({ content: `Starting Admin Initiated Data Sync` });
+    //   const start = performance.now();
+    //   await jobs[0].job(this.sb);
+    //   await message.channel.send(`Refresh Completed In ${(performance.now() - start).toFixed(3)}ms`);
+    // }
+    // const thisUser = await this.sb.dbConnection
+    //   .getRepository<SbUser>(SbUser)
+    //   .findOne({ where: { discordUserId: message.author.id } });
+    // const lastRefreshedCharacter = await this.sb.dbConnection
+    //   .getRepository<FFXIVChar>(FFXIVChar)
+    //   .findOne({ where: { lastSeenApi: Not(IsNull()) }, order: { lastSeenApi: 'DESC' } });
+    // if (lastRefreshedCharacter) {
+    //   const lastRefresh = moment(lastRefreshedCharacter.lastSeenApi);
+    //   const lastRefreshString = lastRefresh
+    //     .tz(thisUser && thisUser.timezone && moment.tz.zone(thisUser.timezone) ? thisUser.timezone : 'UTC')
+    //     .format('LT z');
+    //   void message.reply({ content: `Fresh FC Member Data Was Pulled At: ${lastRefreshString}` });
+    // }
   }
 }

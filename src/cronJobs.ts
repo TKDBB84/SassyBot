@@ -27,10 +27,10 @@ const twiceADay = '0 15 8,20 * * *';
 // const every15Min = '0 0,15,30,45 * * * *';
 
 const jobs: IScheduledJob[] = [
-  {
-    job: deletePastAbsences,
-    schedule: twiceADay,
-  },
+  // {
+  //   job: deletePastAbsences,
+  //   schedule: twiceADay,
+  // },
 ];
 
 export default jobs;

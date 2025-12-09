@@ -6,18 +6,19 @@ import SassybotCommand from '../SassybotCommand';
 
 export default abstract class ActivityCommand extends SassybotCommand {
   protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (!message.guild || !message.member) {
-      return;
-    }
-    const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-    if (
-      (officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
-      message.author.id === UserIds.SASNER
-    ) {
-      await this.listAll(message);
-    } else {
-      await this.activityListener({ message, params });
-    }
+    return;
+    // if (!message.guild || !message.member) {
+    //   return;
+    // }
+    // const officerRole = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
+    // if (
+    //   (officerRole && message.member.roles.highest.comparePositionTo(officerRole) >= 0) ||
+    //   message.author.id === UserIds.SASNER
+    // ) {
+    //   await this.listAll(message);
+    // } else {
+    //   await this.activityListener({ message, params });
+    // }
   }
 
   protected async requestCharacterName(message: Message): Promise<void> {

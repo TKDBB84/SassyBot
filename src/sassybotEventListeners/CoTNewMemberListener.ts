@@ -20,83 +20,84 @@ export default class CoTNewMemberListener extends SassybotEventListener {
   }
 
   protected async listener({ member }: { member: GuildMember }): Promise<void> {
-    if (member.guild.id !== GuildIds.COT_GUILD_ID) {
-      return;
-    }
-
-    const isCotMember = await this.sb.findCoTMemberByDiscordId(member.id);
-    if (
-      isCotMember &&
-      isCotMember.firstSeenDiscord &&
-      moment(isCotMember.firstSeenDiscord).isAfter('1900-01-01 00:00:00')
-    ) {
-      const role = isCotMember.rank;
-      await member.roles.add(role, 'Added Known Rank To User');
-      if (isCotMember.character.name && (role === CotRanks.MEMBER || role === CotRanks.RECRUIT)) {
-        await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
-      }
-      return;
-    }
-
-    const newMemberChannel = await this.sb.getTextChannel(NewUserChannels[GuildIds.COT_GUILD_ID]);
-    if (!newMemberChannel || !this.sb.isTextChannel(newMemberChannel)) {
-      this.sb.logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
-      return;
-    }
-
-    await member.roles.add(CotRanks.NEW, 'User Joined Server');
-
-    const declaredName = await this.getDeclaredName(newMemberChannel, member);
-    await this.getAgreement(newMemberChannel, member, declaredName, true);
-  }
-
-  private async getDeclaredName(newMemberChannel: TextChannel, member: GuildMember): Promise<string> {
-    await newMemberChannel.send({
-      content: `Hey ${member.toString()}, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?`,
-    });
-    const collectedNameMessages = await newMemberChannel.awaitMessages({
-      filter: CoTNewMemberListener.messageFilter(member),
-      max: 1,
-    });
-    const declaredName: Message | undefined = collectedNameMessages.first();
-    return this.declaringCharacterName(declaredName);
-  }
-  private async declaringCharacterName(message: Message | undefined): Promise<string> {
-    if (!message || !message.guild || !message.member || !message.channel.isSendable()) {
-      return '';
-    }
-    const declaredName = message.cleanContent.trim();
-    const memberName = message.member.nickname || message.author.username;
-    const nameMatchesNickName = memberName.trim() === declaredName;
-    if (!nameMatchesNickName) {
-      try {
-        await message.member.setNickname(declaredName, 'Declared Character Name');
-      } catch (error) {
-        await message.channel.send({
-          content: `I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?`,
-          reply: { messageReference: message },
-        });
-        this.sb.logger.warn('unable to update nickname', error);
-      }
-    }
-    const nameMatch = await this.sb.dbConnection
-      .getRepository(FFXIVChar)
-      .createQueryBuilder()
-      .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
-      .getOne();
-
-    if (nameMatch) {
-      // found in API before
-      const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
-      if (cotMember.rank !== CotRanks.NEW) {
-        await message.channel.send(
-          `I've found your FC membership, it looks like you're currently a ${
-            CoTRankValueToString[cotMember.rank]
-          }, I'll be sure to set that for you when we're done.`,
-        );
-      }
-    }
-    return declaredName;
+    return;
+  //   if (member.guild.id !== GuildIds.COT_GUILD_ID) {
+  //     return;
+  //   }
+  //
+  //   const isCotMember = await this.sb.findCoTMemberByDiscordId(member.id);
+  //   if (
+  //     isCotMember &&
+  //     isCotMember.firstSeenDiscord &&
+  //     moment(isCotMember.firstSeenDiscord).isAfter('1900-01-01 00:00:00')
+  //   ) {
+  //     const role = isCotMember.rank;
+  //     await member.roles.add(role, 'Added Known Rank To User');
+  //     if (isCotMember.character.name && (role === CotRanks.MEMBER || role === CotRanks.RECRUIT)) {
+  //       await member.setNickname(isCotMember.character.name.trim(), 'Set To Match Char Name');
+  //     }
+  //     return;
+  //   }
+  //
+  //   const newMemberChannel = await this.sb.getTextChannel(NewUserChannels[GuildIds.COT_GUILD_ID]);
+  //   if (!newMemberChannel || !this.sb.isTextChannel(newMemberChannel)) {
+  //     this.sb.logger.warn('unable to fetch new user channel', { channel: NewUserChannels[GuildIds.COT_GUILD_ID] });
+  //     return;
+  //   }
+  //
+  //   await member.roles.add(CotRanks.NEW, 'User Joined Server');
+  //
+  //   const declaredName = await this.getDeclaredName(newMemberChannel, member);
+  //   await this.getAgreement(newMemberChannel, member, declaredName, true);
+  // }
+  //
+  // private async getDeclaredName(newMemberChannel: TextChannel, member: GuildMember): Promise<string> {
+  //   await newMemberChannel.send({
+  //     content: `Hey ${member.toString()}, welcome to the Crowne of Thorne server!\n\nFirst Can you please type your FULL FFXIV character name?`,
+  //   });
+  //   const collectedNameMessages = await newMemberChannel.awaitMessages({
+  //     filter: CoTNewMemberListener.messageFilter(member),
+  //     max: 1,
+  //   });
+  //   const declaredName: Message | undefined = collectedNameMessages.first();
+  //   return this.declaringCharacterName(declaredName);
+  // }
+  // private async declaringCharacterName(message: Message | undefined): Promise<string> {
+  //   if (!message || !message.guild || !message.member || !message.channel.isSendable()) {
+  //     return '';
+  //   }
+  //   const declaredName = message.cleanContent.trim();
+  //   const memberName = message.member.nickname || message.author.username;
+  //   const nameMatchesNickName = memberName.trim() === declaredName;
+  //   if (!nameMatchesNickName) {
+  //     try {
+  //       await message.member.setNickname(declaredName, 'Declared Character Name');
+  //     } catch (error) {
+  //       await message.channel.send({
+  //         content: `I was unable to update your discord nickname to match your character name, would you please do that when you have a few minutes?`,
+  //         reply: { messageReference: message },
+  //       });
+  //       this.sb.logger.warn('unable to update nickname', error);
+  //     }
+  //   }
+  //   const nameMatch = await this.sb.dbConnection
+  //     .getRepository(FFXIVChar)
+  //     .createQueryBuilder()
+  //     .where(`LOWER(name) = LOWER(:name)`, { name: declaredName.toLowerCase() })
+  //     .getOne();
+  //
+  //   if (nameMatch) {
+  //     // found in API before
+  //     const cotMember = await COTMember.getCotMemberByName(nameMatch.name, message.author.id);
+  //     if (cotMember.rank !== CotRanks.NEW) {
+  //       await message.channel.send(
+  //         `I've found your FC membership, it looks like you're currently a ${
+  //           CoTRankValueToString[cotMember.rank]
+  //         }, I'll be sure to set that for you when we're done.`,
+  //       );
+  //     }
+  //   }
+  //   return declaredName;
   }
 
   private async getAgreement(
