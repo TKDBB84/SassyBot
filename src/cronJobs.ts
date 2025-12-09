@@ -10,18 +10,18 @@ export interface IScheduledJob {
   schedule: string;
 }
 
-const deletePastAbsences: IJob = async (sb: Sassybot) => {
-  const absentRepo = sb.dbConnection.getRepository(AbsentRequest);
-  const eventRepo = sb.dbConnection.getRepository(Event);
-  const YESTERDAY = new Date();
-  YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
-  await Promise.all([
-    eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) }),
-    absentRepo.delete({ endDate: LessThan<Date>(YESTERDAY) }),
-  ]);
-};
+// const deletePastAbsences: IJob = async (sb: Sassybot) => {
+//   const absentRepo = sb.dbConnection.getRepository(AbsentRequest);
+//   const eventRepo = sb.dbConnection.getRepository(Event);
+//   const YESTERDAY = new Date();
+//   YESTERDAY.setTime(new Date().getTime() - 24 * (60 * 60 * 1000));
+//   await Promise.all([
+//     eventRepo.delete({ eventTime: LessThan<Date>(YESTERDAY) }),
+//     absentRepo.delete({ endDate: LessThan<Date>(YESTERDAY) }),
+//   ]);
+// };
 
-const twiceADay = '0 15 8,20 * * *';
+// const twiceADay = '0 15 8,20 * * *';
 // const daily = '0 0 20 * * *';
 // const afterTwiceADay = '0 30 8,20 * * *';
 // const every15Min = '0 0,15,30,45 * * * *';
