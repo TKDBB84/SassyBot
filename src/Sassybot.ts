@@ -70,13 +70,23 @@ const redisConnection: Promise<Redis> = new Promise((resolve, reject) => {
     resolve(redisClient);
     return;
   }
+  const onReady = () => {
+    clearTimeout(timer);
+    redisClient.removeListener('error', onError);
+    resolve(redisClient);
+  };
+  const onError = (err: Error) => {
+    clearTimeout(timer);
+    redisClient.removeListener('ready', onReady);
+    reject(err);
+  };
   const timer = setTimeout(() => {
+    redisClient.removeListener('ready', onReady);
+    redisClient.removeListener('error', onError);
     reject(new Error('Timed out waiting for Redis to become ready'));
   }, REDIS_READY_TIMEOUT_MS);
-  redisClient.once('ready', () => {
-    clearTimeout(timer);
-    resolve(redisClient);
-  });
+  redisClient.once('ready', onReady);
+  redisClient.once('error', onError);
 });
 
 export type SassybotEvent =
