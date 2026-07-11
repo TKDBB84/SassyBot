@@ -47,16 +47,20 @@ const redisClient = new Redis({
     return Math.min(times * 200, 5000);
   },
   reconnectOnError(err: Error) {
-    const reconnectErrors = ['READONLY', 'ECONNRESET', 'ECONNREFUSED'];
-    return reconnectErrors.some((e) => err.message.includes(e));
+    const errWithCode = err as Error & { code?: string };
+    const reconnectCodes = ['ECONNRESET', 'ECONNREFUSED'];
+    if (errWithCode.code && reconnectCodes.includes(errWithCode.code)) {
+      return true;
+    }
+    return err.message.includes('READONLY');
   },
 });
 
 redisClient.on('error', (err: Error) => {
-  logger.error('Redis client error', { message: err.message });
+  logger.error('Redis client error', err);
 });
-redisClient.on('reconnecting', () => {
-  logger.warn('Redis client reconnecting...');
+redisClient.on('reconnecting', (delay: number) => {
+  logger.warn('Redis client reconnecting...', { delay });
 });
 
 const redisConnection: Promise<Redis> = new Promise((resolve) => {
