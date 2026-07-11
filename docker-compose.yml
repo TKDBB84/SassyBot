@@ -46,10 +46,10 @@ services:
         redis:
           condition: service_healthy
     environment:
-      - ENV TYPEORM_USERNAME=${SASSYBOT_DB_USER:-sassybot}
-      - ENV TYPEORM_PASSWORD=${SASSYBOT_DB_PASSWORD:-password}
-      - ENV TYPEORM_DATABASE=${SASSYBOT_DB_NAME:-sassybot}
-      - ENV DISCORD_TOKEN=$DISCORD_TOKEN
+      - TYPEORM_USERNAME=${SASSYBOT_DB_USER:-sassybot}
+      - TYPEORM_PASSWORD=${SASSYBOT_DB_PASSWORD:-password}
+      - TYPEORM_DATABASE=${SASSYBOT_DB_NAME:-sassybot}
+      - DISCORD_TOKEN=$DISCORD_TOKEN
       - REDIS_HOST=redis
 
 networks:

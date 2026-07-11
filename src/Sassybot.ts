@@ -63,12 +63,20 @@ redisClient.on('reconnecting', (delay: number) => {
   logger.warn('Redis client reconnecting...', { delay });
 });
 
-const redisConnection: Promise<Redis> = new Promise((resolve) => {
+const REDIS_READY_TIMEOUT_MS = 30_000;
+
+const redisConnection: Promise<Redis> = new Promise((resolve, reject) => {
   if (redisClient.status === 'ready') {
     resolve(redisClient);
-  } else {
-    redisClient.once('ready', () => resolve(redisClient));
+    return;
   }
+  const timer = setTimeout(() => {
+    reject(new Error('Timed out waiting for Redis to become ready'));
+  }, REDIS_READY_TIMEOUT_MS);
+  redisClient.once('ready', () => {
+    clearTimeout(timer);
+    resolve(redisClient);
+  });
 });
 
 export type SassybotEvent =
