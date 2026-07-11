@@ -15,6 +15,9 @@ RUN npm run build
 FROM node:22-alpine as sassybot
 LABEL authors="tkdbb84"
 
+RUN apk update && \
+    apk add --no-cache bind-tools
+
 WORKDIR /home/node/
 USER node
 
