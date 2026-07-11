@@ -37,9 +37,48 @@ import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotC
 import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
-const redisClient = new Redis(6379, process.env.REDIS_HOST || 'localhost');
-const redisConnection: Promise<Redis> = new Promise((resolve) => {
-  redisClient.on('connect', () => resolve(redisClient));
+const redisClient = new Redis({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: 6379,
+  keepAlive: 10000,
+  connectTimeout: 10000,
+  maxRetriesPerRequest: null,
+  retryStrategy(times: number) {
+    return Math.min(times * 200, 5000);
+  },
+  reconnectOnError(err: Error) {
+    const errWithCode = err as Error & { code?: string };
+    const reconnectCodes = ['ECONNRESET', 'ECONNREFUSED'];
+    if (errWithCode.code && reconnectCodes.includes(errWithCode.code)) {
+      return true;
+    }
+    return err.message.includes('READONLY');
+  },
+});
+
+redisClient.on('error', (err: Error) => {
+  logger.error('Redis client error', err);
+});
+redisClient.on('reconnecting', (delay: number) => {
+  logger.warn('Redis client reconnecting...', { delay });
+});
+
+const REDIS_READY_TIMEOUT_MS = 30_000;
+
+const redisConnection: Promise<Redis> = new Promise((resolve, reject) => {
+  if (redisClient.status === 'ready') {
+    resolve(redisClient);
+    return;
+  }
+  const onReady = () => {
+    clearTimeout(timer);
+    resolve(redisClient);
+  };
+  const timer = setTimeout(() => {
+    redisClient.removeListener('ready', onReady);
+    reject(new Error('Timed out waiting for Redis to become ready'));
+  }, REDIS_READY_TIMEOUT_MS);
+  redisClient.once('ready', onReady);
 });
 
 export type SassybotEvent =
@@ -188,7 +227,8 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public async getRedis(): Promise<Redis> {
-    return redisConnection;
+    await redisConnection;
+    return redisClient;
   }
 
   public async getSasner(): Promise<User> {
