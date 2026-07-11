@@ -37,9 +37,34 @@ import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotC
 import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
 import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
 
-const redisClient = new Redis(6379, process.env.REDIS_HOST || 'localhost');
+const redisClient = new Redis({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: 6379,
+  keepAlive: 10000,
+  connectTimeout: 10000,
+  maxRetriesPerRequest: null,
+  retryStrategy(times: number) {
+    return Math.min(times * 200, 5000);
+  },
+  reconnectOnError(err: Error) {
+    const reconnectErrors = ['READONLY', 'ECONNRESET', 'ECONNREFUSED'];
+    return reconnectErrors.some((e) => err.message.includes(e));
+  },
+});
+
+redisClient.on('error', (err: Error) => {
+  logger.error('Redis client error', { message: err.message });
+});
+redisClient.on('reconnecting', () => {
+  logger.warn('Redis client reconnecting...');
+});
+
 const redisConnection: Promise<Redis> = new Promise((resolve) => {
-  redisClient.on('connect', () => resolve(redisClient));
+  if (redisClient.status === 'ready') {
+    resolve(redisClient);
+  } else {
+    redisClient.once('ready', () => resolve(redisClient));
+  }
 });
 
 export type SassybotEvent =
@@ -188,7 +213,8 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public async getRedis(): Promise<Redis> {
-    return redisConnection;
+    await redisConnection;
+    return redisClient;
   }
 
   public async getSasner(): Promise<User> {
