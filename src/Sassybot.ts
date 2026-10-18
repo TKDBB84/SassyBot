@@ -2,6 +2,7 @@ import {
   Channel,
   TextChannel,
   Client,
+  Events,
   Guild,
   GuildMember,
   GatewayIntentBits,
@@ -31,7 +32,7 @@ import jobs from './cronJobs';
 import COTMember from './entity/COTMember';
 import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
-import { logger } from './log';
+import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
 import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
 import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
@@ -370,21 +371,21 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public async run(): Promise<void> {
-    this.discordClient.on('messageCreate', (...args) => {
+    this.discordClient.on(Events.MessageCreate, (...args) => {
       void this.onMessageHandler.bind(this)(...args);
     });
-    this.discordClient.on('messageUpdate', (oldMessage, newMessage) => {
+    this.discordClient.on(Events.MessageUpdate, (oldMessage, newMessage) => {
       void this.onMessageHandler.bind(this)(newMessage);
     });
 
-    this.discordClient.on('voiceStateUpdate', (...args) => {
+    this.discordClient.on(Events.VoiceStateUpdate, (...args) => {
       void this.onVoiceStateUpdate.bind(this)(...args);
     });
 
-    this.discordClient.on('messageReactionAdd', (...args) => {
+    this.discordClient.on(Events.MessageReactionAdd, (...args) => {
       void this.onMessageReactionAdd.bind(this)(...args);
     });
-    this.discordClient.on('guildMemberAdd', (...args) => {
+    this.discordClient.on(Events.GuildMemberAdd, (...args) => {
       void this.onGuildMemberAdd.bind(this)(...args);
     });
     await this.login();
@@ -410,6 +411,7 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     try {
       const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
       if (logChannel && this.isTextChannel(logChannel)) {
+        this.logger = createLogger(this.discordClient, logChannel);
         this.logger.info('Bot Restarted');
         await logChannel.send('Bot Restarted');
       }
@@ -523,18 +525,18 @@ const intents = [
 ];
 logger.info('Creating Discord Client...');
 const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
-discordClient.on('error', (err) => {
+discordClient.on(Events.Error, (err) => {
   logger.error('Discord client error', err);
 });
 const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
     reject(new Error('connection timed out'));
   }, 30_000);
-  discordClient.once('ready', () => {
+  discordClient.once(Events.ClientReady, (readyClient) => {
     clearTimeout(timer);
-    resolve(discordClient as Client<true>);
+    resolve(readyClient);
   });
-  discordClient.once('error', (error) => {
+  discordClient.once(Events.Error, (error) => {
     clearTimeout(timer);
     reject(error);
   });

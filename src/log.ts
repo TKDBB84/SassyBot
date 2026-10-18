@@ -1,3 +1,5 @@
+import DiscordTransport from 'winston-discordjs';
+import { Client, TextChannel } from 'discord.js';
 import { format, transports, createLogger as createWinstonLogger } from 'winston';
 import type { Logger } from 'winston';
 
@@ -16,7 +18,19 @@ const winLogger = createWinstonLogger({
   ],
 });
 
-const createLogger = (): Logger => {
+let discordTransportAdded = false;
+
+const createLogger = (discordClient?: Client, discordChannel?: TextChannel): Logger => {
+  if (discordClient && discordChannel && !discordTransportAdded) {
+    winLogger.add(
+      new DiscordTransport({
+        discordClient,
+        discordChannel,
+        level: 'warn',
+      }),
+    );
+    discordTransportAdded = true;
+  }
   return winLogger;
 };
 
