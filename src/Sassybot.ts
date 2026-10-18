@@ -387,11 +387,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     this.discordClient.on('guildMemberAdd', (...args) => {
       void this.onGuildMemberAdd.bind(this)(...args);
     });
-    this.discordClient.on('disconnect', () => {
-      setTimeout(() => {
-        void this.login();
-      }, 30000);
-    });
     await this.login();
   }
 
@@ -413,7 +408,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   private async login() {
     this.emit('preLogin');
     try {
-      await this.discordClient.login(process.env.DISCORD_TOKEN);
       const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
       if (logChannel && this.isTextChannel(logChannel)) {
         this.logger.info('Bot Restarted');
@@ -529,6 +523,9 @@ const intents = [
 ];
 logger.info('Creating Discord Client...');
 const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
+discordClient.on('error', (err) => {
+  logger.error('Discord client error', err);
+});
 const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
     reject(new Error('connection timed out'));
@@ -546,6 +543,7 @@ const waitForReady: Promise<Client<true>> = new Promise((resolve, reject) => {
 logger.info('Attempting To Connect...');
 discordClient.login(process.env.DISCORD_TOKEN).catch((e) => {
   logger.error('Error Logging In', e);
+  process.exit(1);
 });
 
 Promise.all([getDataSource(), waitForReady])
@@ -567,4 +565,5 @@ Promise.all([getDataSource(), waitForReady])
   })
   .catch((e) => {
     logger.error('error connecting to database', e);
+    process.exit(1);
   });
