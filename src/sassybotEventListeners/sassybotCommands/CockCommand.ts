@@ -3,7 +3,6 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
-import { UserIds } from '../../consts';
 import SassybotCommand from './SassybotCommand';
 
 export default class CockCommand extends SassybotCommand {
@@ -46,13 +45,6 @@ export default class CockCommand extends SassybotCommand {
       'well... hopefully you have a long tongue.  2/10',
     ];
 
-    if (interaction.user.id === UserIds.FURRY_COCK_USER) {
-      phrases.push(
-        '10/10, i want it to rub on my soft furry programming',
-        'mmmm... yeah put that on my fur',
-        "it's so soft and fluffy....",
-      );
-    }
     const content = phrases[Math.floor(Math.random() * phrases.length)];
     await interaction.reply({ content });
   }

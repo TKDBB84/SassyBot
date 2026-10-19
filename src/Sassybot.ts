@@ -10,10 +10,7 @@ import {
   Interaction,
   Message,
   MessageFlags,
-  MessageReaction,
   PartialGuildMember,
-  Partials,
-  PartialUser,
   PermissionResolvable,
   type RESTPostAPIApplicationCommandsJSONBody,
   Role,
@@ -22,8 +19,6 @@ import {
   User,
   UserResolvable,
   VoiceState,
-  PartialMessageReaction,
-  MessageReactionEventDetails,
 } from 'discord.js';
 import Redis from 'ioredis';
 import { createHash } from 'node:crypto';
@@ -85,7 +80,7 @@ const redisConnection: Promise<Redis> = new Promise((resolve, reject) => {
   redisClient.once('ready', onReady);
 });
 
-export type SassybotEvent = 'preLogin' | 'postLogin' | 'messageReactionAdd' | 'voiceStateUpdate' | 'guildMemberAdd';
+export type SassybotEvent = 'preLogin' | 'postLogin' | 'voiceStateUpdate' | 'guildMemberAdd';
 
 export interface ISassybotEventListener {
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,15 +90,6 @@ export interface ISassybotEventListener {
 type SassybotEmitter = {
   preLogin: () => void;
   postLogin: () => void;
-  messageReactionAdd: ({
-    messageReaction,
-    user,
-    details,
-  }: {
-    messageReaction: MessageReaction | PartialMessageReaction;
-    user: User | PartialUser;
-    details: MessageReactionEventDetails;
-  }) => void;
   voiceStateUpdate: ({
     previousMemberState,
     currentMemberState,
@@ -266,7 +252,7 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public eventNames(): (string | symbol)[] {
-    return ['preLogin', 'postLogin', 'messageReactionAdd', 'voiceStateUpdate', 'guildMemberAdd'];
+    return ['preLogin', 'postLogin', 'voiceStateUpdate', 'guildMemberAdd'];
   }
 
   public async run(): Promise<void> {
@@ -278,9 +264,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
       void this.onVoiceStateUpdate.bind(this)(...args);
     });
 
-    this.discordClient.on(Events.MessageReactionAdd, (...args) => {
-      void this.onMessageReactionAdd.bind(this)(...args);
-    });
     this.discordClient.on(Events.GuildMemberAdd, (...args) => {
       void this.onGuildMemberAdd.bind(this)(...args);
     });
@@ -515,34 +498,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
 
-  private async onMessageReactionAdd(
-    reaction: MessageReaction | PartialMessageReaction,
-    user: User | PartialUser,
-    details: MessageReactionEventDetails,
-  ) {
-    try {
-      if (reaction.partial) {
-        reaction = await reaction.fetch();
-      }
-      if (reaction.message.partial) {
-        await reaction.message.fetch();
-      }
-      if (user.partial) {
-        user = await user.fetch();
-      }
-    } catch (err) {
-      this.logger.warn('Failed to fetch partial reaction or message', err);
-      return;
-    }
-
-    if (reaction instanceof MessageReaction && user instanceof User) {
-      if (reaction.message.author?.bot || user.bot) {
-        return;
-      }
-      this.emit('messageReactionAdd', { messageReaction: reaction, user, details });
-    }
-  }
-
   public async sendEventMessage(eventName: string, data: Record<string, unknown>): Promise<void> {
     const redis = await this.getRedis();
     await redis.publish(
@@ -555,18 +510,10 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 }
 
-const intents = [
-  GatewayIntentBits.Guilds,
-  GatewayIntentBits.GuildMembers,
-  GatewayIntentBits.GuildVoiceStates,
-  GatewayIntentBits.GuildMessages,
-  GatewayIntentBits.GuildMessageReactions,
-  GatewayIntentBits.MessageContent,
-];
+const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildVoiceStates];
 logger.info('Creating Discord Client...');
 const discordClient = new Client({
   intents,
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
   allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
 });
 discordClient.on(Events.Error, (err) => {
