@@ -3,11 +3,6 @@ export const enum GuildIds {
   SASNERS_TEST_SERVER_GUILD_ID = '367724585019506688',
 }
 
-export const NewUserChannels = {
-  [GuildIds.GAMEZZZ_GUILD_ID]: 'xx',
-  [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: 'xx',
-};
-
 export const ONE_HOUR = 3600000;
 export const TWO_MIN = 120000;
 export const PodcastRoleId = '784239695771992065';

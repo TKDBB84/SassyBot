@@ -7,6 +7,14 @@ import {
 import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
 
+interface JokeApiResponse {
+  error?: boolean;
+  type?: 'single' | 'twopart';
+  joke?: string;
+  setup?: string;
+  delivery?: string;
+}
+
 export default class PunCommand extends SassybotCommand {
   public getHelpText(): string {
     return 'usage: `/pun` or `/joke` -- I send a stupid pun or joke to the channel';
@@ -30,8 +38,16 @@ export default class PunCommand extends SassybotCommand {
     }
     url += '?type=twopart';
     const jokeRes = await fetch(url);
-    const data: { setup: string; delivery: string } = await jokeRes.json();
-    const text = `${data.setup}\n\n||${data.delivery}||`;
+    if (!jokeRes.ok) {
+      await interaction.editReply('Sorry, I could not fetch a joke right now.');
+      return;
+    }
+    const data = (await jokeRes.json()) as JokeApiResponse;
+    if (data.error || (!data.setup && !data.joke)) {
+      await interaction.editReply('Sorry, I could not find a joke right now.');
+      return;
+    }
+    const text = data.setup && data.delivery ? `${data.setup}\n\n||${data.delivery}||` : (data.joke ?? '');
     await interaction.editReply(text);
   }
 }

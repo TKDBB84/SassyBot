@@ -7,7 +7,7 @@ import {
 import SassybotCommand from './SassybotCommand';
 
 export default class RollCommand extends SassybotCommand {
-  private static readonly VALID_DICE_REGEX = /^\s*\d+d\d+(?:[dk]\d+)?(?:\s*[+-]\s*\d+)?\s*$/i;
+  private static readonly VALID_DICE_REGEX = /^\s*[1-9]\d*d[1-9]\d*(?:[dk][1-9]\d*)?(?:\s*[+-]\s*\d+)?\s*$/i;
 
   private static parseDice(args: string): { num: number; sides: number } {
     const result = /^\s*(\d+)d(\d+).*$/i.exec(args);
@@ -181,23 +181,26 @@ export default class RollCommand extends SassybotCommand {
   }
 
   protected getHelpText(): string {
-    return 'usage: `/roll dice:{int: number of dies}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}` -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
+    return 'usage: `/roll [dice:{int: number of dice}d{int: number of sides}[k|d{number of dice to keep/drop}][+|-]{constant to add/sub from total}]` (defaults to `1d20`) -- I roll the specified number of dice, with the specified number of sides, and compute the sum total, as well as list each roll';
   }
 
   public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
     return [
       new SlashCommandBuilder()
         .setName('roll')
-        .setDescription('Roll dice using standard dice notation (e.g. 2d6, 4d6k3+2)')
+        .setDescription('Roll dice using standard dice notation (e.g. 2d6, 4d6k3+2; defaults to 1d20)')
         .addStringOption((option) =>
-          option.setName('dice').setDescription('Dice notation (e.g. 1d20+5, 4d6k3)').setRequired(true),
+          option
+            .setName('dice')
+            .setDescription('Dice notation (e.g. 1d20+5, 4d6k3; defaults to 1d20)')
+            .setRequired(false),
         )
         .toJSON(),
     ];
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
-    const dice = interaction.options.getString('dice', true).trim();
+    const dice = (interaction.options.getString('dice') ?? '1d20').trim();
     if (!RollCommand.VALID_DICE_REGEX.test(dice)) {
       await interaction.reply({
         content: `Invalid dice notation \`${dice}\`. Try something like \`1d20\`, \`2d6+3\`, or \`4d6k3\`.`,

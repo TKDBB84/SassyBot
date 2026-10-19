@@ -6,7 +6,7 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   type RESTPostAPIContextMenuApplicationCommandsJSONBody,
 } from 'discord.js';
-import type { Sassybot } from '../../Sassybot';
+import type { Sassybot } from '../Sassybot';
 
 export default abstract class SassybotCommand {
   protected sb: Sassybot;
@@ -14,10 +14,6 @@ export default abstract class SassybotCommand {
 
   constructor(sb: Sassybot) {
     this.sb = sb;
-  }
-
-  public get commands(): string[] {
-    return this.getSlashCommands().map((cmd) => cmd.name.toLowerCase());
   }
 
   public abstract getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[];

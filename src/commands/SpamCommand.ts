@@ -6,8 +6,8 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
-import { UserIds } from '../../consts';
-import SpamChannel from '../../entity/SpamChannel';
+import { UserIds } from '../consts';
+import SpamChannel from '../entity/SpamChannel';
 import SassybotCommand from './SassybotCommand';
 
 export default class SpamCommand extends SassybotCommand {

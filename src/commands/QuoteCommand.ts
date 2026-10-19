@@ -10,7 +10,7 @@ import {
   type RESTPostAPIContextMenuApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
-import Quote from '../../entity/Quote';
+import Quote from '../entity/Quote';
 import SassybotCommand from './SassybotCommand';
 
 export default class QuoteCommand extends SassybotCommand {
@@ -21,15 +21,21 @@ export default class QuoteCommand extends SassybotCommand {
     const chunks: string[] = [];
     let current = '';
     for (const line of lines) {
-      const candidate = current ? `${current}\n${line}` : line;
+      let remaining = line;
+      while (remaining.length > maxLength) {
+        if (current) {
+          chunks.push(current);
+          current = '';
+        }
+        chunks.push(remaining.slice(0, maxLength));
+        remaining = remaining.slice(maxLength);
+      }
+      const candidate = current ? `${current}\n${remaining}` : remaining;
       if (candidate.length > maxLength) {
         if (current) {
           chunks.push(current);
-          current = line.slice(0, maxLength);
-        } else {
-          chunks.push(line.slice(0, maxLength));
-          current = '';
         }
+        current = remaining;
       } else {
         current = candidate;
       }
@@ -132,14 +138,17 @@ export default class QuoteCommand extends SassybotCommand {
       return;
     }
 
-    await interaction.deferReply();
     const quoteRepo = this.sb.dbConnection.getRepository(Quote);
     const alreadyQuoted = await quoteRepo.findOne({ where: { messageId: targetMessage.id } });
     if (alreadyQuoted) {
-      await interaction.editReply('That message has already been quoted.');
+      await interaction.reply({
+        content: 'That message has already been quoted.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
+    await interaction.deferReply();
     const sbUser = await this.sb.maybeCreateSBUser(targetMessage.author.id);
     const sbQuote = new Quote();
     sbQuote.user = sbUser;
@@ -152,7 +161,9 @@ export default class QuoteCommand extends SassybotCommand {
       .getMember(savedQuote.guildId, savedQuote.user.discordUserId)
       .catch(() => undefined);
     const displayName = quotedMember?.displayName ?? targetMessage.author.displayName;
-    await interaction.editReply(`I've noted that ${displayName} said: "${savedQuote.quoteText}"`);
+    await interaction.editReply(
+      `I've noted that ${displayName} said: "${savedQuote.quoteText}" (${targetMessage.url})`,
+    );
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
@@ -173,7 +184,7 @@ export default class QuoteCommand extends SassybotCommand {
         await this.listAllCounts(interaction);
         return;
       }
-      const member = await this.sb.getMember(interaction.guild.id, targetUser.id);
+      const member = await this.sb.getMember(interaction.guild.id, targetUser.id).catch(() => undefined);
       if (!member) {
         await interaction.editReply('Could not find that member in this server.');
         return;
@@ -182,14 +193,15 @@ export default class QuoteCommand extends SassybotCommand {
       return;
     }
 
-    await interaction.deferReply();
-
     if (subcommand === 'get') {
       const user = interaction.options.getUser('user', true);
       const quoteNumber = interaction.options.getInteger('number', true);
-      const member = await this.sb.getMember(interaction.guild.id, user.id);
+      const member = await this.sb.getMember(interaction.guild.id, user.id).catch(() => undefined);
       if (!member) {
-        await interaction.editReply('Could not find that member in this server.');
+        await interaction.reply({
+          content: 'Could not find that member in this server.',
+          flags: MessageFlags.Ephemeral,
+        });
         return;
       }
       await this.getUserQuote(interaction, member, quoteNumber);
@@ -198,9 +210,12 @@ export default class QuoteCommand extends SassybotCommand {
 
     // subcommand === 'random'
     if (targetUser) {
-      const member = await this.sb.getMember(interaction.guild.id, targetUser.id);
+      const member = await this.sb.getMember(interaction.guild.id, targetUser.id).catch(() => undefined);
       if (!member) {
-        await interaction.editReply('Could not find that member in this server.');
+        await interaction.reply({
+          content: 'Could not find that member in this server.',
+          flags: MessageFlags.Ephemeral,
+        });
         return;
       }
       await this.getUserQuote(interaction, member);
@@ -293,19 +308,25 @@ export default class QuoteCommand extends SassybotCommand {
     });
 
     if (!userQuotes.length) {
-      await interaction.editReply(`${member.displayName} has no saved quotes`);
+      await interaction.reply({
+        content: `${member.displayName} has no saved quotes`,
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
     const selectedNumber = quoteNumber ?? Math.floor(Math.random() * userQuotes.length) + 1;
 
     if (selectedNumber > userQuotes.length) {
-      await interaction.editReply(`${member.displayName} only has ${userQuotes.length} saved quotes`);
+      await interaction.reply({
+        content: `${member.displayName} only has ${userQuotes.length} saved quotes`,
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
     const quote = userQuotes[selectedNumber - 1];
-    await interaction.editReply(
+    await interaction.reply(
       `${member.displayName} said: "${quote.quoteText}" (quote #${selectedNumber}) of ${userQuotes.length}`,
     );
   }
@@ -328,12 +349,15 @@ export default class QuoteCommand extends SassybotCommand {
         const quoteIndex = userQuotes.findIndex((q) => q.id === randomQuote.id) + 1;
         const member = await this.sb.getMember(guildId, authorId).catch(() => undefined);
         const displayName = member?.displayName ?? 'Unknown Member';
-        await interaction.editReply(
+        await interaction.reply(
           `${displayName} said: "${randomQuote.quoteText}" (quote #${quoteIndex || 1}) of ${userQuotes.length}`,
         );
         return;
       }
     }
-    await interaction.editReply('No quotes found.');
+    await interaction.reply({
+      content: 'No quotes found.',
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }
