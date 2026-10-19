@@ -10,6 +10,7 @@ export default class InspireCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
+    await interaction.deferReply();
     const response = await fetch('https://inspirobot.me/api?generate=true', {
       method: 'GET',
       headers: {
@@ -30,6 +31,6 @@ export default class InspireCommand extends SassybotCommand {
 
     const imageLink = await response.text();
 
-    await interaction.reply({ content: imageLink });
+    await interaction.editReply({ content: imageLink });
   }
 }

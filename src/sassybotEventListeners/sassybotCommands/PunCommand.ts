@@ -22,6 +22,7 @@ export default class PunCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
+    await interaction.deferReply();
     let url = 'https://v2.jokeapi.dev/joke';
     const command = interaction.commandName.toLowerCase();
     if (command === 'pun') {
@@ -33,6 +34,6 @@ export default class PunCommand extends SassybotCommand {
     const jokeRes = await fetch(url);
     const data: { setup: string; delivery: string } = await jokeRes.json();
     const text = `${data.setup}\n\n||${data.delivery}||`;
-    await interaction.reply(text);
+    await interaction.editReply(text);
   }
 }

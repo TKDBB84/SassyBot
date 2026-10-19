@@ -1,5 +1,7 @@
 import {
+  type AutocompleteInteraction,
   type ChatInputCommandInteraction,
+  MessageFlags,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -8,19 +10,14 @@ import SassybotEventListener from '../SassybotEventListener';
 
 export default abstract class SassybotCommand extends SassybotEventListener {
   public abstract readonly commands: string[];
+  public readonly guildId?: string;
 
   constructor(sb: Sassybot) {
-    super(sb, 'sassybotCommand');
-    this.sb.on(
-      'sassybotHelpCommand',
-      ({ interaction, command }: { interaction: ChatInputCommandInteraction; command: string }) => {
-        void this.displayHelpText.bind(this)({ interaction, command });
-      },
-    );
+    super(sb);
   }
 
   public getEventListener(): ({ interaction }: { interaction: ChatInputCommandInteraction }) => Promise<void> {
-    return this.onEventCallback.bind(this);
+    return this.execute.bind(this);
   }
 
   public getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
@@ -35,38 +32,49 @@ export default abstract class SassybotCommand extends SassybotEventListener {
   protected abstract listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void>;
   protected abstract getHelpText(): string;
 
-  public async displayHelpText({
-    interaction,
-    command,
-  }: {
-    interaction: ChatInputCommandInteraction;
-    command: string;
-  }): Promise<void> {
+  public async autocomplete({ interaction }: { interaction: AutocompleteInteraction }): Promise<void> {
+    await interaction.respond([]);
+  }
+
+  public async displayHelpText({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     const helpText = this.getHelpText().trim();
     if (helpText === '') {
-      // don't bother
+      await interaction.reply({
+        content: 'No help text available for this command.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
-    const commandsListenedFor = this.commands.map((c) => c.toLowerCase());
-    if (commandsListenedFor.includes(command.toLowerCase().trim())) {
-      await interaction.reply(helpText);
-    }
+    await interaction.reply({
+      content: helpText,
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
-  private async onEventCallback({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
+  public async execute({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     const invoked = interaction.commandName.toLowerCase();
-    const commands = this.commands.map((c) => c.toLowerCase());
-    if (commands.includes(invoked)) {
+    try {
+      this.sb.logger.info(`Command Invoked: ${invoked}`, {
+        commandName: interaction.commandName,
+        options: interaction.options.data,
+        author: interaction.user.displayName,
+      });
+      await this.listener({ interaction });
+    } catch (e: unknown) {
+      this.sb.logger.error(`Error Processing ${invoked}`, { e, interaction });
       try {
-        this.sb.logger.info(`Command Invoked: ${invoked}`, {
-          commandName: interaction.commandName,
-          options: interaction.options.data,
-          author: interaction.user.displayName,
-        });
-        await this.listener({ interaction });
-      } catch (e: unknown) {
-        this.sb.logger.error(`Error Processing ${invoked}`, { e, interaction });
+        const errorPayload = {
+          content: 'An error occurred while executing this command.',
+          flags: MessageFlags.Ephemeral,
+        } as const;
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(errorPayload);
+        } else {
+          await interaction.reply(errorPayload);
+        }
+      } catch (replyError: unknown) {
+        this.sb.logger.error(`Failed to send error reply for ${invoked}`, { replyError });
       }
     }
   }

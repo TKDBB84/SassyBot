@@ -2,13 +2,15 @@ import type { ISassybotEventListener, Sassybot, SassybotEvent } from '../Sassybo
 
 export default abstract class SassybotEventListener implements ISassybotEventListener {
   protected sb: Sassybot;
-  protected constructor(sb: Sassybot, event: SassybotEvent) {
+  protected constructor(sb: Sassybot, event?: SassybotEvent) {
     this.sb = sb;
 
-    //eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.sb.on(event, (...args: any[]) => {
-      void this.getEventListener().bind(this)(...args);
-    });
+    if (event) {
+      //eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.sb.on(event, (...args: any[]) => {
+        void this.getEventListener().bind(this)(...args);
+      });
+    }
   }
 
   //eslint-disable-next-line @typescript-eslint/no-explicit-any

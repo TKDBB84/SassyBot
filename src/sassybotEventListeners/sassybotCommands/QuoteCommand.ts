@@ -1,6 +1,7 @@
 import {
   ChatInputCommandInteraction,
   GuildMember,
+  InteractionContextType,
   MessageFlags,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
@@ -11,8 +12,37 @@ import SassybotCommand from './SassybotCommand';
 export default class QuoteCommand extends SassybotCommand {
   public readonly commands = ['quote'];
 
+  private static chunkText(text: string, maxLength = 1950): string[] {
+    const lines = text.split('\n');
+    const chunks: string[] = [];
+    let current = '';
+    for (const line of lines) {
+      const candidate = current ? `${current}\n${line}` : line;
+      if (candidate.length > maxLength) {
+        if (current) {
+          chunks.push(current);
+          current = line.slice(0, maxLength);
+        } else {
+          chunks.push(line.slice(0, maxLength));
+          current = '';
+        }
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) {
+      chunks.push(current);
+    }
+    return chunks;
+  }
+
   public getHelpText(): string {
-    return 'usage: `/quote [user:@User] [number:quote number] [list:true|false]` -- I retrieve a random quote (or from the specified user).\n if you specify `list:true` I will DM you a full list of quotes for that user (or quote counts for all users if no user is specified) \n if you specify `number`, I will return that exact quote, rather than a random one.';
+    return (
+      'usage:\n' +
+      '- `/quote random [user:@User]` -- Retrieve a random quote (or from the specified user)\n' +
+      '- `/quote get user:@User number:<quote number>` -- Retrieve that exact quote number for the user\n' +
+      '- `/quote list [user:@User]` -- DM a full list of quotes for that user (or quote counts for all users if no user is specified)'
+    );
   }
 
   public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
@@ -20,21 +50,37 @@ export default class QuoteCommand extends SassybotCommand {
       new SlashCommandBuilder()
         .setName('quote')
         .setDescription('Retrieve a random or specific quote, or list saved quotes')
-        .addUserOption((option) =>
-          option.setName('user').setDescription('The user to retrieve quotes for').setRequired(false),
+        .setContexts(InteractionContextType.Guild)
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('random')
+            .setDescription('Retrieve a random quote from the server or a specific user')
+            .addUserOption((option) =>
+              option.setName('user').setDescription('The user to retrieve a random quote for').setRequired(false),
+            ),
         )
-        .addIntegerOption((option) =>
-          option
-            .setName('number')
-            .setDescription('Exact quote number to retrieve for the user')
-            .setMinValue(1)
-            .setRequired(false),
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName('get')
+            .setDescription('Retrieve a specific quote by number for a user')
+            .addUserOption((option) =>
+              option.setName('user').setDescription('The user to retrieve the quote for').setRequired(true),
+            )
+            .addIntegerOption((option) =>
+              option
+                .setName('number')
+                .setDescription('Exact quote number to retrieve for the user')
+                .setMinValue(1)
+                .setRequired(true),
+            ),
         )
-        .addBooleanOption((option) =>
-          option
+        .addSubcommand((subcommand) =>
+          subcommand
             .setName('list')
-            .setDescription('DM a full list of quotes for the user, or quote counts for all users')
-            .setRequired(false),
+            .setDescription('DM a full list of quotes for a user, or quote counts for all users')
+            .addUserOption((option) =>
+              option.setName('user').setDescription('The user to list quotes for').setRequired(false),
+            ),
         )
         .toJSON(),
     ];
@@ -42,43 +88,77 @@ export default class QuoteCommand extends SassybotCommand {
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     if (!interaction.guild || !interaction.member) {
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
+    const subcommand = interaction.options.getSubcommand();
     const targetUser = interaction.options.getUser('user');
-    const quoteNumber = interaction.options.getInteger('number');
-    const listRequested = interaction.options.getBoolean('list') ?? false;
 
-    if (listRequested && !targetUser) {
-      await this.listAllCounts(interaction);
+    if (subcommand === 'list') {
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      if (!targetUser) {
+        await this.listAllCounts(interaction);
+        return;
+      }
+      const member = await this.sb.getMember(interaction.guild.id, targetUser.id);
+      if (!member) {
+        await interaction.editReply('Could not find that member in this server.');
+        return;
+      }
+      await this.listAllUserQuotes(interaction, member);
       return;
     }
 
+    await interaction.deferReply();
+
+    if (subcommand === 'get') {
+      const user = interaction.options.getUser('user', true);
+      const quoteNumber = interaction.options.getInteger('number', true);
+      const member = await this.sb.getMember(interaction.guild.id, user.id);
+      if (!member) {
+        await interaction.editReply('Could not find that member in this server.');
+        return;
+      }
+      await this.getUserQuote(interaction, member, quoteNumber);
+      return;
+    }
+
+    // subcommand === 'random'
     if (targetUser) {
       const member = await this.sb.getMember(interaction.guild.id, targetUser.id);
       if (!member) {
-        await interaction.reply({
-          content: 'Could not find that member in this server.',
-          flags: MessageFlags.Ephemeral,
-        });
+        await interaction.editReply('Could not find that member in this server.');
         return;
       }
-
-      if (listRequested) {
-        await this.listAllUserQuotes(interaction, member);
-        return;
-      }
-
-      if (quoteNumber !== null) {
-        await this.getUserQuote(interaction, member, quoteNumber);
-        return;
-      }
-
-      await this.getRandomMemberQuote(interaction, member);
+      await this.getUserQuote(interaction, member);
       return;
     }
 
-    return await this.getRandomQuote(interaction);
+    await this.getRandomQuote(interaction);
+  }
+
+  private async sendDmOrEphemeral(
+    interaction: ChatInputCommandInteraction,
+    text: string,
+    dmSuccessMessage: string,
+  ): Promise<void> {
+    const chunks = QuoteCommand.chunkText(text);
+    try {
+      const dmChannel = await interaction.user.createDM();
+      for (const chunk of chunks) {
+        await dmChannel.send(chunk);
+      }
+      await interaction.editReply(dmSuccessMessage);
+    } catch {
+      await interaction.editReply(chunks[0] ?? 'No quotes found.');
+      for (let i = 1; i < chunks.length; i++) {
+        await interaction.followUp({ content: chunks[i], flags: MessageFlags.Ephemeral });
+      }
+    }
   }
 
   private async listAllCounts(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -95,7 +175,9 @@ export default class QuoteCommand extends SassybotCommand {
       .groupBy('userDiscordUserId')
       .getRawMany();
 
-    const allMembers = await Promise.all(results.map((result) => this.sb.getMember(guildId, result.userDiscordUserId)));
+    const allMembers = await Promise.all(
+      results.map((result) => this.sb.getMember(guildId, result.userDiscordUserId).catch(() => undefined)),
+    );
     let outputString = '';
     allMembers.forEach((member) => {
       if (member) {
@@ -106,11 +188,9 @@ export default class QuoteCommand extends SassybotCommand {
       }
     });
     if (outputString.length) {
-      const dmChannel = await interaction.user.createDM();
-      await dmChannel.send(outputString);
-      await interaction.reply({ content: 'Sent quote counts to your DMs.', flags: MessageFlags.Ephemeral });
+      await this.sendDmOrEphemeral(interaction, outputString.trimEnd(), 'Sent quote counts to your DMs.');
     } else {
-      await interaction.reply({ content: 'No quotes saved in this server yet.', flags: MessageFlags.Ephemeral });
+      await interaction.editReply('No quotes saved in this server yet.');
     }
   }
 
@@ -122,30 +202,31 @@ export default class QuoteCommand extends SassybotCommand {
       return;
     }
 
-    const dmChannel = await interaction.user.createDM();
     const allQuotesForMentioned = await this.sb.dbConnection.getRepository(Quote).find({
+      order: { id: 1 },
       relations: ['user'],
       where: { user: { discordUserId: mentionedMember.user.id }, guildId: interaction.guild.id },
     });
-    if (allQuotesForMentioned && allQuotesForMentioned.length) {
+    if (allQuotesForMentioned.length) {
       let finalMessage = mentionedMember.displayName + '\n----------------------------\n';
       allQuotesForMentioned.forEach((quote, index) => {
         finalMessage += `${index + 1} - ${quote.quoteText}\n`;
       });
-      await dmChannel.send(finalMessage + '----------------------------\n');
-      await interaction.reply({
-        content: `Sent ${mentionedMember.displayName}'s quotes to your DMs.`,
-        flags: MessageFlags.Ephemeral,
-      });
+      finalMessage += '----------------------------';
+      await this.sendDmOrEphemeral(
+        interaction,
+        finalMessage,
+        `Sent ${mentionedMember.displayName}'s quotes to your DMs.`,
+      );
     } else {
-      await interaction.reply(`${mentionedMember.displayName} has no saved quotes`);
+      await interaction.editReply(`${mentionedMember.displayName} has no saved quotes`);
     }
   }
 
   private async getUserQuote(
     interaction: ChatInputCommandInteraction,
     member: GuildMember,
-    quoteNumber: number,
+    quoteNumber?: number,
   ): Promise<void> {
     if (!interaction.guild) {
       return;
@@ -159,36 +240,21 @@ export default class QuoteCommand extends SassybotCommand {
     });
 
     if (!userQuotes.length) {
-      await interaction.reply(`${member.displayName} has no saved quotes`);
+      await interaction.editReply(`${member.displayName} has no saved quotes`);
       return;
     }
 
-    if (!quoteNumber) {
-      quoteNumber = Math.floor(Math.random() * userQuotes.length) + 1;
-    }
+    const selectedNumber = quoteNumber ?? Math.floor(Math.random() * userQuotes.length) + 1;
 
-    if (quoteNumber > userQuotes.length) {
-      await interaction.reply(`${member.displayName} only has ${userQuotes.length} saved quotes`);
+    if (selectedNumber > userQuotes.length) {
+      await interaction.editReply(`${member.displayName} only has ${userQuotes.length} saved quotes`);
       return;
     }
 
-    const quote = userQuotes[quoteNumber - 1];
-    await interaction.reply(
-      `${member.displayName} said: "${quote.quoteText}" (quote #${quoteNumber}) of ${userQuotes.length}`,
+    const quote = userQuotes[selectedNumber - 1];
+    await interaction.editReply(
+      `${member.displayName} said: "${quote.quoteText}" (quote #${selectedNumber}) of ${userQuotes.length}`,
     );
-  }
-
-  private async getRandomMemberQuote(interaction: ChatInputCommandInteraction, member: GuildMember) {
-    if (!interaction.guild) {
-      return;
-    }
-    const guildId = interaction.guild.id;
-    const userQuoteCount = await this.sb.dbConnection.getRepository(Quote).count({
-      relations: ['user'],
-      where: { user: { discordUserId: member.id }, guildId },
-    });
-    const index = Math.floor(Math.random() * userQuoteCount);
-    await this.getUserQuote(interaction, member, index);
   }
 
   private async getRandomQuote(interaction: ChatInputCommandInteraction) {
@@ -196,15 +262,25 @@ export default class QuoteCommand extends SassybotCommand {
       return;
     }
     const guildId = interaction.guild.id;
-    const randomQuotes = await this.sb.dbConnection.getRepository(Quote).find({ where: { guildId } });
-    if (randomQuotes && randomQuotes.length) {
-      const randomQuote = randomQuotes[Math.floor(Math.random() * randomQuotes.length)];
-      const member = await this.sb.getMember(guildId, randomQuote.user.discordUserId);
-      if (member) {
-        await this.getRandomMemberQuote(interaction, member);
+    const allQuotes = await this.sb.dbConnection.getRepository(Quote).find({
+      order: { id: 1 },
+      relations: ['user'],
+      where: { guildId },
+    });
+    if (allQuotes.length) {
+      const randomQuote = allQuotes[Math.floor(Math.random() * allQuotes.length)];
+      const authorId = randomQuote.user?.discordUserId;
+      if (authorId) {
+        const userQuotes = allQuotes.filter((q) => q.user?.discordUserId === authorId);
+        const quoteIndex = userQuotes.findIndex((q) => q.id === randomQuote.id) + 1;
+        const member = await this.sb.getMember(guildId, authorId).catch(() => undefined);
+        const displayName = member?.displayName ?? 'Unknown Member';
+        await interaction.editReply(
+          `${displayName} said: "${randomQuote.quoteText}" (quote #${quoteIndex || 1}) of ${userQuotes.length}`,
+        );
         return;
       }
     }
-    await interaction.reply('No quotes found.');
+    await interaction.editReply('No quotes found.');
   }
 }

@@ -1,5 +1,7 @@
 import {
+  type AutocompleteInteraction,
   ChatInputCommandInteraction,
+  MessageFlags,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -10,13 +12,14 @@ import SassybotCommand from './SassybotCommand';
 
 export default class TzCommand extends SassybotCommand {
   private static wikiLink = 'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones';
+  private static readonly allTimezones = moment.tz.names();
   public readonly commands = ['tz'];
 
   public getHelpText(): string {
     return (
       'usage: `/tz [timezone:{iana timezone name}]` --- a complete list of timezones can be found here\n' +
       TzCommand.wikiLink +
-      '\n please use the the name from the "TZ database name" column'
+      '\n please use the name from the "TZ database name" column'
     );
   }
 
@@ -26,10 +29,23 @@ export default class TzCommand extends SassybotCommand {
         .setName('tz')
         .setDescription('Get or set your IANA timezone')
         .addStringOption((option) =>
-          option.setName('timezone').setDescription('IANA timezone name (e.g. America/New_York)').setRequired(false),
+          option
+            .setName('timezone')
+            .setDescription('IANA timezone name (e.g. America/New_York)')
+            .setRequired(false)
+            .setAutocomplete(true),
         )
         .toJSON(),
     ];
+  }
+
+  public override async autocomplete({ interaction }: { interaction: AutocompleteInteraction }): Promise<void> {
+    const focused = interaction.options.getFocused().toLowerCase().trim();
+    const matches = TzCommand.allTimezones
+      .filter((tz) => (focused ? tz.toLowerCase().includes(focused) : tz.includes('/')))
+      .slice(0, 25)
+      .map((tz) => ({ name: tz, value: tz }));
+    await interaction.respond(matches);
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
@@ -41,19 +57,23 @@ export default class TzCommand extends SassybotCommand {
     }
     const tzParam = (interaction.options.getString('timezone') ?? '').trim();
     if (tzParam === '' && !currentUser.timezone) {
-      await interaction.reply(`You must provide a timezone to set. \n ${this.getHelpText()}`);
+      await interaction.reply({
+        content: `You must provide a timezone to set. \n ${this.getHelpText()}`,
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     } else if (tzParam) {
-      // return current timezone
-      const newTz = tzParam.toLowerCase();
-      if (!moment.tz.zone(newTz)) {
-        await interaction.reply(
-          "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
+      const zone = moment.tz.zone(tzParam);
+      if (!zone) {
+        await interaction.reply({
+          content:
+            "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
             TzCommand.wikiLink,
-        );
+          flags: MessageFlags.Ephemeral,
+        });
         return;
       }
-      currentUser.timezone = newTz;
+      currentUser.timezone = zone.name;
       currentUser = await userRepository.save(currentUser, { reload: true });
     }
     await interaction.reply(

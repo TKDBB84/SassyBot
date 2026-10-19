@@ -1,5 +1,8 @@
 import {
   ChatInputCommandInteraction,
+  InteractionContextType,
+  MessageFlags,
+  PermissionFlagsBits,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -19,16 +22,22 @@ export default class SpamCommand extends SassybotCommand {
       new SlashCommandBuilder()
         .setName('spam')
         .setDescription('Set this channel to log users entering, leaving, or moving voice channels (Admin only)')
+        .setContexts(InteractionContextType.Guild)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .toJSON(),
     ];
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     if (!interaction.guild || !interaction.channel) {
+      await interaction.reply({
+        content: 'This command can only be used in a server channel.',
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
     const authorId = interaction.user.id;
-    if (interaction.memberPermissions?.has('Administrator') || authorId === UserIds.SASNER) {
+    if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) || authorId === UserIds.SASNER) {
       const spamChannelRepo = this.sb.dbConnection.getRepository(SpamChannel);
       let spamChannel = await spamChannelRepo.findOne({ where: { guildId: interaction.guild.id } });
       if (!spamChannel) {
@@ -39,7 +48,10 @@ export default class SpamCommand extends SassybotCommand {
       await spamChannelRepo.save(spamChannel);
       await interaction.reply("Ok, I'll spam this channel");
     } else {
-      await interaction.reply('This functionality is limited to Server Admins');
+      await interaction.reply({
+        content: 'This functionality is limited to Server Admins',
+        flags: MessageFlags.Ephemeral,
+      });
     }
   }
 }
