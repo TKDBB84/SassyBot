@@ -6,9 +6,8 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
-import { GuildIds } from '../consts';
+import { GuildIds, UserIds } from '../consts';
 import SassybotCommand from './SassybotCommand';
-import { isInteractionFromAdmin } from './lib';
 import { inspect } from 'util';
 
 export default class EvalCommand extends SassybotCommand {
@@ -33,7 +32,7 @@ export default class EvalCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
-    if (!isInteractionFromAdmin(interaction)) {
+    if (interaction.user.id !== UserIds.SASNER) {
       await interaction.reply({
         content: 'Sorry, only Sasner is allowed to run eval.',
         flags: MessageFlags.Ephemeral,

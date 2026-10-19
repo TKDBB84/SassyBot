@@ -6,9 +6,8 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
-import { GuildIds } from '../consts';
+import { GuildIds, UserIds } from '../consts';
 import SassybotCommand from './SassybotCommand';
-import { isInteractionFromAdmin } from './lib';
 
 export default class RestartCommand extends SassybotCommand {
   public override readonly guildId = GuildIds.SASNERS_TEST_SERVER_GUILD_ID;
@@ -29,7 +28,7 @@ export default class RestartCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
-    if (isInteractionFromAdmin(interaction)) {
+    if (interaction.user.id === UserIds.SASNER) {
       await interaction.reply({
         content: 'restarting...',
         flags: MessageFlags.Ephemeral,
