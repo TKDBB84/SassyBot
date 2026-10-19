@@ -14,7 +14,6 @@ export default class VoiceLogListener extends SassybotEventListener {
   private static readonly TIME_FORMAT = 'HH:mm z';
 
   private static readonly IGNORED_VOICE_CHANNELS: IIgnoredVoiceChannelsMap = {
-    [GuildIds.COT_GUILD_ID]: new Set<string>(['597969171384500240']),
     [GuildIds.GAMEZZZ_GUILD_ID]: new Set<string>(),
     [GuildIds.SASNERS_TEST_SERVER_GUILD_ID]: new Set<string>(),
   };
@@ -113,7 +112,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     }
 
     if (
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id].has(
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[previousMemberState.guild.id]?.has(
         previousMemberState.channelId || 'not-in-array',
       )
     ) {
@@ -121,7 +120,7 @@ export default class VoiceLogListener extends SassybotEventListener {
     }
 
     if (
-      VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id].has(
+      VoiceLogListener.IGNORED_VOICE_CHANNELS[currentMemberState.guild.id]?.has(
         currentMemberState.channelId || 'not-in-array',
       )
     ) {

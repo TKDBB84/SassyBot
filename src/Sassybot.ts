@@ -6,22 +6,20 @@ import {
   Guild,
   GuildMember,
   GatewayIntentBits,
+  Interaction,
   Message,
-  MessageMentions,
-  MessageReaction,
+  MessageFlags,
   PartialGuildMember,
-  PartialUser,
   PermissionResolvable,
+  type RESTPostAPIApplicationCommandsJSONBody,
   Role,
   Snowflake,
   User,
   UserResolvable,
   VoiceState,
-  PartialMessageReaction,
-  PartialMessage,
-  MessageReactionEventDetails,
 } from 'discord.js';
 import Redis from 'ioredis';
+import { createHash } from 'node:crypto';
 import EventEmitter from 'node:events';
 import type TypedEmitter from 'typed-emitter';
 import cron from 'node-cron';
@@ -29,14 +27,12 @@ import 'reflect-metadata';
 import type { DataSource } from 'typeorm';
 import getDataSource from './dataSource';
 import jobs from './cronJobs';
-import COTMember from './entity/COTMember';
-import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
+import SassybotCommandsToRegister from './commands';
+import SassybotCommand from './commands/SassybotCommand';
 import SassybotEventsToRegister from './sassybotEventListeners';
-import SassybotCommand from './sassybotEventListeners/sassybotCommands/SassybotCommand';
-import { NewUserChannels, SassybotLogChannelId, UserIds } from './consts';
-import SassybotEventListener from './sassybotEventListeners/SassybotEventListener';
+import { SassybotLogChannelId, UserIds } from './consts';
 
 const redisClient = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -82,73 +78,16 @@ const redisConnection: Promise<Redis> = new Promise((resolve, reject) => {
   redisClient.once('ready', onReady);
 });
 
-export type SassybotEvent =
-  | 'preLogin'
-  | 'postLogin'
-  | 'messageReceived'
-  | 'sassybotCommandPreprocess'
-  | 'sassybotCommand'
-  | 'sassybotHelpCommand'
-  | 'sassybotCommandPostprocess'
-  | 'messageEnd'
-  | 'messageReactionAdd'
-  | 'voiceStateUpdate'
-  | 'messageCreate'
-  | 'messageUpdate'
-  | 'guildMemberAdd';
+export type SassybotEvent = 'preLogin' | 'postLogin' | 'voiceStateUpdate' | 'guildMemberAdd';
 
 export interface ISassybotEventListener {
   //eslint-disable-next-line @typescript-eslint/no-explicit-any
   getEventListener: () => (...args: any[]) => Promise<void>;
 }
 
-export interface ISassybotCommandParams {
-  command: string;
-  args: string;
-  mentions: MessageMentions | false;
-}
-
-export type XIVAPIPagination = {
-  Page: number;
-  PageNext: string | null;
-  PagePrev: string | null;
-  PageTotal: number;
-  Results: number;
-  ResultsPerPage: number;
-  ResultsTotal: number;
-};
-export type XIVAPICharacterSearchResult = {
-  Avatar: string;
-  FeastMatches: number;
-  ID: number;
-  Lang: string;
-  Name: string;
-  Rank: string | null;
-  RankIcon: string | null;
-  Server: string;
-};
-export type XIVAPISearchResponse = {
-  Pagination: XIVAPIPagination;
-  Results: XIVAPICharacterSearchResult[];
-};
 type SassybotEmitter = {
   preLogin: () => void;
   postLogin: () => void;
-  messageReceived: ({ message }: { message: Message | PartialMessage }) => void;
-  sassybotCommandPreprocess: ({ message }: { message: Message | PartialMessage }) => void;
-  sassybotCommand: ({ message, params }: { message: Message | PartialMessage; params: ISassybotCommandParams }) => void;
-  sassybotHelpCommand: ({ message, params }: { message: Message; params: ISassybotCommandParams }) => void;
-  sassybotCommandPostprocess: ({ message }: { message: Message | PartialMessage }) => void;
-  messageEnd: ({ message }: { message: Message | PartialMessage }) => void;
-  messageReactionAdd: ({
-    messageReaction,
-    user,
-    details,
-  }: {
-    messageReaction: MessageReaction | PartialMessageReaction;
-    user: User | PartialUser;
-    details: MessageReactionEventDetails;
-  }) => void;
   voiceStateUpdate: ({
     previousMemberState,
     currentMemberState,
@@ -156,8 +95,6 @@ type SassybotEmitter = {
     previousMemberState: VoiceState;
     currentMemberState: VoiceState;
   }) => void;
-  messageCreate: () => void;
-  messageUpdate: () => void;
   guildMemberAdd: ({ member }: { member: GuildMember | PartialGuildMember }) => void;
 };
 
@@ -172,52 +109,27 @@ declare interface SassybotType {
   getMessage(channelId: string, messageId: string): Promise<Message | null>;
   maybeCreateSBUser(userId: string): Promise<SbUser>;
   getUser(userId: string): Promise<User | undefined>;
-  findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null>;
   getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined>;
   isTextChannel(channel: Channel | null | undefined): channel is TextChannel;
-  isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand;
   botHasPermission(permissionString: PermissionResolvable, guildId: Snowflake): Promise<boolean>;
   eventNames(): (string | symbol)[];
   run(): Promise<void>;
-  registerSassybotEventListener(sbEvent: SassybotEventListener): void;
+  getCommandsMap(): ReadonlyMap<string, SassybotCommand>;
+  registerCommand(command: SassybotCommand): void;
   sendEventMessage(eventName: string, data: Record<string, unknown>): Promise<void>;
 }
 
+const SLASH_COMMANDS_HASH_REDIS_KEY = 'sassybot:application-commands-hash:v1';
+const SLASH_COMMANDS_GUILDS_REDIS_KEY = 'sassybot:application-commands-guilds:v1';
+
 export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEmitter>) implements SassybotType {
-  private static isSassybotCommand(message: Message): boolean {
-    const hasCommandPrefix =
-      message.cleanContent.toLowerCase().startsWith('!sb ') ||
-      message.cleanContent.toLowerCase().startsWith('!sassybot ');
-    const isNewUserChannel = Object.values(NewUserChannels).includes(message.channel.id);
-    return hasCommandPrefix && !isNewUserChannel;
-  }
-
-  private static getCommandParameters(message: Message): ISassybotCommandParams {
-    const result: ISassybotCommandParams = {
-      args: '',
-      command: '',
-      mentions: false,
-    };
-    const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s*(?<args>.*)$/i;
-    const matches = patternMatch.exec(message.cleanContent);
-    if (matches && matches.groups) {
-      if (matches.groups.command) {
-        result.command = matches.groups.command.toLowerCase();
-      }
-      if (matches.groups.args) {
-        result.args = matches.groups.args.toLowerCase().trim();
-      }
-
-      if ((message.mentions.members?.size || 0) > 0) {
-        result.mentions = message.mentions;
-      }
-    }
-    return result;
-  }
   public dbConnection: DataSource;
   public logger: typeof logger;
   private discordClient: Client<true>;
-  private registeredCommands: Set<string> = new Set<string>();
+  private commandsMap: Map<string, SassybotCommand> = new Map<string, SassybotCommand>();
+  private contextMenuCommandsMap: Map<string, SassybotCommand> = new Map<string, SassybotCommand>();
+  private slashCommands: RESTPostAPIApplicationCommandsJSONBody[] = [];
+  private guildSlashCommands: Map<string, RESTPostAPIApplicationCommandsJSONBody[]> = new Map();
   private sasner: User | undefined;
 
   constructor(connection: DataSource, discordClient: Client<true>) {
@@ -304,23 +216,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
       throw error;
     }
   }
-  public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null> {
-    const sbUser = await this.maybeCreateSBUser(discordId);
-    const char = await this.dbConnection
-      .getRepository(FFXIVChar)
-      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
-    if (!char) {
-      return null;
-    }
-
-    const member = await this.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } } });
-    char.user = sbUser;
-    if (member) {
-      member.character = char;
-      return member;
-    }
-    return null;
-  }
 
   public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {
     try {
@@ -340,10 +235,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     return channel instanceof TextChannel;
   }
 
-  public isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand {
-    return 'commands' in sbEvent;
-  }
-
   public async botHasPermission(permissionString: PermissionResolvable, guildId: Snowflake): Promise<boolean> {
     const sassybot = this.discordClient.user;
     if (sassybot && guildId) {
@@ -356,53 +247,117 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public eventNames(): (string | symbol)[] {
-    return [
-      'preLogin',
-      'postLogin',
-      'messageReceived',
-      'sassybotCommandPreprocess',
-      'sassybotCommand',
-      'sassybotHelpCommand',
-      'sassybotCommandPostprocess',
-      'messageEnd',
-      'messageReactionAdd',
-      'voiceStateUpdate',
-    ];
+    return ['preLogin', 'postLogin', 'voiceStateUpdate', 'guildMemberAdd'];
   }
 
   public async run(): Promise<void> {
-    this.discordClient.on(Events.MessageCreate, (...args) => {
-      void this.onMessageHandler.bind(this)(...args);
-    });
-    this.discordClient.on(Events.MessageUpdate, (oldMessage, newMessage) => {
-      void this.onMessageHandler.bind(this)(newMessage);
+    this.discordClient.on(Events.InteractionCreate, (...args) => {
+      void this.onInteractionCreate.bind(this)(...args);
     });
 
     this.discordClient.on(Events.VoiceStateUpdate, (...args) => {
       void this.onVoiceStateUpdate.bind(this)(...args);
     });
 
-    this.discordClient.on(Events.MessageReactionAdd, (...args) => {
-      void this.onMessageReactionAdd.bind(this)(...args);
-    });
     this.discordClient.on(Events.GuildMemberAdd, (...args) => {
       void this.onGuildMemberAdd.bind(this)(...args);
     });
     await this.login();
   }
 
-  public registerSassybotEventListener(sbEvent: SassybotEventListener): void {
-    const uniqueCommands = new Set();
-    if (this.isSassyBotCommand(sbEvent)) {
-      sbEvent.commands.forEach((eachCommand) => {
-        const thisCommand = eachCommand.toLowerCase();
-        if (uniqueCommands.has(thisCommand)) {
-          throw new Error('Command Already Registered');
-        }
-        uniqueCommands.add(thisCommand);
-      });
-      const command = sbEvent.commands[0].toLowerCase();
-      this.registeredCommands.add(command);
+  public getCommandsMap(): ReadonlyMap<string, SassybotCommand> {
+    return this.commandsMap;
+  }
+
+  public registerCommand(command: SassybotCommand): void {
+    const slashCommands = command.getSlashCommands();
+    const contextMenuCommands = command.getContextMenuCommands();
+
+    slashCommands.forEach((slashCmd) => {
+      const thisCommand = slashCmd.name.toLowerCase();
+      if (this.commandsMap.has(thisCommand)) {
+        throw new Error(`Command Already Registered: ${thisCommand}`);
+      }
+      this.commandsMap.set(thisCommand, command);
+    });
+
+    contextMenuCommands.forEach((ctxCmd) => {
+      if (this.contextMenuCommandsMap.has(ctxCmd.name)) {
+        throw new Error(`Context Menu Command Already Registered: ${ctxCmd.name}`);
+      }
+      this.contextMenuCommandsMap.set(ctxCmd.name, command);
+    });
+
+    const allCommands: RESTPostAPIApplicationCommandsJSONBody[] = [...slashCommands, ...contextMenuCommands];
+    if (command.guildId) {
+      const existing = this.guildSlashCommands.get(command.guildId) ?? [];
+      existing.push(...allCommands);
+      this.guildSlashCommands.set(command.guildId, existing);
+    } else {
+      this.slashCommands.push(...allCommands);
+    }
+  }
+
+  private async syncApplicationCommands(): Promise<void> {
+    const globalPayload: RESTPostAPIApplicationCommandsJSONBody[] = [...this.slashCommands];
+    const guildPayloads = Object.fromEntries(this.guildSlashCommands.entries());
+    const payloadHash = createHash('sha256').update(JSON.stringify({ globalPayload, guildPayloads })).digest('hex');
+
+    let previousGuildIds: string[] = [];
+    try {
+      const redis = await this.getRedis();
+      const [cachedHash, cachedGuildsJson] = await Promise.all([
+        redis.get(SLASH_COMMANDS_HASH_REDIS_KEY),
+        redis.get(SLASH_COMMANDS_GUILDS_REDIS_KEY),
+      ]);
+      if (cachedGuildsJson) {
+        previousGuildIds = JSON.parse(cachedGuildsJson) as string[];
+      }
+      if (cachedHash === payloadHash) {
+        this.logger.info('Slash command definitions unchanged; skipping registration.');
+        return;
+      }
+    } catch (err) {
+      this.logger.warn('Could not read slash command hash from Redis; proceeding with registration', err);
+    }
+
+    let allSucceeded = true;
+    try {
+      await this.discordClient.application.commands.set(globalPayload);
+    } catch (err) {
+      allSucceeded = false;
+      this.logger.error('Failed to register global application commands', err);
+    }
+
+    for (const [guildId, commands] of this.guildSlashCommands.entries()) {
+      try {
+        await this.discordClient.application.commands.set(commands, guildId);
+      } catch (err) {
+        allSucceeded = false;
+        this.logger.warn(`Failed to register guild application commands for guild ${guildId}`, err);
+      }
+    }
+
+    const removedGuildIds = previousGuildIds.filter((id) => !this.guildSlashCommands.has(id));
+    for (const guildId of removedGuildIds) {
+      try {
+        await this.discordClient.application.commands.set([], guildId);
+      } catch (err) {
+        allSucceeded = false;
+        this.logger.warn(`Failed to clear removed guild application commands for guild ${guildId}`, err);
+      }
+    }
+
+    if (allSucceeded) {
+      try {
+        const redis = await this.getRedis();
+        await Promise.all([
+          redis.set(SLASH_COMMANDS_HASH_REDIS_KEY, payloadHash),
+          redis.set(SLASH_COMMANDS_GUILDS_REDIS_KEY, JSON.stringify([...this.guildSlashCommands.keys()])),
+        ]);
+      } catch (err) {
+        this.logger.warn('Could not persist slash command hash to Redis', err);
+      }
     }
   }
 
@@ -415,55 +370,72 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
         this.logger.info('Bot Restarted');
         await logChannel.send('Bot Restarted');
       }
-      this.emit('postLogin');
     } catch (error) {
-      this.logger.error('Could not login to discord', error);
+      this.logger.error('Could not initialize Discord log channel', error);
     }
+
+    await this.syncApplicationCommands();
+    this.emit('postLogin');
   }
 
-  private async onMessageHandler(message: Message | PartialMessage): Promise<void> {
-    if (!message || message.partial || message?.author?.bot) {
-      return;
-    }
+  private async onInteractionCreate(interaction: Interaction): Promise<void> {
+    try {
+      if (interaction.user.bot) {
+        return;
+      }
 
-    this.emit('messageReceived', { message });
-    if (Sassybot.isSassybotCommand(message)) {
-      try {
-        void (await this.maybeCreateSBUser(message.author.id));
-      } catch (e) {
+      if (interaction.isAutocomplete()) {
+        const command = this.commandsMap.get(interaction.commandName.toLowerCase());
+        if (command) {
+          try {
+            await command.autocomplete({ interaction });
+          } catch (e) {
+            this.logger.warn(`Error handling autocomplete for ${interaction.commandName}`, e);
+          }
+        }
+        return;
+      }
+
+      if (interaction.isMessageContextMenuCommand()) {
+        void this.maybeCreateSBUser(interaction.user.id).catch((e) => {
+          this.logger.warn('Error Creating SbUser', e);
+        });
+        const command = this.contextMenuCommandsMap.get(interaction.commandName);
+        if (!command) {
+          await interaction.reply({
+            content: `Unknown command \`${interaction.commandName}\`.`,
+            flags: MessageFlags.Ephemeral,
+          });
+        } else {
+          await command.executeContextMenu({ interaction });
+        }
+        return;
+      }
+
+      if (!interaction.isChatInputCommand()) {
+        return;
+      }
+
+      void this.maybeCreateSBUser(interaction.user.id).catch((e) => {
         this.logger.warn('Error Creating SbUser', e);
-      }
-      this.emit('sassybotCommandPreprocess', { message });
-      const params = Sassybot.getCommandParameters(message);
-      if (params.command === 'help') {
-        await this.processHelpCommand(message, params);
-      } else {
-        this.emit('sassybotCommand', { message, params });
-      }
-      this.emit('sassybotCommandPostprocess', { message });
-    }
-    this.emit('messageEnd', { message });
-  }
+      });
 
-  private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
-    if (!message.channel.isSendable()) {
-      return;
-    }
-    if (params.args === '') {
-      const commands: string[] = [...this.registeredCommands];
-      commands.sort();
-      await message.channel.send({
-        content: `Available commands are:\n${commands.join(
-          ', ',
-        )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
-      });
-    } else if (params.args === 'help') {
-      await message.channel.send({
-        content:
-          'usage: `!{sassybot|sb} help [commands]` -- I displays a list of commands, and can take a 2nd argument for more details of a commands',
-      });
-    } else {
-      this.emit('sassybotHelpCommand', { message, params });
+      const command = this.commandsMap.get(interaction.commandName.toLowerCase());
+      if (!command) {
+        await interaction.reply({
+          content: `Unknown command \`/${interaction.commandName}\`.`,
+          flags: MessageFlags.Ephemeral,
+        });
+      } else if (command.guildId && interaction.guildId !== command.guildId) {
+        await interaction.reply({
+          content: 'This command is not available in this server.',
+          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        await command.execute({ interaction });
+      }
+    } catch (err) {
+      this.logger.error('Unhandled error in onInteractionCreate', err);
     }
   }
 
@@ -480,18 +452,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     }
     this.emit('voiceStateUpdate', { previousMemberState, currentMemberState });
   }
-  private onMessageReactionAdd(
-    reaction: MessageReaction | PartialMessageReaction,
-    user: User | PartialUser,
-    details: MessageReactionEventDetails,
-  ) {
-    if (reaction instanceof MessageReaction && user instanceof User) {
-      if (reaction.message.author?.bot || user.bot) {
-        return;
-      }
-      this.emit('messageReactionAdd', { messageReaction: reaction, user, details });
-    }
-  }
 
   public async sendEventMessage(eventName: string, data: Record<string, unknown>): Promise<void> {
     const redis = await this.getRedis();
@@ -505,26 +465,12 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 }
 
-const intents = [
-  GatewayIntentBits.Guilds,
-  GatewayIntentBits.GuildMembers,
-  GatewayIntentBits.GuildEmojisAndStickers,
-  GatewayIntentBits.GuildIntegrations,
-  GatewayIntentBits.GuildWebhooks,
-  GatewayIntentBits.GuildInvites,
-  GatewayIntentBits.GuildVoiceStates,
-  GatewayIntentBits.GuildPresences,
-  GatewayIntentBits.GuildMessages,
-  GatewayIntentBits.GuildMessageReactions,
-  GatewayIntentBits.GuildMessageTyping,
-  GatewayIntentBits.DirectMessages,
-  GatewayIntentBits.DirectMessageReactions,
-  GatewayIntentBits.DirectMessageTyping,
-  GatewayIntentBits.GuildScheduledEvents,
-  GatewayIntentBits.MessageContent,
-];
+const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildVoiceStates];
 logger.info('Creating Discord Client...');
-const discordClient = new Client({ intents, allowedMentions: { parse: ['users', 'roles'], repliedUser: true } });
+const discordClient = new Client({
+  intents,
+  allowedMentions: { parse: ['users', 'roles'], repliedUser: true },
+});
 discordClient.on(Events.Error, (err) => {
   logger.error('Discord client error', err);
 });
@@ -553,7 +499,8 @@ Promise.all([getDataSource(), waitForReady])
     if (discordClient.isReady()) {
       const sb = new Sassybot(connection, discordClient);
       sb.setMaxListeners(30);
-      SassybotEventsToRegister.forEach((event) => sb.registerSassybotEventListener(new event(sb)));
+      SassybotEventsToRegister.forEach((EventListener) => new EventListener(sb));
+      SassybotCommandsToRegister.forEach((Command) => sb.registerCommand(new Command(sb)));
       jobs.forEach(({ job, schedule }) => {
         const jobFunction = job.bind(null, sb);
         cron.schedule(schedule, () => {

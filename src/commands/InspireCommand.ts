@@ -1,19 +1,22 @@
-import { Message } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
 
 export default class InspireCommand extends SassybotCommand {
-  public readonly commands = ['inspire'];
-
   public getHelpText(): string {
     return 'I give you an inspirational image';
   }
 
-  protected async listener({ message }: { message: Message }): Promise<void> {
-    if (!message.channel.isSendable()) {
-      return;
-    }
+  public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    return [new SlashCommandBuilder().setName('inspire').setDescription(this.getHelpText()).toJSON()];
+  }
 
+  protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
+    await interaction.deferReply();
     const response = await fetch('https://inspirobot.me/api?generate=true', {
       method: 'GET',
       headers: {
@@ -34,6 +37,6 @@ export default class InspireCommand extends SassybotCommand {
 
     const imageLink = await response.text();
 
-    await message.channel.send({ content: imageLink });
+    await interaction.editReply({ content: imageLink });
   }
 }
