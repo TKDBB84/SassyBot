@@ -1,11 +1,20 @@
 import { CotRanks, GuildIds, UserIds } from '../../../consts';
-import { Message, Role } from 'discord.js';
+import { ChatInputCommandInteraction, GuildMember, Message, Role } from 'discord.js';
 
-const isMessageFromAdmin = (message: Message, officer: Role | null): boolean => {
-  let isDiscordOfficer = [UserIds.SASNER.toString(), UserIds.CAIT.toString()].includes(message.author.id.toString());
-  if (!isDiscordOfficer && message.guild?.id === GuildIds.COT_GUILD_ID && message.member) {
+const isMessageFromAdmin = (
+  messageOrInteraction: Message | ChatInputCommandInteraction,
+  officer: Role | null,
+): boolean => {
+  const userId = 'author' in messageOrInteraction ? messageOrInteraction.author.id : messageOrInteraction.user.id;
+  let isDiscordOfficer = [UserIds.SASNER.toString(), UserIds.CAIT.toString()].includes(userId.toString());
+  if (
+    !isDiscordOfficer &&
+    messageOrInteraction.guild?.id === GuildIds.COT_GUILD_ID &&
+    messageOrInteraction.member instanceof GuildMember
+  ) {
     if (officer) {
-      isDiscordOfficer = CotRanks.OFFICER && message.member?.roles.highest.comparePositionTo(officer) >= 0;
+      isDiscordOfficer =
+        Boolean(CotRanks.OFFICER) && messageOrInteraction.member.roles.highest.comparePositionTo(officer) >= 0;
     }
   }
   return isDiscordOfficer;

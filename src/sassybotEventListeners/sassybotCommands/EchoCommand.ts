@@ -1,21 +1,31 @@
-import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
+import {
+  ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 
 export default class EchoCommand extends SassybotCommand {
   public readonly commands = ['echo'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} echo {message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging';
+    return 'usage: `/echo message:{message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging';
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (!message.channel.isSendable()) {
-      return;
-    }
-    await message.channel.send({
-      content: params.args,
-      reply: { messageReference: message },
+  public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    return [
+      new SlashCommandBuilder()
+        .setName('echo')
+        .setDescription('Reply with the same message you sent')
+        .addStringOption((option) => option.setName('message').setDescription('The message to echo').setRequired(true))
+        .toJSON(),
+    ];
+  }
+
+  protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
+    const message = interaction.options.getString('message', true);
+    await interaction.reply({
+      content: message,
     });
   }
 }

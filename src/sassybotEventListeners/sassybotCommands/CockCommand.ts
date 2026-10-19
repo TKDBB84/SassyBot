@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 
 export default class CockCommand extends SassybotCommand {
@@ -8,11 +8,7 @@ export default class CockCommand extends SassybotCommand {
     return 'yeah, you do really need help.';
   }
 
-  protected async listener({ message }: { message: Message }): Promise<void> {
-    if (!message.channel.isSendable()) {
-      return;
-    }
-
+  protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     const phrases = [
       '8/10, a little firm but gets the job done',
       '10/10, nice cock bro',
@@ -43,7 +39,7 @@ export default class CockCommand extends SassybotCommand {
       'well... hopefully you have a long tongue.  2/10',
     ];
 
-    if (message.author.id === '125025069402554368') {
+    if (interaction.user.id === '125025069402554368') {
       phrases.push(
         '10/10, i want it to rub on my soft furry programming',
         'mmmm... yeah put that on my fur',
@@ -51,6 +47,6 @@ export default class CockCommand extends SassybotCommand {
       );
     }
     const content = phrases[Math.floor(Math.random() * phrases.length)];
-    await message.channel.send({ content, reply: { messageReference: message } });
+    await interaction.reply({ content });
   }
 }

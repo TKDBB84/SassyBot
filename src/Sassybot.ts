@@ -1,18 +1,21 @@
 import {
   Channel,
+  ChatInputCommandInteraction,
   TextChannel,
   Client,
   Events,
   Guild,
   GuildMember,
   GatewayIntentBits,
+  Interaction,
   Message,
-  MessageMentions,
   MessageReaction,
   PartialGuildMember,
   PartialUser,
   PermissionResolvable,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
   Role,
+  SlashCommandBuilder,
   Snowflake,
   User,
   UserResolvable,
@@ -102,12 +105,6 @@ export interface ISassybotEventListener {
   getEventListener: () => (...args: any[]) => Promise<void>;
 }
 
-export interface ISassybotCommandParams {
-  command: string;
-  args: string;
-  mentions: MessageMentions | false;
-}
-
 export type XIVAPIPagination = {
   Page: number;
   PageNext: string | null;
@@ -135,10 +132,16 @@ type SassybotEmitter = {
   preLogin: () => void;
   postLogin: () => void;
   messageReceived: ({ message }: { message: Message | PartialMessage }) => void;
-  sassybotCommandPreprocess: ({ message }: { message: Message | PartialMessage }) => void;
-  sassybotCommand: ({ message, params }: { message: Message | PartialMessage; params: ISassybotCommandParams }) => void;
-  sassybotHelpCommand: ({ message, params }: { message: Message; params: ISassybotCommandParams }) => void;
-  sassybotCommandPostprocess: ({ message }: { message: Message | PartialMessage }) => void;
+  sassybotCommandPreprocess: ({ interaction }: { interaction: ChatInputCommandInteraction }) => void;
+  sassybotCommand: ({ interaction }: { interaction: ChatInputCommandInteraction }) => void;
+  sassybotHelpCommand: ({
+    interaction,
+    command,
+  }: {
+    interaction: ChatInputCommandInteraction;
+    command: string;
+  }) => void;
+  sassybotCommandPostprocess: ({ interaction }: { interaction: ChatInputCommandInteraction }) => void;
   messageEnd: ({ message }: { message: Message | PartialMessage }) => void;
   messageReactionAdd: ({
     messageReaction,
@@ -184,40 +187,11 @@ declare interface SassybotType {
 }
 
 export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEmitter>) implements SassybotType {
-  private static isSassybotCommand(message: Message): boolean {
-    const hasCommandPrefix =
-      message.cleanContent.toLowerCase().startsWith('!sb ') ||
-      message.cleanContent.toLowerCase().startsWith('!sassybot ');
-    const isNewUserChannel = Object.values(NewUserChannels).includes(message.channel.id);
-    return hasCommandPrefix && !isNewUserChannel;
-  }
-
-  private static getCommandParameters(message: Message): ISassybotCommandParams {
-    const result: ISassybotCommandParams = {
-      args: '',
-      command: '',
-      mentions: false,
-    };
-    const patternMatch = /^(?:!sb\s|!sassybot\s)(?<command>\w+)\s*(?<args>.*)$/i;
-    const matches = patternMatch.exec(message.cleanContent);
-    if (matches && matches.groups) {
-      if (matches.groups.command) {
-        result.command = matches.groups.command.toLowerCase();
-      }
-      if (matches.groups.args) {
-        result.args = matches.groups.args.toLowerCase().trim();
-      }
-
-      if ((message.mentions.members?.size || 0) > 0) {
-        result.mentions = message.mentions;
-      }
-    }
-    return result;
-  }
   public dbConnection: DataSource;
   public logger: typeof logger;
   private discordClient: Client<true>;
   private registeredCommands: Set<string> = new Set<string>();
+  private slashCommands: RESTPostAPIChatInputApplicationCommandsJSONBody[] = [];
   private sasner: User | undefined;
 
   constructor(connection: DataSource, discordClient: Client<true>) {
@@ -377,6 +351,9 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     this.discordClient.on(Events.MessageUpdate, (oldMessage, newMessage) => {
       void this.onMessageHandler.bind(this)(newMessage);
     });
+    this.discordClient.on(Events.InteractionCreate, (...args) => {
+      void this.onInteractionCreate.bind(this)(...args);
+    });
 
     this.discordClient.on(Events.VoiceStateUpdate, (...args) => {
       void this.onVoiceStateUpdate.bind(this)(...args);
@@ -392,23 +369,30 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
   }
 
   public registerSassybotEventListener(sbEvent: SassybotEventListener): void {
-    const uniqueCommands = new Set();
     if (this.isSassyBotCommand(sbEvent)) {
       sbEvent.commands.forEach((eachCommand) => {
         const thisCommand = eachCommand.toLowerCase();
-        if (uniqueCommands.has(thisCommand)) {
+        if (this.registeredCommands.has(thisCommand)) {
           throw new Error('Command Already Registered');
         }
-        uniqueCommands.add(thisCommand);
+        this.registeredCommands.add(thisCommand);
       });
-      const command = sbEvent.commands[0].toLowerCase();
-      this.registeredCommands.add(command);
+      this.slashCommands.push(...sbEvent.getSlashCommands());
     }
   }
 
   private async login() {
     this.emit('preLogin');
     try {
+      const helpCommand = new SlashCommandBuilder()
+        .setName('help')
+        .setDescription('Display a list of available commands or details about a specific command')
+        .addStringOption((option) =>
+          option.setName('command').setDescription('The command to get help for').setRequired(false),
+        )
+        .toJSON();
+      await this.discordClient.application.commands.set([helpCommand, ...this.slashCommands]);
+
       const logChannel = (await this.discordClient.channels.fetch(SassybotLogChannelId)) as TextChannel;
       if (logChannel && this.isTextChannel(logChannel)) {
         this.logger = createLogger(this.discordClient, logChannel);
@@ -427,43 +411,49 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
     }
 
     this.emit('messageReceived', { message });
-    if (Sassybot.isSassybotCommand(message)) {
-      try {
-        void (await this.maybeCreateSBUser(message.author.id));
-      } catch (e) {
-        this.logger.warn('Error Creating SbUser', e);
-      }
-      this.emit('sassybotCommandPreprocess', { message });
-      const params = Sassybot.getCommandParameters(message);
-      if (params.command === 'help') {
-        await this.processHelpCommand(message, params);
-      } else {
-        this.emit('sassybotCommand', { message, params });
-      }
-      this.emit('sassybotCommandPostprocess', { message });
-    }
     this.emit('messageEnd', { message });
   }
 
-  private async processHelpCommand(message: Message, params: ISassybotCommandParams) {
-    if (!message.channel.isSendable()) {
+  private async onInteractionCreate(interaction: Interaction): Promise<void> {
+    if (!interaction.isChatInputCommand() || interaction.user.bot) {
       return;
     }
-    if (params.args === '') {
+    if (Object.values(NewUserChannels).includes(interaction.channelId)) {
+      return;
+    }
+    try {
+      void (await this.maybeCreateSBUser(interaction.user.id));
+    } catch (e) {
+      this.logger.warn('Error Creating SbUser', e);
+    }
+    this.emit('sassybotCommandPreprocess', { interaction });
+    if (interaction.commandName === 'help') {
+      await this.processHelpCommand(interaction);
+    } else {
+      this.emit('sassybotCommand', { interaction });
+    }
+    this.emit('sassybotCommandPostprocess', { interaction });
+  }
+
+  private async processHelpCommand(interaction: ChatInputCommandInteraction) {
+    const commandArg = (interaction.options.getString('command') ?? '').toLowerCase().trim().replace(/^\//, '');
+    if (commandArg === '') {
       const commands: string[] = [...this.registeredCommands];
       commands.sort();
-      await message.channel.send({
-        content: `Available commands are:\n${commands.join(
-          ', ',
-        )}\n for more information, you can specify \`!{sassybot|sb} help [commands]\` to get more information about that commands`,
+      await interaction.reply({
+        content: `Available commands are:\n${commands.map((c) => `\`/${c}\``).join(', ')}\n for more information, you can specify \`/help command:[command]\` to get more information about that command`,
       });
-    } else if (params.args === 'help') {
-      await message.channel.send({
+    } else if (commandArg === 'help') {
+      await interaction.reply({
         content:
-          'usage: `!{sassybot|sb} help [commands]` -- I displays a list of commands, and can take a 2nd argument for more details of a commands',
+          'usage: `/help [command]` -- I display a list of commands, and can take an optional argument for more details of a command',
       });
+    } else if (this.registeredCommands.has(commandArg)) {
+      this.emit('sassybotHelpCommand', { interaction, command: commandArg });
     } else {
-      this.emit('sassybotHelpCommand', { message, params });
+      await interaction.reply({
+        content: `Unknown command \`/${commandArg}\`. Run \`/help\` to see available commands.`,
+      });
     }
   }
 

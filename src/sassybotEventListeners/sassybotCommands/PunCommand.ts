@@ -1,23 +1,30 @@
 // disabled for external fetch
-import { Message } from 'discord.js';
-import { ISassybotCommandParams } from '../../Sassybot';
+import {
+  ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
 
 export default class PunCommand extends SassybotCommand {
-  public readonly commands = ['pun', 'puns', 'joke', 'jokes'];
+  public readonly commands = ['pun', 'joke'];
 
   public getHelpText(): string {
-    return 'usage: `!{sassybot|sb} pun` -- I send a stupid pun to the channel';
+    return 'usage: `/pun` or `/joke` -- I send a stupid pun or joke to the channel';
   }
 
-  protected async listener({ message, params }: { message: Message; params: ISassybotCommandParams }): Promise<void> {
-    if (!message.channel.isSendable()) {
-      return;
-    }
+  public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    return [
+      new SlashCommandBuilder().setName('pun').setDescription('I send a stupid pun to the channel').toJSON(),
+      new SlashCommandBuilder().setName('joke').setDescription('I send a joke to the channel').toJSON(),
+    ];
+  }
+
+  protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     let url = 'https://v2.jokeapi.dev/joke';
-    const command = params.command.toLowerCase();
-    if (['pun', 'puns'].includes(command)) {
+    const command = interaction.commandName.toLowerCase();
+    if (command === 'pun') {
       url += '/Pun';
     } else {
       url += '/Any';
@@ -26,6 +33,6 @@ export default class PunCommand extends SassybotCommand {
     const jokeRes = await fetch(url);
     const data: { setup: string; delivery: string } = await jokeRes.json();
     const text = `${data.setup}\n\n||${data.delivery}||`;
-    await message.channel.send(text);
+    await interaction.reply(text);
   }
 }

@@ -14,8 +14,6 @@ export default class GamezzEyeListenerListener extends SassybotEventListener {
 
   protected async listener({ message }: { message: Message }): Promise<void> {
     if (
-      message.cleanContent.toLowerCase().startsWith('!sb ') ||
-      message.cleanContent.toLowerCase().startsWith('!sassybot ') ||
       !message.member ||
       !message.guild ||
       message.guild.id !== GuildIds.GAMEZZZ_GUILD_ID ||
