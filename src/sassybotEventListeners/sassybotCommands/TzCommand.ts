@@ -13,7 +13,6 @@ import SassybotCommand from './SassybotCommand';
 export default class TzCommand extends SassybotCommand {
   private static wikiLink = 'https://en.wikipedia.org/wiki/List_of_tz_database_time_zones';
   private static readonly allTimezones = moment.tz.names();
-  public readonly commands = ['tz'];
 
   public getHelpText(): string {
     return (
@@ -49,32 +48,43 @@ export default class TzCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
-    const userRepository = this.sb.dbConnection.getRepository(SbUser);
-    let currentUser = await userRepository.findOne({ where: { discordUserId: interaction.user.id } });
-    if (!currentUser) {
-      currentUser = new SbUser();
-      currentUser.discordUserId = interaction.user.id;
-    }
     const tzParam = (interaction.options.getString('timezone') ?? '').trim();
-    if (tzParam === '' && !currentUser.timezone) {
+    const zone = tzParam ? moment.tz.zone(tzParam) : null;
+    if (tzParam && !zone) {
+      await interaction.reply({
+        content:
+          "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
+          TzCommand.wikiLink,
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const userRepository = this.sb.dbConnection.getRepository(SbUser);
+    if (zone) {
+      await interaction.deferReply();
+      let currentUser = await userRepository.findOne({ where: { discordUserId: interaction.user.id } });
+      if (!currentUser) {
+        currentUser = new SbUser();
+        currentUser.discordUserId = interaction.user.id;
+      }
+      currentUser.timezone = zone.name;
+      currentUser = await userRepository.save(currentUser, { reload: true });
+      await interaction.editReply(
+        `I have your timezone as: \`${currentUser.timezone}\` your local time should be: ${moment()
+          .tz(currentUser.timezone)
+          .format('LT')}`,
+      );
+      return;
+    }
+
+    const currentUser = await userRepository.findOne({ where: { discordUserId: interaction.user.id } });
+    if (!currentUser?.timezone) {
       await interaction.reply({
         content: `You must provide a timezone to set. \n ${this.getHelpText()}`,
         flags: MessageFlags.Ephemeral,
       });
       return;
-    } else if (tzParam) {
-      const zone = moment.tz.zone(tzParam);
-      if (!zone) {
-        await interaction.reply({
-          content:
-            "Sorry, that doesn't appear to be a timezone I know, there's a full list of valid timezones here:\n" +
-            TzCommand.wikiLink,
-          flags: MessageFlags.Ephemeral,
-        });
-        return;
-      }
-      currentUser.timezone = zone.name;
-      currentUser = await userRepository.save(currentUser, { reload: true });
     }
     await interaction.reply(
       `I have your timezone as: \`${currentUser.timezone}\` your local time should be: ${moment()

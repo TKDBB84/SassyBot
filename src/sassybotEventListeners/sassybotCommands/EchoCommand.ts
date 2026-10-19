@@ -6,8 +6,6 @@ import {
 import SassybotCommand from './SassybotCommand';
 
 export default class EchoCommand extends SassybotCommand {
-  public readonly commands = ['echo'];
-
   public getHelpText(): string {
     return 'usage: `/echo message:{message}` -- I reply with the same message you sent me, Sasner generally uses this for debugging';
   }

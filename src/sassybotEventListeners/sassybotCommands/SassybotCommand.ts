@@ -1,32 +1,29 @@
 import {
   type AutocompleteInteraction,
   type ChatInputCommandInteraction,
+  type MessageContextMenuCommandInteraction,
   MessageFlags,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
-  SlashCommandBuilder,
+  type RESTPostAPIContextMenuApplicationCommandsJSONBody,
 } from 'discord.js';
 import type { Sassybot } from '../../Sassybot';
-import SassybotEventListener from '../SassybotEventListener';
 
-export default abstract class SassybotCommand extends SassybotEventListener {
-  public abstract readonly commands: string[];
+export default abstract class SassybotCommand {
+  protected sb: Sassybot;
   public readonly guildId?: string;
 
   constructor(sb: Sassybot) {
-    super(sb);
+    this.sb = sb;
   }
 
-  public getEventListener(): ({ interaction }: { interaction: ChatInputCommandInteraction }) => Promise<void> {
-    return this.execute.bind(this);
+  public get commands(): string[] {
+    return this.getSlashCommands().map((cmd) => cmd.name.toLowerCase());
   }
 
-  public getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
-    return this.commands.map((commandName) =>
-      new SlashCommandBuilder()
-        .setName(commandName.toLowerCase())
-        .setDescription(this.getHelpText().slice(0, 100))
-        .toJSON(),
-    );
+  public abstract getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[];
+
+  public getContextMenuCommands(): RESTPostAPIContextMenuApplicationCommandsJSONBody[] {
+    return [];
   }
 
   protected abstract listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void>;
@@ -34,6 +31,17 @@ export default abstract class SassybotCommand extends SassybotEventListener {
 
   public async autocomplete({ interaction }: { interaction: AutocompleteInteraction }): Promise<void> {
     await interaction.respond([]);
+  }
+
+  public async contextMenuListener({
+    interaction,
+  }: {
+    interaction: MessageContextMenuCommandInteraction;
+  }): Promise<void> {
+    await interaction.reply({
+      content: 'This context menu command is not implemented.',
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
   public async displayHelpText({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
@@ -62,7 +70,52 @@ export default abstract class SassybotCommand extends SassybotEventListener {
       });
       await this.listener({ interaction });
     } catch (e: unknown) {
-      this.sb.logger.error(`Error Processing ${invoked}`, { e, interaction });
+      this.sb.logger.error(`Error Processing ${invoked}`, {
+        error: e,
+        commandName: interaction.commandName,
+        userId: interaction.user.id,
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
+        options: interaction.options.data,
+      });
+      try {
+        const errorPayload = {
+          content: 'An error occurred while executing this command.',
+          flags: MessageFlags.Ephemeral,
+        } as const;
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(errorPayload);
+        } else {
+          await interaction.reply(errorPayload);
+        }
+      } catch (replyError: unknown) {
+        this.sb.logger.error(`Failed to send error reply for ${invoked}`, { replyError });
+      }
+    }
+  }
+
+  public async executeContextMenu({
+    interaction,
+  }: {
+    interaction: MessageContextMenuCommandInteraction;
+  }): Promise<void> {
+    const invoked = interaction.commandName;
+    try {
+      this.sb.logger.info(`Context Menu Command Invoked: ${invoked}`, {
+        commandName: interaction.commandName,
+        targetId: interaction.targetId,
+        author: interaction.user.displayName,
+      });
+      await this.contextMenuListener({ interaction });
+    } catch (e: unknown) {
+      this.sb.logger.error(`Error Processing Context Menu ${invoked}`, {
+        error: e,
+        commandName: interaction.commandName,
+        userId: interaction.user.id,
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
+        targetId: interaction.targetId,
+      });
       try {
         const errorPayload = {
           content: 'An error occurred while executing this command.',

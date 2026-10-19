@@ -1,11 +1,18 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from 'discord.js';
+import { UserIds } from '../../consts';
 import SassybotCommand from './SassybotCommand';
 
 export default class CockCommand extends SassybotCommand {
-  public readonly commands = ['cock'];
-
   public getHelpText(): string {
     return 'yeah, you do really need help.';
+  }
+
+  public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    return [new SlashCommandBuilder().setName('cock').setDescription(this.getHelpText()).toJSON()];
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
@@ -39,7 +46,7 @@ export default class CockCommand extends SassybotCommand {
       'well... hopefully you have a long tongue.  2/10',
     ];
 
-    if (interaction.user.id === '125025069402554368') {
+    if (interaction.user.id === UserIds.FURRY_COCK_USER) {
       phrases.push(
         '10/10, i want it to rub on my soft furry programming',
         'mmmm... yeah put that on my fur',

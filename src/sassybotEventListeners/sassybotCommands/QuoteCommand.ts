@@ -1,16 +1,20 @@
 import {
+  ApplicationCommandType,
   ChatInputCommandInteraction,
+  ContextMenuCommandBuilder,
   GuildMember,
   InteractionContextType,
+  type MessageContextMenuCommandInteraction,
   MessageFlags,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  type RESTPostAPIContextMenuApplicationCommandsJSONBody,
   SlashCommandBuilder,
 } from 'discord.js';
 import Quote from '../../entity/Quote';
 import SassybotCommand from './SassybotCommand';
 
 export default class QuoteCommand extends SassybotCommand {
-  public readonly commands = ['quote'];
+  public static readonly SAVE_QUOTE_CONTEXT_MENU_NAME = 'Save Quote';
 
   private static chunkText(text: string, maxLength = 1950): string[] {
     const lines = text.split('\n');
@@ -41,7 +45,8 @@ export default class QuoteCommand extends SassybotCommand {
       'usage:\n' +
       '- `/quote random [user:@User]` -- Retrieve a random quote (or from the specified user)\n' +
       '- `/quote get user:@User number:<quote number>` -- Retrieve that exact quote number for the user\n' +
-      '- `/quote list [user:@User]` -- DM a full list of quotes for that user (or quote counts for all users if no user is specified)'
+      '- `/quote list [user:@User]` -- Display a full list of quotes for that user (or quote counts for all users if no user is specified)\n' +
+      '- Right-click any message -> **Apps -> Save Quote** to save a message as a quote'
     );
   }
 
@@ -77,13 +82,77 @@ export default class QuoteCommand extends SassybotCommand {
         .addSubcommand((subcommand) =>
           subcommand
             .setName('list')
-            .setDescription('DM a full list of quotes for a user, or quote counts for all users')
+            .setDescription('Display a full list of quotes for a user, or quote counts for all users')
             .addUserOption((option) =>
               option.setName('user').setDescription('The user to list quotes for').setRequired(false),
             ),
         )
         .toJSON(),
     ];
+  }
+
+  public override getContextMenuCommands(): RESTPostAPIContextMenuApplicationCommandsJSONBody[] {
+    return [
+      new ContextMenuCommandBuilder()
+        .setName(QuoteCommand.SAVE_QUOTE_CONTEXT_MENU_NAME)
+        .setType(ApplicationCommandType.Message)
+        .setContexts(InteractionContextType.Guild)
+        .toJSON(),
+    ];
+  }
+
+  public override async contextMenuListener({
+    interaction,
+  }: {
+    interaction: MessageContextMenuCommandInteraction;
+  }): Promise<void> {
+    if (!interaction.guild) {
+      await interaction.reply({
+        content: 'This command can only be used in a server.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const targetMessage = interaction.targetMessage;
+    if (targetMessage.author.bot) {
+      await interaction.reply({
+        content: 'Cannot quote bot messages.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    const quoteText = targetMessage.cleanContent.trim();
+    if (!quoteText) {
+      await interaction.reply({
+        content: 'That message has no text content to quote.',
+        flags: MessageFlags.Ephemeral,
+      });
+      return;
+    }
+
+    await interaction.deferReply();
+    const quoteRepo = this.sb.dbConnection.getRepository(Quote);
+    const alreadyQuoted = await quoteRepo.findOne({ where: { messageId: targetMessage.id } });
+    if (alreadyQuoted) {
+      await interaction.editReply('That message has already been quoted.');
+      return;
+    }
+
+    const sbUser = await this.sb.maybeCreateSBUser(targetMessage.author.id);
+    const sbQuote = new Quote();
+    sbQuote.user = sbUser;
+    sbQuote.quoteText = quoteText;
+    sbQuote.channelId = targetMessage.channelId;
+    sbQuote.guildId = interaction.guild.id;
+    sbQuote.messageId = targetMessage.id;
+    const savedQuote = await quoteRepo.save(sbQuote, { reload: true });
+    const quotedMember = await this.sb
+      .getMember(savedQuote.guildId, savedQuote.user.discordUserId)
+      .catch(() => undefined);
+    const displayName = quotedMember?.displayName ?? targetMessage.author.displayName;
+    await interaction.editReply(`I've noted that ${displayName} said: "${savedQuote.quoteText}"`);
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
@@ -141,23 +210,11 @@ export default class QuoteCommand extends SassybotCommand {
     await this.getRandomQuote(interaction);
   }
 
-  private async sendDmOrEphemeral(
-    interaction: ChatInputCommandInteraction,
-    text: string,
-    dmSuccessMessage: string,
-  ): Promise<void> {
+  private async sendEphemeralChunks(interaction: ChatInputCommandInteraction, text: string): Promise<void> {
     const chunks = QuoteCommand.chunkText(text);
-    try {
-      const dmChannel = await interaction.user.createDM();
-      for (const chunk of chunks) {
-        await dmChannel.send(chunk);
-      }
-      await interaction.editReply(dmSuccessMessage);
-    } catch {
-      await interaction.editReply(chunks[0] ?? 'No quotes found.');
-      for (let i = 1; i < chunks.length; i++) {
-        await interaction.followUp({ content: chunks[i], flags: MessageFlags.Ephemeral });
-      }
+    await interaction.editReply(chunks[0] ?? 'No quotes found.');
+    for (let i = 1; i < chunks.length; i++) {
+      await interaction.followUp({ content: chunks[i], flags: MessageFlags.Ephemeral });
     }
   }
 
@@ -188,7 +245,7 @@ export default class QuoteCommand extends SassybotCommand {
       }
     });
     if (outputString.length) {
-      await this.sendDmOrEphemeral(interaction, outputString.trimEnd(), 'Sent quote counts to your DMs.');
+      await this.sendEphemeralChunks(interaction, outputString.trimEnd());
     } else {
       await interaction.editReply('No quotes saved in this server yet.');
     }
@@ -213,11 +270,7 @@ export default class QuoteCommand extends SassybotCommand {
         finalMessage += `${index + 1} - ${quote.quoteText}\n`;
       });
       finalMessage += '----------------------------';
-      await this.sendDmOrEphemeral(
-        interaction,
-        finalMessage,
-        `Sent ${mentionedMember.displayName}'s quotes to your DMs.`,
-      );
+      await this.sendEphemeralChunks(interaction, finalMessage);
     } else {
       await interaction.editReply(`${mentionedMember.displayName} has no saved quotes`);
     }

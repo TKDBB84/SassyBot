@@ -1,12 +1,18 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  SlashCommandBuilder,
+} from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
 
 export default class InspireCommand extends SassybotCommand {
-  public readonly commands = ['inspire'];
-
   public getHelpText(): string {
     return 'I give you an inspirational image';
+  }
+
+  public override getSlashCommands(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+    return [new SlashCommandBuilder().setName('inspire').setDescription(this.getHelpText()).toJSON()];
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {

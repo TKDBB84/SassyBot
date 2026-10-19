@@ -11,8 +11,6 @@ import SpamChannel from '../../entity/SpamChannel';
 import SassybotCommand from './SassybotCommand';
 
 export default class SpamCommand extends SassybotCommand {
-  public readonly commands = ['spam'];
-
   public getHelpText(): string {
     return 'usage: `/spam` -- this causes me to spam users entering, leaving, or changing voice rooms into the channel this command was specified -- only available to admins';
   }
@@ -38,6 +36,7 @@ export default class SpamCommand extends SassybotCommand {
     }
     const authorId = interaction.user.id;
     if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) || authorId === UserIds.SASNER) {
+      await interaction.deferReply();
       const spamChannelRepo = this.sb.dbConnection.getRepository(SpamChannel);
       let spamChannel = await spamChannelRepo.findOne({ where: { guildId: interaction.guild.id } });
       if (!spamChannel) {
@@ -46,7 +45,7 @@ export default class SpamCommand extends SassybotCommand {
       }
       spamChannel.channelId = interaction.channel.id;
       await spamChannelRepo.save(spamChannel);
-      await interaction.reply("Ok, I'll spam this channel");
+      await interaction.editReply("Ok, I'll spam this channel");
     } else {
       await interaction.reply({
         content: 'This functionality is limited to Server Admins',

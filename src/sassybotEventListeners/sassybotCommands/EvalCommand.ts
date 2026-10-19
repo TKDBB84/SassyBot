@@ -12,7 +12,6 @@ import { isMessageFromAdmin } from './lib';
 import { inspect } from 'util';
 
 export default class EvalCommand extends SassybotCommand {
-  public readonly commands = ['eval'];
   public override readonly guildId = GuildIds.SASNERS_TEST_SERVER_GUILD_ID;
 
   public getHelpText(): string {

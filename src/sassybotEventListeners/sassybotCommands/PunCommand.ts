@@ -8,8 +8,6 @@ import SassybotCommand from './SassybotCommand';
 import fetch from 'node-fetch';
 
 export default class PunCommand extends SassybotCommand {
-  public readonly commands = ['pun', 'joke'];
-
   public getHelpText(): string {
     return 'usage: `/pun` or `/joke` -- I send a stupid pun or joke to the channel';
   }
