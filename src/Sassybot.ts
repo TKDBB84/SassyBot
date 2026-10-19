@@ -32,8 +32,6 @@ import 'reflect-metadata';
 import type { DataSource } from 'typeorm';
 import getDataSource from './dataSource';
 import jobs from './cronJobs';
-import COTMember from './entity/COTMember';
-import FFXIVChar from './entity/FFXIVChar';
 import SbUser from './entity/SbUser';
 import { createLogger, logger } from './log';
 import SassybotEventsToRegister from './sassybotEventListeners';
@@ -105,29 +103,6 @@ export interface ISassybotEventListener {
   getEventListener: () => (...args: any[]) => Promise<void>;
 }
 
-export type XIVAPIPagination = {
-  Page: number;
-  PageNext: string | null;
-  PagePrev: string | null;
-  PageTotal: number;
-  Results: number;
-  ResultsPerPage: number;
-  ResultsTotal: number;
-};
-export type XIVAPICharacterSearchResult = {
-  Avatar: string;
-  FeastMatches: number;
-  ID: number;
-  Lang: string;
-  Name: string;
-  Rank: string | null;
-  RankIcon: string | null;
-  Server: string;
-};
-export type XIVAPISearchResponse = {
-  Pagination: XIVAPIPagination;
-  Results: XIVAPICharacterSearchResult[];
-};
 type SassybotEmitter = {
   preLogin: () => void;
   postLogin: () => void;
@@ -175,7 +150,6 @@ declare interface SassybotType {
   getMessage(channelId: string, messageId: string): Promise<Message | null>;
   maybeCreateSBUser(userId: string): Promise<SbUser>;
   getUser(userId: string): Promise<User | undefined>;
-  findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null>;
   getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined>;
   isTextChannel(channel: Channel | null | undefined): channel is TextChannel;
   isSassyBotCommand(sbEvent: ISassybotEventListener): sbEvent is SassybotCommand;
@@ -277,23 +251,6 @@ export class Sassybot extends (EventEmitter as new () => TypedEmitter<SassybotEm
       this.logger.error('could not fetch user', { userId });
       throw error;
     }
-  }
-  public async findCoTMemberByDiscordId(discordId: Snowflake): Promise<COTMember | null> {
-    const sbUser = await this.maybeCreateSBUser(discordId);
-    const char = await this.dbConnection
-      .getRepository(FFXIVChar)
-      .findOne({ where: { user: { discordUserId: sbUser.discordUserId } } });
-    if (!char) {
-      return null;
-    }
-
-    const member = await this.dbConnection.getRepository(COTMember).findOne({ where: { character: { id: char.id } } });
-    char.user = sbUser;
-    if (member) {
-      member.character = char;
-      return member;
-    }
-    return null;
   }
 
   public async getMember(guildId: string, userResolvable: UserResolvable): Promise<GuildMember | undefined> {

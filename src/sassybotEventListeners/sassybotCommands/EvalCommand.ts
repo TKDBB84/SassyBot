@@ -29,15 +29,11 @@ export default class EvalCommand extends SassybotCommand {
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
     const code = interaction.options.getString('code', true);
-    if (
-      interaction.user.id === UserIds.SASNER ||
-      interaction.user.id === UserIds.RYK ||
-      interaction.user.id === UserIds.CAIT
-    ) {
+    if (interaction.user.id === UserIds.SASNER || interaction.user.id === UserIds.RYK) {
       const isNonSasnerAdmin = interaction.user.id !== UserIds.SASNER;
       if (isNonSasnerAdmin) {
         await interaction.reply("I sure hope you know what you're doing...");
-        const forUser = interaction.user.id === UserIds.CAIT ? 'Cait' : 'Ryk';
+        const forUser = 'Ryk';
         const log = `Running Eval'd: ${code} for ${forUser}`;
         this.sb.logger.warn(log, { interaction, code, forUser });
       }

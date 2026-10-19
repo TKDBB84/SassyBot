@@ -5,7 +5,6 @@ import {
 } from 'discord.js';
 import SassybotCommand from './SassybotCommand';
 import { isMessageFromAdmin } from './lib';
-import { CotRanks, GuildIds } from '../../consts';
 
 export default class RestartCommand extends SassybotCommand {
   public readonly commands = ['restart'];
@@ -19,9 +18,7 @@ export default class RestartCommand extends SassybotCommand {
   }
 
   protected async listener({ interaction }: { interaction: ChatInputCommandInteraction }): Promise<void> {
-    const officer = await this.sb.getRole(GuildIds.COT_GUILD_ID, CotRanks.OFFICER);
-
-    if (isMessageFromAdmin(interaction, officer)) {
+    if (isMessageFromAdmin(interaction)) {
       await interaction.reply('restarting...');
       process.exit(1); // exit w/ error so PM2 restarts us.
       return;
